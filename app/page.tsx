@@ -1,5 +1,9 @@
 import Image from "next/image";
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 342b763 (update sidebar)
 export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
