@@ -2,20 +2,8 @@
 // components/tables/RecentLicenseActivityTable.tsx
 "use client";
 import React from "react";
+import { LicenseActivity } from "@/mock/types.js";
 
-// ประเภทของแอ็กชัน เพื่อกำหนดสี/ป้ายในอนาคตได้
-export type LicenseAction =
-  | "Assign"
-  | "Deallocate"
-  | "Request Approved"
-  | "Request Rejected";
-
-export type LicenseActivity = {
-  date: string | Date;     // วันที่ (สามารถเป็น Date หรือ string)
-  action: LicenseAction;   // การกระทำ
-  software: string;        // ชื่อซอฟต์แวร์
-  employee: string;        // ชื่อพนักงาน
-};
 
 type Props = {
   title?: string;
@@ -63,7 +51,7 @@ export const RecentLicenseActivityTable: React.FC<Props> = ({
         <table className="w-full border-separate border-spacing-0">
           <thead>
             <tr className="text-sm text-gray-500 dark:text-gray-400">
-              <th className="text-left font-medium py-2 border-b border-gray-200">Date</th>
+              <th className="text-left font-medium py-2 border-b border-gray-200 -[120px]">Date</th>
               <th className="text-left font-medium py-2 border-b border-gray-200">Action</th>
               <th className="text-left font-medium py-2 border-b border-gray-200">Software N.</th>
               <th className="text-left font-medium py-2 border-b border-gray-200">Employee</th>

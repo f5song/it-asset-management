@@ -1,6 +1,9 @@
+
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ClientShell from "@/components/layout/ClientShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,15 +22,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="th">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-gray-50`}>
+        <ClientShell>{children}</ClientShell>
       </body>
     </html>
   );
