@@ -13,10 +13,8 @@ import {
   Cog6ToothIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
+import { cn } from "../ui";
 
-function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
-}
 
 type MenuItem = {
   key: string;
@@ -59,20 +57,15 @@ export default function Sidebar({
 
   return (
     <aside
-      className={cx(
-        // ⭐ ให้เป็น flex item ที่ “ยืดสูง” เท่ากับคอลัมน์ขวา
+      className={cn(
         "self-stretch bg-white shrink-0",
-        // ⭐ คุมความกว้างเปิด/ปิดเฉพาะ Desktop ด้วย width + overflow-hidden
         "transition-[width] duration-300 ease-in-out overflow-hidden",
         isDesktopOpen ? "md:w-64" : "md:w-0",
-        // บนมือถือตามที่คุณบอก “ยังไม่ทำ” → จะไม่มีความกว้างพิเศษ
         "w-0 md:block",
-        // เงาให้เหมือนดีไซน์
         "shadow-[4px_0_20px_-12px_rgba(0,0,0,0.25)]"
       )}
       aria-label="Sidebar"
     >
-      {/* ภายในใช้ flex-col และ h-full เพื่อให้พื้นหลังเติมเต็ม */}
       <nav className="flex flex-col h-full gap-1 p-2 md:p-3">
         {MENU.map((item) => {
           const Icon = item.icon;
@@ -84,7 +77,7 @@ export default function Sidebar({
           return (
             <div key={item.key}>
               <button
-                className={cx(
+                className={cn(
                   "w-full flex items-center gap-3 px-3 py-2 rounded-md transition",
                   "text-gray-800 hover:bg-gray-100",
                   (isActive(item.path) || isParentActive) && "text-blue-600 bg-blue-50"
@@ -99,7 +92,7 @@ export default function Sidebar({
               >
                 {Icon && (
                   <Icon
-                    className={cx(
+                    className={cn(
                       "w-5 h-5",
                       (isActive(item.path) || isParentActive)
                         ? "text-blue-600"
@@ -110,7 +103,7 @@ export default function Sidebar({
                 <span className="text-sm font-medium">{item.name}</span>
                 {hasChildren && (
                   <ChevronDownIcon
-                    className={cx(
+                    className={cn(
                       "ml-auto w-4 h-4 text-gray-700 transition-transform",
                       showChildren ? "rotate-180" : "rotate-0"
                     )}
@@ -120,7 +113,7 @@ export default function Sidebar({
 
               {hasChildren && (
                 <div
-                  className={cx(
+                  className={cn(
                     "pl-6 ml-2 border-l border-gray-200 overflow-hidden transition-[max-height] duration-300",
                     showChildren ? "max-h-40" : "max-h-0"
                   )}
@@ -129,7 +122,7 @@ export default function Sidebar({
                     <button
                       key={child.key}
                       onClick={() => onNavigate(child.path!)}
-                      className={cx(
+                      className={cn(
                         "w-full text-left px-3 py-2 rounded-md mt-1",
                         "text-gray-700 hover:bg-gray-100",
                         isActive(child.path) && "text-blue-600 bg-blue-50 font-medium"
