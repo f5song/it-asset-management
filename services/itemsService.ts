@@ -1,6 +1,7 @@
 
 // src/services/itemsService.ts
-import { MOCK_ITEMS, type Item, type ItemStatus } from '../mock/mockSoftware';
+import { SoftwareType } from "@/mock/types";
+import { MOCK_ITEMS, type Item, type ItemStatus } from "../mock/mockSoftware";
 
 export type ItemsResponse = {
   data: Item[];
@@ -13,39 +14,72 @@ export type ItemsResponse = {
 };
 
 export type ItemsQuery = {
-  page: number;                 // 1-based
+  page: number; // 1-based
   limit: number;
   sortBy?: keyof Item;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   statusFilter?: ItemStatus;
+  typeFilter?: SoftwareType;
+  manufacturerFilter?: string;
+  searchText?: string;
 };
+
+function normalize(s?: string) {
+  return (s ?? "").trim().toLowerCase();
+}
 
 // จำลอง network ด้วย setTimeout (ไม่ใช้ MSW/axios)
 export async function getItemsStock({
   page,
   limit,
   sortBy,
-  sortOrder = 'asc',
+  sortOrder = "asc",
   statusFilter,
+  typeFilter,
+  manufacturerFilter,
+  searchText,
 }: ItemsQuery): Promise<ItemsResponse> {
   return new Promise((resolve) => {
     setTimeout(() => {
-      // 1) filter
-      const filtered = statusFilter
-        ? MOCK_ITEMS.filter((x) => x.status === statusFilter)
-        : MOCK_ITEMS;
+      // 1) filter (ครบทุกเงื่อนไข)
+      const kw = normalize(searchText);
+
+      const filtered = MOCK_ITEMS.filter((x) => {
+        const statusOk = !statusFilter || x.status === statusFilter;
+
+        // NOTE: ตรวจชื่อฟิลด์ให้ตรงกับ Item ของคุณ
+        // ในตารางของคุณมีคอลัมน์ 'softwareType' และ 'manufacturer'
+        const typeOk = !typeFilter || x.softwareType === typeFilter;
+
+        // กรณีตัวพิมพ์/ช่องว่างต่างกัน → normalize ทั้งสองฝั่ง
+        const mfOk =
+          !manufacturerFilter ||
+          normalize(x.manufacturer) === normalize(manufacturerFilter);
+
+        // keyword match ชื่อ/ผู้ผลิต/ประเภท
+        const kwOk =
+          !kw ||
+          normalize(x.softwareName).includes(kw) ||
+          normalize(x.manufacturer).includes(kw) ||
+          normalize(x.softwareType).includes(kw);
+
+        return statusOk && typeOk && mfOk && kwOk;
+      });
 
       // 2) sort (optional)
-      const dir = sortOrder === 'desc' ? -1 : 1;
+      const dir = sortOrder === "desc" ? -1 : 1;
       const sorted = sortBy
         ? [...filtered].sort((a, b) => {
             const va = a[sortBy];
             const vb = b[sortBy];
-            return String(va).localeCompare(String(vb)) * dir;
+            return String(va).localeCompare(String(vb), undefined, {
+              numeric: true,
+              sensitivity: "base",
+            }) * dir;
           })
         : filtered;
 
-      // 3) paginate
+      // 3) paginate (1-based page)
       const start = (page - 1) * limit;
       const pageRows = sorted.slice(start, start + limit);
 
@@ -54,7 +88,7 @@ export async function getItemsStock({
         pagination: {
           page,
           limit,
-          total: sorted.length,
+          total: sorted.length, // รวมหลังกรอง
           totalPages: Math.ceil(sorted.length / limit),
         },
       });

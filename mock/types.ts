@@ -10,3 +10,9 @@ export type LicenseActivity = {
   software: string;        // ชื่อซอฟต์แวร์
   employee: string;        // ชื่อพนักงาน
 };
+
+export type ItemStatus = 'Active' | 'Expired' | 'Expiring';
+export type PolicyCompliance = 'Allowed' | 'Not Allowed';
+export type SoftwareType = 'Standard' | 'Special' | 'Exception';
+export type LicenseModel = 'Free' | 'Paid' | 'Perpetual' | 'Subscription';
+export type ClientServer = 'Client' | 'Server';

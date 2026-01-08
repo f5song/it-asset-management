@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: '/', // ให้ MSW จับเส้นทาง "/users-items" ได้ตรง ๆ
+  baseURL: '/', 
   headers: { 'Content-Type': 'application/json' },
   timeout: 15_000,
 });

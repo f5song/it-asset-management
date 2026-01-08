@@ -1,10 +1,6 @@
-// src/mock/mockSoftware.ts
-export type ItemStatus = 'Active' | 'Expired' | 'Expiring';
-export type PolicyCompliance = 'Allowed' | 'Not Allowed' | 'Requires';
-export type SoftwareType = 'Standard' | 'Special' | 'Exception';
-export type LicenseModel = 'Free' | 'Paid' | 'Perpetual' | 'Subscription';
-export type ClientServer = 'Client' | 'Server';
+import { ClientServer, ItemStatus, LicenseModel, PolicyCompliance, SoftwareType } from "./types";
 
+// src/mock/mockSoftware.ts
 export type Item = {
   id: string;
   softwareName: string;
@@ -53,7 +49,7 @@ export const MOCK_ITEMS: Item[] = [
     manufacturer: 'LINE Corp',
     version: 'v2409',
     category: 'Productive',
-    policyCompliance: 'Requires',
+    policyCompliance: 'Not Allowed',
     expiryDate: '05-08-2023',
     status: 'Expiring',
     softwareType: 'Standard',
@@ -118,7 +114,7 @@ export const MOCK_ITEMS: Item[] = [
     manufacturer: 'LINE Corp',
     version: 'v2025',
     category: 'Utility',
-    policyCompliance: 'Requires',
+    policyCompliance: 'Not Allowed',
     expiryDate: '02-09-2023',
     status: 'Active',
     softwareType: 'Exception',
@@ -158,7 +154,7 @@ export const MOCK_ITEMS: Item[] = [
     manufacturer: 'Figma Inc.',
     version: 'v124',
     category: 'Design',
-    policyCompliance: 'Requires',
+    policyCompliance: 'Not Allowed',
     expiryDate: '15-03-2025',
     status: 'Expiring',
     softwareType: 'Special',
@@ -179,3 +175,5 @@ export const MOCK_ITEMS: Item[] = [
     clientServer: 'Client',
   },
 ];
+export type { ItemStatus };
+
