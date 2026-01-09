@@ -1,31 +1,15 @@
-
-// src/services/itemsService.ts
-import { SoftwareType } from "@/mock/types";
-import { MOCK_ITEMS, type Item, type ItemStatus } from "../mock/mockSoftware";
-
-export type ItemsResponse = {
-  data: Item[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-};
-
-export type ItemsQuery = {
-  page: number; // 1-based
-  limit: number;
-  sortBy?: keyof Item;
-  sortOrder?: "asc" | "desc";
-  statusFilter?: ItemStatus;
-  typeFilter?: SoftwareType;
-  manufacturerFilter?: string;
-  searchText?: string;
-};
+import { MOCK_ITEMS } from "@/mock/mockSoftware";
+import { ItemsQuery, SoftwareItem } from "@/types";
+import { ItemsResponse } from "@/types/service";
 
 function normalize(s?: string) {
   return (s ?? "").trim().toLowerCase();
+}
+
+export async function getItemById(id: string): Promise<SoftwareItem | null> {
+  await new Promise((res) => setTimeout(res, 150));
+  const found = (MOCK_ITEMS as SoftwareItem[]).find((x) => String(x.id) === String(id));
+  return found ?? null;
 }
 
 // จำลอง network ด้วย setTimeout (ไม่ใช้ MSW/axios)

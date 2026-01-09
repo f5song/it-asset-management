@@ -1,14 +1,12 @@
 "use client";
-// src/pages/ItemsPage.tsx
 import React, { useState } from "react";
 import { ColumnDef, DataTable } from "@/components/table/DataTable";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { useItemsTable } from "@/hooks/useItemsTable";
-import { Item, ItemStatus } from "@/mock/mockSoftware";
-import { PaginationState, SortingState } from "@/types/table";
-import { SoftwareType } from "@/mock/types";
+import { PaginationState, SoftwareItem, SoftwareStatus, SoftwareType, SortingState } from "@/types";
 
-const columns: ColumnDef<Item>[] = [
+
+const columns: ColumnDef<SoftwareItem>[] = [
   {
     id: "softwareName",
     header: "Software Name",
@@ -59,7 +57,7 @@ const columns: ColumnDef<Item>[] = [
 
 export default function SoftwarePage() {
   // ---------- ฟิลเตอร์ (single source of truth) ----------
-  const [status, setStatus] = useState<ItemStatus | undefined>(undefined);
+  const [status, setStatus] = useState<SoftwareStatus | undefined>(undefined);
   const [type, setType] = useState<SoftwareType | undefined>();
   const [mfgr, setMfgr] = useState<string | undefined>();
   const [searchText, setSearchText] = useState("");
@@ -70,7 +68,7 @@ export default function SoftwarePage() {
     pageSize: 8,
   });
 
-  const [sorting, setSorting] = useState<SortingState<Item>>({
+  const [sorting, setSorting] = useState<SortingState<SoftwareItem>>({
     sortBy: "softwareName",
     sortOrder: "asc",
   });
@@ -118,7 +116,7 @@ export default function SoftwarePage() {
       {/* เอา status dropdown เดิมออก เพราะซ้ำกับ FilterBar */}
       {/* ถ้าต้องการคงไว้ ให้ทำให้ sync กับ state เดียวกัน (status) */}
 
-      <DataTable<Item>
+      <DataTable<SoftwareItem>
         columns={columns}
         rows={rows}
         totalRows={totalRows}
@@ -131,7 +129,7 @@ export default function SoftwarePage() {
         isLoading={isLoading}
         isError={isError}
         errorMessage={errorMessage}
-        maxBodyHeight={420} // ถ้าตารางยาวจะ scroll แนวตั้ง
+        maxBodyHeight={420}
       />
     </div>
   );

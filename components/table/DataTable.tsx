@@ -1,16 +1,19 @@
-// src/components/DataTable.tsx
-import { PaginationState, SortingState } from "@/types/table";
+"use client";
+
 import React from "react";
+import { useRouter } from "next/navigation";
+import { Pagination } from "../pagination/Pagination";
+import { PaginationState, SortingState } from "@/types";
 
 export type ColumnDef<T> = {
   id: string;
   header: string;
   accessorKey: keyof T;
-  width?: number; // ความกว้างคอลัมน์ (optional)
+  width?: number;
   cell?: (value: any, row: T) => React.ReactNode;
 };
 
-export type DataTableProps<T> = {
+export type DataTableProps<T extends { id?: string | number }> = {
   columns: ColumnDef<T>[];
   rows: T[];
   totalRows?: number;
@@ -30,9 +33,17 @@ export type DataTableProps<T> = {
 
   /** สูงสุดของตาราง (px) ถ้าเกินจะ scroll แนวตั้ง */
   maxBodyHeight?: number;
+
+  /** คลิกแถวแล้วทำอะไร (ถ้าส่งมา จะใช้อันนี้ก่อน) */
+  onRowClick?: (row: T) => void;
+
+  /** สร้างเส้นทางของแถว เช่น row => `/software/${row.id}` */
+  rowHref?: (row: T) => string;
 };
 
-export function DataTable<T>(props: DataTableProps<T>) {
+export function DataTable<T extends { id?: string | number }>(
+  props: DataTableProps<T>
+) {
   const {
     columns,
     rows,
@@ -47,7 +58,11 @@ export function DataTable<T>(props: DataTableProps<T>) {
     isError,
     errorMessage,
     maxBodyHeight = 420,
+    onRowClick,
+    rowHref,
   } = props;
+
+  const router = useRouter();
 
   const totalPages =
     totalRows && pagination
@@ -55,6 +70,31 @@ export function DataTable<T>(props: DataTableProps<T>) {
       : undefined;
 
   const tableClass = variant === "striped" ? "table-striped" : "table-default";
+
+  const handleRowNavigate = (row: T) => {
+    // หากมี onRowClick ให้ใช้ก่อน
+    if (onRowClick) {
+      onRowClick(row);
+      return;
+    }
+    // ถ้ามี rowHref ใช้ path ที่ส่งมา
+    if (rowHref) {
+      const path = rowHref(row);
+      if (path) router.push(path);
+      return;
+    }
+    // Fallback: ใช้ id ของ row
+    const id = row.id;
+    if (id !== undefined && id !== null) {
+      router.push(`/software/${id}`);
+    } else {
+      // ถ้าไม่มี id และไม่มี rowHref → ไม่ทำอะไร
+      console.warn(
+        "[DataTable] Cannot navigate: row.id is missing and rowHref not provided.",
+        row
+      );
+    }
+  };
 
   return (
     <div
@@ -123,11 +163,13 @@ export function DataTable<T>(props: DataTableProps<T>) {
         </table>
 
         {isLoading && <div style={{ padding: 16 }}>กำลังโหลด...</div>}
+
         {isError && !isLoading && (
           <div style={{ padding: 16, color: "#b91c1c" }}>
             {errorMessage ?? "เกิดข้อผิดพลาด"}
           </div>
         )}
+
         {!isLoading && !isError && rows.length === 0 && (
           <div style={{ padding: 16 }}>{emptyMessage}</div>
         )}
@@ -136,7 +178,19 @@ export function DataTable<T>(props: DataTableProps<T>) {
           <table style={{ minWidth: 1000, width: "100%" }}>
             <tbody>
               {rows.map((row, ri) => (
-                <tr key={ri} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                <tr
+                  key={ri}
+                  style={{
+                    borderBottom: "1px solid #f1f5f9",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => handleRowNavigate(row)}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ")
+                      handleRowNavigate(row);
+                  }}
+                >
                   {columns.map((c) => {
                     const value = (row as any)[c.accessorKey];
                     return (
@@ -146,6 +200,12 @@ export function DataTable<T>(props: DataTableProps<T>) {
                           padding: "10px 12px",
                           minWidth: c.width ?? 140,
                           whiteSpace: "nowrap",
+                        }}
+                        // ป้องกันปุ่ม/ลิงก์ภายในเซลล์ทำให้แถว trigger navigate
+                        onClick={(e) => {
+                          const target = e.target as HTMLElement;
+                          if (target.closest('button,a,[role="button"]'))
+                            e.stopPropagation();
                         }}
                       >
                         {c.cell ? c.cell(value, row) : String(value)}
@@ -159,52 +219,25 @@ export function DataTable<T>(props: DataTableProps<T>) {
         )}
       </div>
 
-      {/* Pagination */}
       {pagination && onPaginationChange && (
         <div
           className="table-pagination"
-          role="navigation"
-          aria-label="Pagination"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: 12,
-            borderTop: "1px solid #e5e7eb",
-            justifyContent: "flex-end",
-          }}
+          style={{ display: "flex", justifyContent: "flex-end" }}
         >
-          <button
-            onClick={() =>
-              onPaginationChange({
-                pageIndex: Math.max(0, pagination.pageIndex - 1),
-                pageSize: pagination.pageSize,
-              })
-            }
-            disabled={pagination.pageIndex === 0 || isLoading}
-          >
-            ก่อนหน้า
-          </button>
-
-          <span>
-            หน้า {pagination.pageIndex + 1}
-            {totalPages ? ` / ${totalPages}` : ""}
-          </span>
-
-          <button
-            onClick={() =>
-              onPaginationChange({
-                pageIndex: pagination.pageIndex + 1,
-                pageSize: pagination.pageSize,
-              })
-            }
-            disabled={
-              isLoading ||
-              (totalPages ? pagination.pageIndex + 1 >= totalPages : false)
-            }
-          >
-            ถัดไป
-          </button>
+          <Pagination
+            // --- Adapter props ---
+            pagination={pagination} // { pageIndex: 0-based, pageSize }
+            totalPages={totalPages} // ถ้ามี (server-side) → totalCount จะถูกคำนวณให้อัตโนมัติ
+            onPaginationChange={onPaginationChange} // ({ pageIndex, pageSize }) 0-based
+            // --- Options ---
+            siblingCount={2}
+            onPageSizeChange={(size) => {
+              // จะวิ่งเข้า adapter → onPaginationChange({ pageIndex: 0, pageSize: size })
+            }}
+            pageSizeOptions={[10, 20, 50, 100]}
+            // --- Lock ทั้ง component ระหว่างโหลด ---
+            disabled={isLoading}
+          />
         </div>
       )}
     </div>

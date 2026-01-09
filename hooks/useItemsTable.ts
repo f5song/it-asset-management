@@ -1,14 +1,13 @@
 // src/hooks/useItemsTable.ts
 import { useQuery } from "@tanstack/react-query";
 import { getItemsStock } from "../services/itemsService";
-import type { Item, ItemStatus } from "../mock/mockSoftware";
-import type { PaginationState, SortingState } from "../types/table";
-import { SoftwareType } from "@/mock/types";
+import { PaginationState, SoftwareItem, SoftwareStatus, SoftwareType, SortingState } from "@/types";
+
 
 export function useItemsTable(params: {
   pagination: PaginationState;
-  sorting: SortingState<Item>;
-  statusFilter?: ItemStatus;
+  sorting: SortingState<SoftwareItem>;
+  statusFilter?: SoftwareStatus;
   typeFilter?: SoftwareType;
   manufacturerFilter?: string;
   searchText?: string;

@@ -1,4 +1,5 @@
-import { LicenseActivity } from "./types";
+import { LicenseActivity } from "@/types";
+
 
 export const LicenseActivityData: LicenseActivity[] = [
     {

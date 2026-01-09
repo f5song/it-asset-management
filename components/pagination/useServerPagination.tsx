@@ -2,7 +2,6 @@
 // src/pagination/useServerPagination.tsx
 'use client';
 
-import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ListService } from './listService';
 

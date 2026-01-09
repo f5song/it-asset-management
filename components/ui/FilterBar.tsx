@@ -1,12 +1,12 @@
 
+import { SoftwareStatus, SoftwareType } from "@/types";
 import React, { useState } from "react";
-import { ItemStatus } from "@/mock/mockSoftware";
-import { SoftwareType } from "@/mock/types";
+
 
 export type FilterBarProps = {
   // Filters
-  statusFilter?: ItemStatus;
-  setStatusFilter: (s?: ItemStatus) => void;
+  statusFilter?: SoftwareStatus;
+  setStatusFilter: (s?: SoftwareStatus) => void;
 
   typeFilter?: SoftwareType;
   setTypeFilter: (t?: SoftwareType) => void;
@@ -22,7 +22,7 @@ export type FilterBarProps = {
   onAddSoftware: () => void;
 
   // Options (optional; ถ้าไม่ส่งมาจะใช้ค่า default ด้านล่าง)
-  statusOptions?: readonly ItemStatus[];
+  statusOptions?: readonly SoftwareStatus[];
   typeOptions?: readonly SoftwareType[];
   manufacturerOptions?: readonly string[];
 };
@@ -125,7 +125,7 @@ export function FilterBar({
           style={styles.select}
           value={statusFilter ?? ""}
           onChange={(e) =>
-            setStatusFilter(e.target.value ? (e.target.value as ItemStatus) : undefined)
+            setStatusFilter(e.target.value ? (e.target.value as SoftwareStatus) : undefined)
           }
         >
           <option value="">All Status</option>

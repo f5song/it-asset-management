@@ -1,4 +1,3 @@
-
 // src/types/table.ts
 export type SortOrder = 'asc' | 'desc';
 
