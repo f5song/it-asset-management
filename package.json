@@ -1,40 +1,26 @@
 {
-  "name": "my-nextjs-app",
-  "version": "0.1.0",
+  "name": "it-asset-monorepo",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "@heroicons/react": "^2.2.0",
-    "@hookform/resolvers": "^5.2.2",
-    "@tanstack/react-query": "^5.90.16",
-    "@tanstack/react-query-devtools": "^5.91.2",
-    "@tanstack/react-table": "^8.21.3",
-    "apexcharts": "^5.3.6",
-    "axios": "^1.13.2",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.562.0",
-    "next": "16.1.0",
-    "react": "19.2.3",
-    "react-apexcharts": "^1.9.0",
-    "react-dom": "19.2.3",
-    "react-hook-form": "^7.70.0",
-    "react-icons": "^5.5.0",
-    "zod": "^4.3.5"
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.0",
-    "msw": "^2.12.7",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "turbo": "^2.1.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.16",
+    "@tanstack/react-query-devtools": "^5.91.2",
+    "geist": "^1.5.1"
   }
 }

@@ -1,0 +1,31 @@
+{
+  "extends": "../../packages/config/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "lib": [
+      "dom",
+      "es2020"
+    ],
+    "allowJs": false,
+    "strict": true,
+    "noEmit": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "./**/*.ts",
+    "./**/*.tsx",
+    "next.config.js",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
