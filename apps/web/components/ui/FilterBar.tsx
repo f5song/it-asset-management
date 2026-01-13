@@ -1,7 +1,7 @@
-
-import { SoftwareStatus, SoftwareType } from "@/types";
-import React, { useState } from "react";
-
+import { useRouter } from 'next/navigation';
+import { SoftwareStatus, SoftwareType } from "../../types";
+import router from 'next/router';
+import { useState } from 'react';
 
 export type FilterBarProps = {
   // Filters
@@ -115,7 +115,8 @@ export function FilterBar({
       width: 240,
     },
   };
-
+  const router = useRouter();
+  const goAddSoftware = () => router.push('/software/add');
   return (
     <div>
       {/* แถวบน: Filters + Export + Add */}
@@ -125,7 +126,9 @@ export function FilterBar({
           style={styles.select}
           value={statusFilter ?? ""}
           onChange={(e) =>
-            setStatusFilter(e.target.value ? (e.target.value as SoftwareStatus) : undefined)
+            setStatusFilter(
+              e.target.value ? (e.target.value as SoftwareStatus) : undefined
+            )
           }
         >
           <option value="">All Status</option>
@@ -141,7 +144,9 @@ export function FilterBar({
           style={styles.select}
           value={typeFilter ?? ""}
           onChange={(e) =>
-            setTypeFilter(e.target.value ? (e.target.value as SoftwareType) : undefined)
+            setTypeFilter(
+              e.target.value ? (e.target.value as SoftwareType) : undefined
+            )
           }
         >
           <option value="">All Types</option>
@@ -183,7 +188,9 @@ export function FilterBar({
                   style={{
                     ...styles.exportItem,
                     borderBottom:
-                      idx === 2 ? "none" : (styles.exportItem as any).borderBottom,
+                      idx === 2
+                        ? "none"
+                        : (styles.exportItem as any).borderBottom,
                   }}
                   onClick={() => {
                     onExport(fmt);
@@ -198,7 +205,7 @@ export function FilterBar({
         </div>
 
         {/* Add Software button */}
-        <button style={styles.btnPrimary} onClick={onAddSoftware}>
+        <button style={styles.btnPrimary} onClick={goAddSoftware}>
           Add Software
         </button>
       </div>

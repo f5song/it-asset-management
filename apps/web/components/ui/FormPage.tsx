@@ -1,23 +1,50 @@
 
-// src/components/FormPage.tsx
+// FormPage.tsx
+'use client';
+
 import React from "react";
-import { useForm, FieldValues } from "react-hook-form";
+import {
+  useForm,
+  FieldValues,
+  DefaultValues,
+  SubmitHandler,
+  FieldErrors,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FormPageProps } from "@/types";
+import * as z from "zod";
+
 import { SelectInput, TextArea, TextInput } from "./Field";
 import { PageHeader } from "./PageHeader";
-import { Card } from "./Card";
 import { FormActions } from "./FormActions";
-import { Container } from "lucide-react";
+import { Container } from "./Container";
 
-/**
- * NOTE:
- * - ใส่ constraint: <TValues extends FieldValues>
- * - เพื่อให้ useForm<TValues>() ถูกต้องตาม react-hook-form
- */
+/** ... BaseField และ FormPageProps เดิม ... */
+export type FormPageProps<TValues extends FieldValues> = {
+  title: string;
+  breadcrumbs?: { label: string; href?: string }[];
+  sectionTitle: string;
+
+  /** ✅ เปลี่ยนเป็น ZodTypeAny */
+  schema?: z.ZodTypeAny;
+
+  /** ✅ defaultValues ต้องเป็น DefaultValues<TValues> */
+  defaultValues?: DefaultValues<TValues>;
+
+  fields: (
+    | { type: "text"; name: keyof TValues & string; label: string; required?: boolean; placeholder?: string; description?: string; colSpan?: 1 | 2 }
+    | { type: "textarea"; name: keyof TValues & string; label: string; required?: boolean; placeholder?: string; description?: string; colSpan?: 1 | 2 }
+    | { type: "select"; name: keyof TValues & string; label: string; required?: boolean; description?: string; options?: { label: string; value: string }[]; colSpan?: 1 | 2 }
+  )[];
+
+  onSubmit: SubmitHandler<TValues>;
+  onCancel?: () => void;
+  submitLabel?: string;
+  cancelLabel?: string;
+};
+
 export function FormPage<TValues extends FieldValues>({
   title,
-  breadcrumbs,
+  breadcrumbs = [],
   sectionTitle,
   schema,
   defaultValues,
@@ -29,7 +56,7 @@ export function FormPage<TValues extends FieldValues>({
 }: FormPageProps<TValues>) {
   const methods = useForm<TValues>({
     defaultValues,
-    resolver: schema ? zodResolver(schema) : undefined,
+    resolver: schema ? zodResolver(schema) : undefined, // ✅ ไม่ต้อง cast แปลก ๆ
     mode: "onBlur",
   });
 
@@ -39,9 +66,14 @@ export function FormPage<TValues extends FieldValues>({
     formState: { errors, isSubmitting },
   } = methods;
 
-  const renderField = (field: typeof fields[number]) => {
+  const getErrorMessage = (name: string) => {
+    const e = (errors as FieldErrors<TValues>)[name as keyof TValues];
+    return (e as any)?.message as string | undefined;
+  };
+
+  const renderField = (field: (typeof fields)[number]) => {
     const id = String(field.name);
-    const errorMsg = (errors as any)[field.name]?.message as string | undefined;
+    const errorMsg = getErrorMessage(field.name);
     const col = field.colSpan === 2 ? "md:col-span-2" : "md:col-span-1";
 
     switch (field.type) {
@@ -112,25 +144,15 @@ export function FormPage<TValues extends FieldValues>({
   };
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-6">
+    <main>
       <PageHeader title={title} breadcrumbs={breadcrumbs} />
-
       <Container title={sectionTitle}>
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="grid gap-6">
-          {/* ฟอร์มแบบ 2 คอลัมน์ */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {fields.map(renderField)}
           </div>
-
-          <FormActions
-            submitLabel={submitLabel}
-            cancelLabel={cancelLabel}
-            onCancel={onCancel}
-          />
-
-          {isSubmitting && (
-            <p className="text-sm text-gray-500">Processing…</p>
-          )}
+          <FormActions submitLabel={submitLabel} cancelLabel={cancelLabel} onCancel={onCancel} />
+          {isSubmitting && <p className="text-sm text-gray-500">Processing…</p>}
         </form>
       </Container>
     </main>

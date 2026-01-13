@@ -1,9 +1,10 @@
-
 // src/pages/AddSoftwarePage.tsx
+"use client";
 import React from "react";
 import { z } from "zod";
-import { FormPage } from "../components/FormPage";
-import type { FieldDescriptor } from "../types/form";
+import { FieldDescriptor } from "../../../types";
+import { FormPage } from "../../../components/ui/FormPage";
+import BackButton from "../../../components/ui/BackButton";
 
 const schema = z.object({
   softwareName: z.string().min(1, "กรุณากรอกชื่อซอฟต์แวร์"),
@@ -91,27 +92,30 @@ const fields: FieldDescriptor<keyof SoftwareFormValues & string>[] = [
 
 export default function AddSoftwarePage() {
   return (
-    <FormPage<SoftwareFormValues>
-      title="Add Software"
-      breadcrumbs={[
-        { label: "Software Inventory", href: "/software" },
-        { label: "Add Software" },
-      ]}
-      sectionTitle="Software Information"
-      schema={schema}
-      defaultValues={defaultValues}
-      fields={fields}
-      submitLabel="Add Request"
-      cancelLabel="Cancel"
-      onSubmit={async (data) => {
-        // TODO: เรียก API
-        console.log("submit:", data);
-        alert("Software request submitted");
-      }}
-      onCancel={() => {
-        // TODO: navigate กลับ
-        alert("Canceled");
-      }}
-    />
+    <div style={{ padding: 6 }}>
+      <BackButton/>
+      <FormPage<SoftwareFormValues>
+        title="Add Software"
+        breadcrumbs={[
+          { label: "Software Inventory", href: "/software/inventory" },
+          { label: "Add Software" },
+        ]}
+        sectionTitle="Software Information"
+        schema={schema}
+        defaultValues={defaultValues}
+        fields={fields}
+        submitLabel="Add Request"
+        cancelLabel="Cancel"
+        onSubmit={async (data) => {
+          // TODO: เรียก API
+          console.log("submit:", data);
+          alert("Software request submitted");
+        }}
+        onCancel={() => {
+          // TODO: navigate กลับ
+          alert("Canceled");
+        }}
+      />
+    </div>
   );
 }

@@ -1,10 +1,10 @@
+
 'use client';
 
 import React from "react";
 import { HistoryEvent, InstallationRow, SoftwareItem } from "../../../types";
 import { DetailView } from "../../../features/detail-view/DetailView";
 import { InstallationSection } from "../../../features/detail-view/InstallationSection";
-
 
 export default function ClientDetail({
   item,
@@ -21,12 +21,8 @@ export default function ClientDetail({
   history: HistoryEvent[];
   total: number;
 }) {
-  // ✅ ทำ event handlers ใน client
   const onBack = () => window.history.back();
-  const onEdit = () => {
-    // TODO: เปิดหน้าแก้ไข หรือ modal
-    console.log("Edit", item.id);
-  };
+
   const onDelete = () => {
     // TODO: เรียก API/Server Action เพื่อลบ แล้ว redirect
     console.log("Delete", item.id);
@@ -54,8 +50,7 @@ export default function ClientDetail({
         <InstallationSection rows={installations} users={users} devices={devices} total={total} />
       }
       history={history}
-      onBack={onBack}
-      onEdit={onEdit}
+      onBack={onBack} // ✅ ส่งได้ ถ้าอยากทำอย่างอื่นเวลา Edit
       onDelete={onDelete}
     />
   );

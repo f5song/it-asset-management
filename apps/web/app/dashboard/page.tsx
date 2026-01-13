@@ -1,13 +1,13 @@
 "use client";
 
-import { Card } from "@/components/ui/Card";
-import BarChart from "@/components/charts/BarChart";
-import DonutChart from "@/components/charts/DonutChart";
-import SemiRadialGauge from "@/components/charts/SemiRadialGauge";
-import { dataDashboardCard } from "../../../mock/dashboard.mock";
-import { RecentLicenseActivityTable } from "@/components/ui/RecentLicenseActivityTable";
-import HorizontalBarChart from "@/components/charts/HorizontalBarChar";
-import { LicenseActivityData } from "@/mock/licenses.mock";
+import BarChart from "../../components/charts/BarChart";
+import DonutChart from "../../components/charts/DonutChart";
+import HorizontalBarChart from "../../components/charts/HorizontalBarChar";
+import SemiRadialGauge from "../../components/charts/SemiRadialGauge";
+import { Card } from "../../components/ui/Card";
+import { RecentLicenseActivityTable } from "../../components/ui/RecentLicenseActivityTable";
+import { dataDashboardCard, LicenseActivityData } from "../../mock";
+
 
 export default function DashboardPage() {
   return (

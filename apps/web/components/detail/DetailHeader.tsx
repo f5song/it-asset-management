@@ -17,15 +17,6 @@ export function DetailHeader({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <button
-        type="button"
-        aria-label="Back"
-        onClick={onBack}
-        className="grid h-9 w-9 place-items-center rounded-md border border-slate-200 bg-slate-50 text-lg hover:bg-slate-100"
-      >
-        ←
-      </button>
-
       <div className="flex flex-col">
         <h1 className="text-xl font-bold text-slate-900">{title}</h1>
         {typeof compliance !== "undefined" && (
