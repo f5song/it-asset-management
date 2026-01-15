@@ -1,38 +1,32 @@
 
-// src/types/index.ts (หรือไฟล์ที่คุณ export ColumnDef อยู่)
+// src/types/index.ts
 import type React from 'react';
 
-export type SortOrder = 'asc' | 'desc';
+// ✅ ใช้ TanStack types โดยตรง (แนะนำให้ import จากไลบรารีที่ใช้จริงในโปรเจกต์)
+import type {
+  SortingState as TanSortingState,
+  PaginationState as TanPaginationState,
+} from '@tanstack/react-table';
+import { Compliance } from './software';
 
-export type PaginationState = {
-  pageIndex: number; // 0-based
-  pageSize: number;
-};
+/** ใช้ชื่อ alias เพื่อสื่อชัดว่าใช้ตาม TanStack */
+export type PaginationState = TanPaginationState; // { pageIndex: number; pageSize: number }
+export type SortingState = TanSortingState;       // { id: string; desc: boolean }[]
 
-// ✅ ใช้ generic ให้ sortBy เป็น key ของแถวจริง
-export type SortingState<T> = {
-  sortBy?: keyof T;
-  sortOrder?: SortOrder;
-};
-
+/** โครงคอลัมน์ของตารางแบบ generic */
 export type ColumnDef<T> = {
-  /** column id ที่ใช้กับ sorting/filtering ให้เป็น string เสมอ */
   id: string;
-  header: string;
-  /** คีย์ข้อมูลในแถว */
-  accessorKey: keyof T;
+  header: string | React.ReactNode;
+  accessorKey: keyof T & string;  // ยัง type-safe กับแถว
   width?: number;
-  /** custom cell renderer */
-  cell?: (value: any, row: T, rowIndex: number) => React.ReactNode; // ✅ ใช้ React.ReactNode จาก import เดียวกัน
-  /** จัดแนวข้อความของคอลัมน์ */
+  cell?: (value: unknown, row: T, rowIndex: number) => React.ReactNode;
   align?: 'left' | 'center' | 'right';
-  /** className เพิ่มสำหรับ <th>/<td> */
   headerClassName?: string;
   cellClassName?: string;
-  /** ใช้เมื่ออยาก sort ด้วยค่าที่แปลงก่อน เช่น parse number/date จาก string */
-  getSortValue?: (row: T) => any;
+  getSortValue?: (row: T) => unknown; // ถ้าจะ sort ด้วยค่าที่แปลงเอง
 };
 
+/** Props ของ DataTable แบบ generic (ปรับให้ใช้ TanStack state) */
 export type DataTableProps<T extends { id?: string | number }> = {
   columns: ColumnDef<T>[];
   rows: T[];
@@ -41,8 +35,8 @@ export type DataTableProps<T extends { id?: string | number }> = {
   pagination?: PaginationState;
   onPaginationChange?: (next: PaginationState) => void;
 
-  sorting?: SortingState<T>;
-  onSortingChange?: (next: SortingState<T>) => void;
+  sorting?: SortingState;                    // ✅ TanStack
+  onSortingChange?: (next: SortingState) => void;
 
   variant?: 'default' | 'striped';
   size?: 'xs' | 'sm' | 'md';
@@ -60,4 +54,18 @@ export type DataTableProps<T extends { id?: string | number }> = {
   defaultColMinWidth?: number;
 
   clientSideSort?: boolean;
+};
+
+/** ตัวอย่างโดเมน */
+export type LicenseItem = {
+  id: string | number;
+  softwareName: string;
+  manufacturer: string;
+  licenseType?: string;
+  compliance: Compliance;
+  total: number;
+  inUse: number;
+  available?: number;
+  expiryDate?: string | null;
+  status?: string;
 };

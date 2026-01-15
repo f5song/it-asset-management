@@ -1,4 +1,4 @@
-import { LicenseItem, LicenseStatus, LicenseType } from "../types";
+import { LicenseActivity, LicenseItem, LicenseStatus, LicenseType } from "../types";
 
 
 
@@ -164,3 +164,23 @@ export async function getLicenseById(id: string): Promise<LicenseItem | null> {
 export async function getAllLicenses(): Promise<LicenseItem[]> {
   return MOCK_LICENSES;
 }
+
+
+// ✅ Mock dataset (คละ string และ Date ให้เห็นเคสทั้งสองแบบ)
+export const LicenseActivityData: LicenseActivity[] = [
+  { date: "2026-01-13T09:15:00Z", action: "Assign",            software: "Microsoft Office 365", employee: "Anan P." },
+  { date: new Date("2026-01-13T11:30:00Z"), action: "Deallocate",        software: "Adobe Photoshop",      employee: "Nicha T." },
+  { date: "2026-01-12T15:05:00Z", action: "Request Approved",  software: "AutoCAD LT",            employee: "Chaiwat K." },
+  { date: new Date("2026-01-12T17:40:00Z"), action: "Request Rejected",  software: "Slack",                employee: "Pimchanok S." },
+  { date: "2026-01-11T08:55:00Z", action: "Assign",            software: "Visual Studio Pro",     employee: "Supakorn J." },
+  { date: new Date("2026-01-11T10:22:00Z"), action: "Assign",            software: "JetBrains IntelliJ",   employee: "Sasithorn R." },
+  { date: "2026-01-10T13:10:00Z", action: "Deallocate",        software: "Zoom Pro",              employee: "Kirati C." },
+  { date: new Date("2026-01-10T16:45:00Z"), action: "Request Approved",  software: "Microsoft Visio",      employee: "Patcharaporn J." },
+  { date: "2026-01-09T09:00:00Z", action: "Assign",            software: "Figma",                employee: "Varis R." },
+  { date: new Date("2026-01-09T11:20:00Z"), action: "Request Rejected",  software: "Adobe Illustrator",    employee: "Benjaporn K." },
+  { date: "2026-01-08T14:35:00Z", action: "Assign",            software: "Tableau Desktop",       employee: "Pattarapon T." },
+  { date: new Date("2026-01-08T18:05:00Z"), action: "Deallocate",        software: "Postman",              employee: "Jirapat M." },
+  { date: "2026-01-07T10:50:00Z", action: "Request Approved",  software: "Microsoft Project",     employee: "Napatsorn L." },
+  { date: new Date("2026-01-07T15:25:00Z"), action: "Assign",            software: "Notion",               employee: "Kamonchanok W." },
+  { date: "2026-01-06T09:45:00Z", action: "Deallocate",        software: "Jira Software",         employee: "Thanakorn P." },
+];

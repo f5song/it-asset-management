@@ -3,9 +3,11 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import type { PaginationState, SortingState } from '@tanstack/react-table';
-import { ColumnDef, DataTable } from '../table/DataTable';
+
 import { PageHeader } from '../ui/PageHeader';
+import { ColumnDef} from '../../types';
+import { DataTable } from '../table';
+import { PaginationState, SortingState } from '@tanstack/react-table';
 
 type Breadcrumb = { label: string; href: string };
 type ExportFmt = 'CSV' | 'XLSX' | 'PDF';

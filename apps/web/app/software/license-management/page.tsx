@@ -2,13 +2,14 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import type { PaginationState, SortingState } from "@tanstack/react-table";
-import { ColumnDef, DataTable } from "../../../components/table/DataTable";
-import { LicenseItem } from "../../../types";
+
+import { ColumnDef, LicenseItem } from "../../../types";
 import { useLicenseInventory } from "../../../hooks/useLicenseInventory";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { FilterBar } from "../../../components/ui/FilterBar";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { formatDate } from "../../../utils/date";
+import { DataTable } from "../../../components/table";
 
 // ----------------------------
 // 1) กำหนดคอลัมน์ตาราง (ตามโดเมน License)
@@ -61,7 +62,7 @@ const columns: ColumnDef<LicenseItem>[] = [
     header: "Expiry Date",
     accessorKey: "expiryDate",
     width: 140,
-    cell: (v) => formatDate(v),
+    cell: (v) => formatDate(typeof v === "string" ? v : undefined),
   },
   {
     id: "status",

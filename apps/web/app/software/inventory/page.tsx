@@ -2,12 +2,14 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import type { PaginationState, SortingState } from "@tanstack/react-table";
-import { ColumnDef, DataTable } from "../../../components/table/DataTable";
-import { SoftwareItem, SoftwareStatus, SoftwareType } from "../../../types";
+
+
+import { ColumnDef, SoftwareItem, SoftwareStatus, SoftwareType } from "../../../types";
 import { useItemsTable } from "../../../hooks/useItemsTable";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { FilterBar } from "../../../components/ui/FilterBar";
+import { DataTable } from "../../../components/table";
+import { PaginationState, SortingState } from "@tanstack/react-table";
 
 
 // ----------------------------
