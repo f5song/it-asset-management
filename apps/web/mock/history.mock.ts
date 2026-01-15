@@ -1,6 +1,4 @@
-
-// src/services/mock/history.mock.ts
-import type { HistoryEvent } from "@/types";
+import { HistoryEvent } from "../types";
 
 export const MOCK_HISTORY: HistoryEvent[] = [
   { id: "h1", title: "License renewed", actor: "Admin", date: "2025-12-01" },

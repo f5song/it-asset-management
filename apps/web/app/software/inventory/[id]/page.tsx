@@ -2,14 +2,14 @@
 import { notFound } from "next/navigation";
 
 import ClientDetail from "./ClientDetail";
-import { getItemById } from "../../../mock/mockSoftware";
+import { getItemById } from "../../../../mock/software.mock";
 import {
   getInstallationFilters,
   getInstallationsBySoftware,
-} from "../../../mock/installation.mock";
-import { getHistoryBySoftware } from "../../../mock/history.mock";
-import { PageHeader } from "../../../components/ui/PageHeader";
-import BackButton from "../../../components/ui/BackButton";
+} from "../../../../mock/installation.mock";
+import { getHistoryBySoftware } from "../../../../mock/history.mock";
+import { PageHeader } from "../../../../components/ui/PageHeader";
+import BackButton from "../../../../components/ui/BackButton";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -32,7 +32,7 @@ export default async function Page({ params }: PageProps) {
         title={item.softwareName} // ✅ ใช้ฟิลด์ที่เป็น string
         breadcrumbs={[
           { label: "Software Inventory", href: "/software/inventory" },
-          { label: item.softwareName, href: `/software/${item.id}` }, // ✅ label เป็น string, href ต่อ URL ถูกต้อง
+          { label: item.softwareName, href: `/software/inventory/${item.id}` }, // ✅ label เป็น string, href ต่อ URL ถูกต้อง
         ]}
       />
       <ClientDetail

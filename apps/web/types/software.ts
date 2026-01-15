@@ -1,25 +1,35 @@
+import { LicenseModel, LicenseType } from "./license";
+
+
 // src/types/software.ts
 export type SoftwareStatus = 'Active' | 'Expired' | 'Expiring';
 export type Compliance = 'Compliant' | 'Non-compliant' | 'Pending';
 export type PolicyCompliance = 'Allowed' | 'Not Allowed';
 export type SoftwareType = 'Standard' | 'Special' | 'Exception';
-export type LicenseModel = 'Free' | 'Paid' | 'Perpetual' | 'Subscription';
-export type ClientServer = 'Client' | 'Server';
-export type LicenseStatus = 'Active' | 'Expiring Soon' | 'Expired';
-export type LicenseType = 'Per User' | 'Per Device';
 
-export type ItemsQuery = {
+export type ClientServer = 'Client' | 'Server';
+
+
+
+export type SoftwareFilters = {
+  manufacturer?: string;
+  status?: SoftwareStatus;
+};
+
+// src/types/software.ts
+export type ItemsQuery<S extends string = SoftwareStatus, T extends string = SoftwareType> = {
   page: number; // 1-based
   limit: number;
-  sortBy?: keyof SoftwareItem;
-  sortOrder?: "asc" | "desc";
-  statusFilter?: SoftwareStatus;
-  typeFilter?: SoftwareType;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  statusFilter?: S;
+  typeFilter?: T;
   manufacturerFilter?: string;
   searchText?: string;
 };
 
-export interface SoftwareItem {
+
+export type SoftwareItem = {
   id: string;
   softwareName: string;
   manufacturer: string;
@@ -61,4 +71,6 @@ export type LicenseActivity = {
   action: LicenseAction;   // การกระทำ
   software: string;        // ชื่อซอฟต์แวร์
   employee: string;        // ชื่อพนักงาน
+
+
 };

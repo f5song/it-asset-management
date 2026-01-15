@@ -1,74 +1,34 @@
+
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ColumnDef, DataTable } from "../../../components/table/DataTable";
-import { useItemsTable } from "../../../hooks/useItemsTable";
-import { FilterBar } from "../../../components/ui/FilterBar";
 import type { PaginationState, SortingState } from "@tanstack/react-table";
-import type {
-  SoftwareItem,
-  SoftwareStatus,
-  SoftwareType,
-} from "../../../types";
+import { ColumnDef, DataTable } from "../../../components/table/DataTable";
+import { SoftwareItem, SoftwareStatus, SoftwareType } from "../../../types";
+import { useItemsTable } from "../../../hooks/useItemsTable";
 import { PageHeader } from "../../../components/ui/PageHeader";
+import { FilterBar } from "../../../components/ui/FilterBar";
 
-/** ----------------------------
- * 1) กำหนดคอลัมน์ตาราง
- * ---------------------------- */
+
+// ----------------------------
+// 1) กำหนดคอลัมน์ตาราง
+// ----------------------------
 const columns: ColumnDef<SoftwareItem>[] = [
-  {
-    id: "softwareName",
-    header: "Software Name",
-    accessorKey: "softwareName",
-    width: 200,
-  },
-  {
-    id: "manufacturer",
-    header: "Manufacturer",
-    accessorKey: "manufacturer",
-    width: 160,
-  },
+  { id: "softwareName", header: "Software Name", accessorKey: "softwareName", width: 200 },
+  { id: "manufacturer", header: "Manufacturer", accessorKey: "manufacturer", width: 160 },
   { id: "version", header: "Version", accessorKey: "version", width: 100 },
   { id: "category", header: "Category", accessorKey: "category", width: 140 },
-  {
-    id: "policyCompliance",
-    header: "Policy Compliance",
-    accessorKey: "policyCompliance",
-    width: 160,
-  },
-  {
-    id: "expiryDate",
-    header: "Expiry Date",
-    accessorKey: "expiryDate",
-    width: 140,
-  },
+  { id: "policyCompliance", header: "Policy Compliance", accessorKey: "policyCompliance", width: 160 },
+  { id: "expiryDate", header: "Expiry Date", accessorKey: "expiryDate", width: 140 },
   { id: "status", header: "Status", accessorKey: "status", width: 120 },
-  // เพิ่มจากภาพที่สอง
-  {
-    id: "softwareType",
-    header: "Software Type",
-    accessorKey: "softwareType",
-    width: 140,
-  },
-  {
-    id: "licenseModel",
-    header: "License Model",
-    accessorKey: "licenseModel",
-    width: 140,
-  },
-  {
-    id: "clientServer",
-    header: "Client/Server",
-    accessorKey: "clientServer",
-    width: 140,
-  },
+  { id: "softwareType", header: "Software Type", accessorKey: "softwareType", width: 140 },
+  { id: "licenseModel", header: "License Model", accessorKey: "licenseModel", width: 140 },
+  { id: "clientServer", header: "Client/Server", accessorKey: "clientServer", width: 140 },
 ];
 
-/** ----------------------------
- * 2) แปลง SortingState (v8) → รูปแบบเก่าสำหรับ useItemsTable (ถ้าฮุคยังใช้แบบเดิม)
- *    - v8: SortingState = Array<{ id: string; desc: boolean }>
- *    - legacy: { sortBy: string; sortOrder: 'asc' | 'desc' }
- * ---------------------------- */
+// ----------------------------
+// 2) แปลง SortingState (v8) → legacy สำหรับ useItemsTable (ถ้าฮุคยังใช้แบบเดิม)
+// ----------------------------
 function sortingToLegacy(sorting: SortingState | undefined): {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
@@ -82,10 +42,10 @@ function sortingToLegacy(sorting: SortingState | undefined): {
 }
 
 export default function SoftwarePage() {
-  /** ---------- ฟิลเตอร์ (single source of truth) ---------- */
+  /** ---------- ฟิลเตอร์ ---------- */
   const [status, setStatus] = useState<SoftwareStatus | undefined>(undefined);
-  const [type, setType] = useState<SoftwareType | undefined>();
-  const [mfgr, setMfgr] = useState<string | undefined>();
+  const [type, setType] = useState<SoftwareType | undefined>(undefined);
+  const [mfgr, setMfgr] = useState<string | undefined>(undefined);
   const [searchText, setSearchText] = useState("");
 
   /** ---------- ตาราง ---------- */
@@ -94,21 +54,26 @@ export default function SoftwarePage() {
     pageSize: 8,
   });
 
-  // ✅ ใช้ SortingState (v8) ที่เป็น array
+  // v8 SortingState (array ของ column sort)
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "softwareName", desc: false }, // เริ่มต้น sort ที่ softwareName → asc
+    { id: "softwareName", desc: false },
   ]);
 
-  // Adapter สำหรับ hook ถ้าฮุคยังต้องการรูปแบบเดิม
+  // ถ้าฮุคยังเป็นแบบ legacy → สร้างค่า legacySorting จาก v8
   const legacySorting = useMemo(() => sortingToLegacy(sorting), [sorting]);
 
   /** ---------- ดึงข้อมูลพร้อมฟิลเตอร์ ---------- */
-  const { rows, totalRows, isLoading, isError, errorMessage } = useItemsTable({
+  const {
+    rows,
+    totalRows,
+    isLoading,
+    isError,
+    errorMessage,
+  } = useItemsTable<SoftwareItem, SoftwareStatus, SoftwareType>({
     pagination,
-    // ❗ ถ้า useItemsTable รองรับ v8 แล้ว ให้ส่ง sorting: SortingState ได้เลย
+    // ✅ ถ้า useItemsTable รองรับ v8 แล้ว ให้ส่ง `sorting` ได้เลย และลบ `legacySorting`
     // sorting,
-    // ❗ ถ้ายังเป็นแบบเก่า ให้ส่ง legacySorting แทน
-    sorting: legacySorting,
+    legacySorting,            // ❗ ถ้าฮุคยังรับแบบ legacy ให้ใช้บรรทัดนี้
     statusFilter: status,
     typeFilter: type,
     manufacturerFilter: mfgr,
@@ -117,12 +82,9 @@ export default function SoftwarePage() {
 
   /** ---------- Action handlers ---------- */
   const handleExport = (fmt: "CSV" | "XLSX" | "PDF") => {
-    // TODO: ใส่ logic export จริง (client หรือ server)
     console.log("Export as:", fmt);
   };
-
   const handleAddSoftware = () => {
-    // TODO: เปิด modal หรือไปหน้า create
     console.log("Add Software clicked");
   };
 
@@ -130,13 +92,11 @@ export default function SoftwarePage() {
     <div style={{ padding: 6 }}>
       <PageHeader
         title="Software Inventory"
-        breadcrumbs={[
-          { label: "Software Inventory", href: "/software/inventory" },
-        ]}
+        breadcrumbs={[{ label: "Software Inventory", href: "/software/inventory" }]}
       />
 
-      {/* Filter Bar */}
-      <FilterBar
+      {/* Filter Bar (generic) */}
+      <FilterBar<SoftwareStatus, SoftwareType>
         statusFilter={status}
         setStatusFilter={setStatus}
         typeFilter={type}
@@ -146,7 +106,11 @@ export default function SoftwarePage() {
         searchText={searchText}
         setSearchText={setSearchText}
         onExport={handleExport}
-        onAddSoftware={handleAddSoftware}
+        onAdd={() => handleAddSoftware()}
+        // ⬇️ สามารถปรับ options ได้ตามโดเมนจริงของคุณ
+        statusOptions={["Active", "Expired", "Expiring"]}
+        typeOptions={["Standard", "Special", "Exception"]}
+        manufacturerOptions={["Adobe", "Autodesk", "Microsoft"]}
       />
 
       {/* DataTable */}
@@ -156,8 +120,8 @@ export default function SoftwarePage() {
         totalRows={totalRows}
         pagination={pagination}
         onPaginationChange={setPagination}
-        sorting={sorting} // ✅ ส่ง v8 sorting ให้ตาราง
-        onSortingChange={setSorting} // ✅ ตารางจะ toggle asc/desc ผ่านฟังก์ชันนี้
+        sorting={sorting}
+        onSortingChange={setSorting}
         variant="striped"
         emptyMessage="ไม่พบรายการ"
         isLoading={isLoading}

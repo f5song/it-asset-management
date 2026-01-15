@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from "react";
+import React, { ComponentType, SVGProps } from "react";
 import {
   GlobeAltIcon,
   ComputerDesktopIcon,
@@ -19,7 +19,7 @@ import { cn } from "../ui";
 type MenuItem = {
   key: string;
   name: string;
-  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  icon?: ComponentType<SVGProps<SVGSVGElement>>;
   path?: string;
   children?: { key: string; name: string; path: string }[];
 };
@@ -32,7 +32,7 @@ const MENU: MenuItem[] = [
     icon: ComputerDesktopIcon,
     children: [
       { key: "software-inventory", name: "Software Inventory", path: "/software/inventory" },
-      { key: "license-management", name: "License Management", path: "/software/license" },
+      { key: "license-management", name: "License Management", path: "/software/license-management" },
     ],
   },
   { key: "devices", name: "Devices", icon: RectangleGroupIcon, path: "/devices" },

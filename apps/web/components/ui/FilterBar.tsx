@@ -1,15 +1,16 @@
+
+'use client';
+
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { SoftwareStatus, SoftwareType } from "../../types";
-import router from 'next/router';
-import { useState } from 'react';
 
-export type FilterBarProps = {
+export type FilterBarProps<TStatus extends string, TType extends string> = {
   // Filters
-  statusFilter?: SoftwareStatus;
-  setStatusFilter: (s?: SoftwareStatus) => void;
+  statusFilter?: TStatus;
+  setStatusFilter: (s?: TStatus) => void;
 
-  typeFilter?: SoftwareType;
-  setTypeFilter: (t?: SoftwareType) => void;
+  typeFilter?: TType;
+  setTypeFilter: (t?: TType) => void;
 
   manufacturerFilter?: string;
   setManufacturerFilter: (m?: string) => void;
@@ -18,16 +19,16 @@ export type FilterBarProps = {
   setSearchText: (t: string) => void;
 
   // Actions
-  onExport: (fmt: "CSV" | "XLSX" | "PDF") => void;
-  onAddSoftware: () => void;
+  onExport: (fmt: 'CSV' | 'XLSX' | 'PDF') => void;
+  onAdd?: () => void;
 
-  // Options (optional; ถ้าไม่ส่งมาจะใช้ค่า default ด้านล่าง)
-  statusOptions?: readonly SoftwareStatus[];
-  typeOptions?: readonly SoftwareType[];
+  // Options
+  statusOptions?: readonly TStatus[];
+  typeOptions?: readonly TType[];
   manufacturerOptions?: readonly string[];
 };
 
-export function FilterBar({
+export function FilterBar<TStatus extends string, TType extends string>({
   statusFilter,
   setStatusFilter,
   typeFilter,
@@ -37,98 +38,24 @@ export function FilterBar({
   searchText,
   setSearchText,
   onExport,
-  onAddSoftware,
-  statusOptions = ["Active", "Expired", "Expiring"] as const,
-  typeOptions = ["Standard", "Special", "Exception"] as const,
-  manufacturerOptions = ["Adobe", "Autodesk", "Microsoft"] as const,
-}: FilterBarProps) {
+  onAdd,
+  statusOptions = [] as readonly TStatus[],
+  typeOptions = [] as readonly TType[],
+  manufacturerOptions = [] as readonly string[],
+}: FilterBarProps<TStatus, TType>) {
   const [exportOpen, setExportOpen] = useState(false);
-
-  // ----- styles ตามที่คุณให้ + เติมส่วนที่จำเป็น -----
-  const styles = {
-    barTop: {
-      display: "flex",
-      gap: 8,
-      alignItems: "center",
-      marginBottom: 12,
-    },
-    select: {
-      padding: "8px 10px",
-      borderRadius: 6,
-      border: "1px solid #D0D5DD",
-      background: "#FFFFFF",
-      fontSize: 14,
-      minWidth: 160,
-    },
-    btnPrimary: {
-      padding: "8px 12px",
-      borderRadius: 6,
-      background: "#3B82F6",
-      color: "#FFFFFF",
-      border: "none",
-      fontWeight: 600,
-      cursor: "pointer",
-    },
-    btnSecondary: {
-      padding: "8px 12px",
-      borderRadius: 6,
-      background: "#F3F4F6",
-      color: "#111827",
-      border: "1px solid #D1D5DB",
-      fontWeight: 600,
-      cursor: "pointer",
-    },
-    exportWrapper: {
-      position: "relative" as const,
-      display: "inline-block",
-    },
-    exportMenu: {
-      position: "absolute" as const,
-      right: 0,
-      marginTop: 6,
-      width: 160,
-      background: "#FFFFFF",
-      border: "1px solid #E5E7EB",
-      borderRadius: 8,
-      boxShadow: "0 8px 16px rgba(0,0,0,0.08)",
-      zIndex: 10,
-    },
-    exportItem: {
-      padding: "8px 12px",
-      cursor: "pointer",
-      borderBottom: "1px solid #E5E7EB",
-      fontSize: 14,
-    },
-    searchBox: {
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      border: "1px solid #D0D5DD",
-      borderRadius: 8,
-      padding: "8px 10px",
-      background: "#FFFFFF",
-    },
-    searchInput: {
-      border: "none",
-      outline: "none",
-      fontSize: 14,
-      width: 240,
-    },
-  };
   const router = useRouter();
-  const goAddSoftware = () => router.push('/software/add');
+
   return (
-    <div>
+    <div className="space-y-3">
       {/* แถวบน: Filters + Export + Add */}
-      <div style={styles.barTop}>
+      <div className="flex gap-3 items-center">
         {/* Status */}
         <select
-          style={styles.select}
-          value={statusFilter ?? ""}
+          className="border rounded px-3 py-2"
+          value={statusFilter ?? ''}
           onChange={(e) =>
-            setStatusFilter(
-              e.target.value ? (e.target.value as SoftwareStatus) : undefined
-            )
+            setStatusFilter(e.target.value ? (e.target.value as TStatus) : undefined)
           }
         >
           <option value="">All Status</option>
@@ -139,14 +66,12 @@ export function FilterBar({
           ))}
         </select>
 
-        {/* Type (SoftwareType) */}
+        {/* Type */}
         <select
-          style={styles.select}
-          value={typeFilter ?? ""}
+          className="border rounded px-3 py-2"
+          value={typeFilter ?? ''}
           onChange={(e) =>
-            setTypeFilter(
-              e.target.value ? (e.target.value as SoftwareType) : undefined
-            )
+            setTypeFilter(e.target.value ? (e.target.value as TType) : undefined)
           }
         >
           <option value="">All Types</option>
@@ -159,8 +84,8 @@ export function FilterBar({
 
         {/* Manufacturer */}
         <select
-          style={styles.select}
-          value={manufacturerFilter ?? ""}
+          className="border rounded px-3 py-2"
+          value={manufacturerFilter ?? ''}
           onChange={(e) => setManufacturerFilter(e.target.value || undefined)}
         >
           <option value="">All Manufacturers</option>
@@ -172,26 +97,19 @@ export function FilterBar({
         </select>
 
         {/* Export dropdown */}
-        <div style={{ ...styles.exportWrapper, marginLeft: "auto" }}>
+        <div className="relative ml-auto">
           <button
-            style={styles.btnSecondary}
+            className="border rounded px-3 py-2 bg-gray-100"
             onClick={() => setExportOpen((v) => !v)}
-            aria-expanded={exportOpen}
           >
-            Export As ▾
+            Export ▾
           </button>
           {exportOpen && (
-            <div style={styles.exportMenu} role="menu">
-              {(["CSV", "XLSX", "PDF"] as const).map((fmt, idx) => (
+            <div className="absolute right-0 mt-2 w-32 bg-white border rounded shadow">
+              {(['CSV', 'XLSX', 'PDF'] as const).map((fmt) => (
                 <div
                   key={fmt}
-                  style={{
-                    ...styles.exportItem,
-                    borderBottom:
-                      idx === 2
-                        ? "none"
-                        : (styles.exportItem as any).borderBottom,
-                  }}
+                  className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
                   onClick={() => {
                     onExport(fmt);
                     setExportOpen(false);
@@ -204,20 +122,24 @@ export function FilterBar({
           )}
         </div>
 
-        {/* Add Software button */}
-        <button style={styles.btnPrimary} onClick={goAddSoftware}>
-          Add Software
-        </button>
+        {/* Add button */}
+        {onAdd && (
+          <button
+            className="bg-blue-500 text-white px-3 py-2 rounded"
+            onClick={onAdd}
+          >
+            Add
+          </button>
+        )}
       </div>
 
       {/* แถวล่าง: Search */}
-      <div style={styles.searchBox}>
-        {/* ไอคอนค้นหาแบบง่าย ๆ ด้วย emoji */}
+      <div className="flex items-center gap-2 border rounded px-3 py-2 bg-white">
         <span role="img" aria-label="search">
-          🔎
+          🔍
         </span>
         <input
-          style={styles.searchInput}
+          className="flex-1 outline-none"
           type="text"
           placeholder="Search"
           value={searchText}

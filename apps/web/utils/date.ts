@@ -1,3 +1,4 @@
+import { SoftwareItem } from "../types";
 
 // src/utils/date.ts
 export const formatDate = (iso?: string) => {
@@ -10,8 +11,6 @@ export const formatDate = (iso?: string) => {
   });
 };
 
-// src/utils/export.ts
-import { SoftwareItem } from '@/types/software';
 
 export const exportToCSV = (rows: SoftwareItem[], filename = 'software_inventory.csv') => {
   const headers = [
@@ -25,7 +24,7 @@ export const exportToCSV = (rows: SoftwareItem[], filename = 'software_inventory
   ];
   const csvRows = rows.map((r) =>
     [
-      r.name,
+      r.softwareName,
       r.manufacturer,
       r.version,
       r.category,

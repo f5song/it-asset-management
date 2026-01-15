@@ -1,4 +1,4 @@
-export * from "./licenses.mock";
+export * from "./license.mock";
 export * from "./chart.mock";
 export * from "./dashboard.mock";
 

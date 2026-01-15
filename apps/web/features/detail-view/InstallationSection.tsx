@@ -1,68 +1,100 @@
 
-// src/features/detail-view/InstallationSection.tsx
 "use client";
 
 import React from "react";
-import { InstallationRow } from "../../types";
-import { InstallationDisplayRow, InstallationFilters, InstallationTable } from "../../components/installation/InstallationTable";
-import { InstallationToolbar } from "../../components/installation/InstallationToolbar";
+import { InstallationDisplayRow, InstallationFilters } from "../../types/tab";
+import { InstallationToolbar } from "../../components/tabbar/InstallationToolbar";
+import { InstallationTable } from "../../components/tabbar/InstallationTable";
 
-/**
- * แปลงจากชนิดดั้งเดิม (InstallationRow) -> ชนิดสำหรับแสดงผลในตาราง (InstallationDisplayRow)
- * ปรับ mapping ให้ตรงกับฟิลด์จริงในโปรเจกต์ของคุณได้เลย
- */
-function mapToDisplayRow(r: InstallationRow): InstallationDisplayRow {
-  return {
-    id: r.id,
-    deviceName: (r as any).deviceName ?? r.device ?? "—",
-    workStation: (r as any).workStation ?? (r as any).workstation ?? "—",
-    user: r.user ?? "—",
-    licenseKey: (r as any).licenseKey ?? "—",
-    licenseStatus: ((r as any).licenseStatus ?? "Active") as InstallationDisplayRow["licenseStatus"],
-    scannedLicenseKey: (r as any).scannedLicenseKey ?? "—",
-  };
+/** หา unique แบบง่าย */
+function uniq<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr));
 }
 
-export function InstallationSection({
+/** ฟิลเตอร์เริ่มต้น */
+const defaultFilters: InstallationFilters = {
+  user: "ALL",
+  device: "ALL",
+  status: "ALL",
+  query: "",
+};
+
+type SectionProps<R> = {
+  /** แถวดิบจาก context ใดๆ (Software, License ฯลฯ) */
+  rows: R[];
+
+  /** ตัวแปลงจาก R -> InstallationDisplayRow (บังคับ) */
+  mapRow: (raw: R) => InstallationDisplayRow;
+
+  /** optional: ถ้าอยากคุม options เอง ส่งมาได้; ไม่ส่งจะ derive จาก rows ให้อัตโนมัติ */
+  users?: string[];
+  devices?: string[];
+  statuses?: Array<"Active" | "Expiring Soon" | "Expired">;
+
+  /** Summary บนกล่อง; ไม่ส่งจะใช้จำนวนแถวหลังแปลง */
+  total?: number;
+
+  /** ใช้ reset state เมื่อ context เปลี่ยน เช่น `software-${softwareId}` / `license-${licenseId}` */
+  resetKey?: string;
+
+  /** ตั้งหน้าปัจจุบัน/ขนาด */
+  initialPage?: number;
+  pageSize?: number;
+
+  /** callback จาก Toolbar */
+  onExport?: (fmt: "csv" | "xlsx" | "pdf") => void;
+  onAction?: (act: "delete" | "reassign" | "scan") => void;
+};
+
+export function InstallationSection<R>({
   rows,
-  users,
-  devices,
+  mapRow,
+  users: usersProp,
+  devices: devicesProp,
+  statuses: statusesProp,
   total,
-}: {
-  rows: InstallationRow[];
-  users: string[];
-  devices: string[];
-  total: number; // ถ้าอยากให้ตรงภาพ (เช่น 1250) ส่งค่าคงที่เข้ามา; หรือใช้ rows.length ก็ได้
-}) {
-  const [filters, setFilters] = React.useState<InstallationFilters>({
-    user: "ALL",
-    device: "ALL",
-    status: "ALL",
-    query: "",
-  });
+  resetKey,
+  initialPage = 1,
+  pageSize = 10,
+  onExport,
+  onAction,
+}: SectionProps<R>) {
+  // --- State ---
+  const [filters, setFilters] = React.useState<InstallationFilters>(defaultFilters);
+  const [page, setPage] = React.useState<number>(initialPage);
 
-  // ตั้งหน้าเริ่มต้นตามภาพ (เช่น 101); ปรับตามจริงได้
-  const [page, setPage] = React.useState<number>(101);
-  const pageSize = 10;
+  // --- Reset เมื่อ context เปลี่ยน ---
+  React.useEffect(() => {
+    setFilters(defaultFilters);
+    setPage(initialPage);
+  }, [resetKey, initialPage]);
 
-  // ✅ แปลงชนิดที่นี่ให้ตรงกับตาราง
-  const displayRows: InstallationDisplayRow[] = React.useMemo(
-    () => rows.map(mapToDisplayRow),
-    [rows]
+  // --- แปลง rows -> displayRows ---
+  const displayRows = React.useMemo<InstallationDisplayRow[]>(
+    () => rows.map(mapRow),
+    [rows, mapRow]
   );
 
-  /**
-   * จำนวนรวมที่แสดงบนกล่อง "Installation(s): XXXX Total"
-   * - ถ้าต้องการให้ "เหมือนภาพ" (เช่น 1250) ให้ใช้ค่า total ที่ส่งเข้ามา
-   * - ถ้าต้องการให้แสดงจำนวนตามผลกรองจริง ให้เปลี่ยนเป็น displayRows.length
-   */
-  const effectiveTotal = React.useMemo(() => {
-    // ใช้คงที่ตามภาพ
-    return total;
+  // --- Derive options ถ้า parent ไม่ส่งมา ---
+  const users = React.useMemo(() => {
+    if (usersProp?.length) return usersProp;
+    const list = displayRows.map((r) => r.user).filter((v) => v && v !== "—");
+    return uniq(list);
+  }, [usersProp, displayRows]);
 
-    // หรือถ้าต้องการตามผลกรองจริง:
-    // return displayRows.length;
-  }, [total /*, displayRows.length */]);
+  const devices = React.useMemo(() => {
+    if (devicesProp?.length) return devicesProp;
+    const list = displayRows.map((r) => r.deviceName).filter((v) => v && v !== "—");
+    return uniq(list);
+  }, [devicesProp, displayRows]);
+
+  const statuses = React.useMemo(
+    () => statusesProp ?? (["Active", "Expiring Soon", "Expired"] as const),
+    [statusesProp]
+  );
+
+  // --- Summary total ---
+  const effectiveTotal = total ?? displayRows.length;
 
   return (
     <>
@@ -71,19 +103,14 @@ export function InstallationSection({
         filters={filters}
         users={users}
         devices={devices}
+        statuses={statuses as Array<"Active" | "Expiring Soon" | "Expired">}
         onFiltersChange={setFilters}
-        onExport={(fmt) => {
-          // TODO: ใส่ logic export (CSV/XLSX/PDF)
-          console.log("Export:", fmt);
-        }}
-        onAction={(act) => {
-          // TODO: ใส่ logic action (delete/reassign/scan)
-          console.log("Action:", act);
-        }}
+        onExport={onExport}
+        onAction={onAction}
       />
 
       <InstallationTable
-        rows={displayRows}      // ✅ ส่งเป็น Display rows เพื่อให้ชนิดตรง
+        rows={displayRows}
         filters={filters}
         page={page}
         pageSize={pageSize}

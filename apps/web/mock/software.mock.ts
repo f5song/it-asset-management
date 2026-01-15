@@ -1,4 +1,5 @@
-import { HistoryEvent, InstallationRow, SoftwareItem } from "@/types";
+import { LicenseType, SoftwareItem } from "../types";
+
 // Mock รายการตามภาพ (สามารถเพิ่มได้)
 export const MOCK_ITEMS: SoftwareItem[] = [
   {
@@ -14,7 +15,7 @@ export const MOCK_ITEMS: SoftwareItem[] = [
     licenseModel: "Free",
     clientServer: "Client",
     compliance: "Compliant",
-    licenseType: "Per Device",
+    licenseType: LicenseType.PerDevice,
   },
   {
     id: "2",
@@ -29,7 +30,7 @@ export const MOCK_ITEMS: SoftwareItem[] = [
     licenseModel: "Perpetual",
     clientServer: "Client",
     compliance: "Compliant",
-    licenseType: "Per Device",
+    licenseType: LicenseType.Subscription,
   },
   {
     id: "3",
@@ -44,7 +45,7 @@ export const MOCK_ITEMS: SoftwareItem[] = [
     licenseModel: "Paid",
     clientServer: "Client",
     compliance: "Compliant",
-    licenseType: "Per Device",
+    licenseType: LicenseType.Subscription,
   },
   {
     id: "4",
@@ -59,7 +60,7 @@ export const MOCK_ITEMS: SoftwareItem[] = [
     licenseModel: "Subscription",
     clientServer: "Client",
     compliance: "Non-compliant",
-    licenseType: "Per Device",
+    licenseType: LicenseType.Subscription,
   },
   {
     id: "5",
@@ -74,7 +75,7 @@ export const MOCK_ITEMS: SoftwareItem[] = [
     licenseModel: "Free",
     clientServer: "Server",
     compliance: "Non-compliant",
-    licenseType: "Per User",
+    licenseType: LicenseType.Subscription,
   },
   {
     id: "6",
@@ -89,7 +90,7 @@ export const MOCK_ITEMS: SoftwareItem[] = [
     licenseModel: "Free",
     clientServer: "Server",
     compliance: "Non-compliant",
-    licenseType: "Per User",
+    licenseType: LicenseType.Perpetual,
   },
   {
     id: "7",
@@ -104,7 +105,7 @@ export const MOCK_ITEMS: SoftwareItem[] = [
     licenseModel: "Subscription",
     clientServer: "Server",
     compliance: "Non-compliant",
-    licenseType: "Per User",
+    licenseType: LicenseType.Subscription,
   },
   {
     id: "8",
@@ -119,7 +120,7 @@ export const MOCK_ITEMS: SoftwareItem[] = [
     licenseModel: "Paid",
     clientServer: "Server",
     compliance: "Non-compliant",
-    licenseType: "Per User",
+    licenseType: LicenseType.Perpetual,
   },
   {
     id: "9",
@@ -134,7 +135,7 @@ export const MOCK_ITEMS: SoftwareItem[] = [
     licenseModel: "Free",
     clientServer: "Server",
     compliance: "Pending",
-    licenseType: "Per User",
+    licenseType: LicenseType.PerDevice,
   },
   // เพิ่มให้ยาวขึ้นเพื่อทดสอบ scroll
   {
@@ -150,7 +151,7 @@ export const MOCK_ITEMS: SoftwareItem[] = [
     licenseModel: "Free",
     clientServer: "Client",
     compliance: "Compliant",
-    licenseType: "Per User",
+    licenseType: LicenseType.PerUser,
   },
   {
     id: "11",
@@ -165,7 +166,7 @@ export const MOCK_ITEMS: SoftwareItem[] = [
     licenseModel: "Subscription",
     clientServer: "Client",
     compliance: "Compliant",
-    licenseType: "Per User",
+    licenseType: LicenseType.PerUser,
   },
   {
     id: "12",
@@ -180,7 +181,7 @@ export const MOCK_ITEMS: SoftwareItem[] = [
     licenseModel: "Paid",
     clientServer: "Client",
     compliance: "Compliant",
-    licenseType: "Per User",
+    licenseType: LicenseType.PerUser,
   },
 ];
 
