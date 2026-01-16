@@ -1,4 +1,4 @@
-import { SortOrder } from "./table";
+import { SortOrder } from "../components/pagination/types";
 
 export type OffsetPaginationParams = {
   page: number;           // เริ่มที่ 1

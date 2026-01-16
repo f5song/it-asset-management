@@ -1,42 +1,23 @@
 
-'use client';
+"use client";
 
 import React from "react";
-import {
-  AssigenedRow, // (สะกดตามในโปรเจกต์)
-  HistoryEvent,
-  LicenseItem,
-} from "../../../../types";
 import { DetailView } from "../../../../features/detail-view/DetailView";
-import { InstallationSection } from "../../../../features/detail-view/InstallationSection";
-import { InstallationDisplayRow } from "../../../../types/tab";
+import { licenseEditFields } from "../../../../features/license/editFields";
+import type { HistoryEvent, LicenseItem } from "../../../../types";
 
-// ⚙️ mapper: AssigenedRow -> InstallationDisplayRow (แบบปลอดภัย)
-const mapLicenseAssignedRow = (r: AssigenedRow): InstallationDisplayRow => ({
-  id: String((r as any).id ?? (r as any).assignmentId ?? crypto.randomUUID()),
-  deviceName: (r as any).deviceName ?? (r as any).device ?? "—",
-  workStation:
-    (r as any).workStation ??
-    (r as any).workstation ??
-    (r as any).ws ??
-    "—",
-  user: (r as any).assignedTo ?? (r as any).user ?? "—",
-  licenseKey: (r as any).licenseKey ?? (r as any).key ?? "—",
-  licenseStatus: ((r as any).status ?? "Active") as InstallationDisplayRow["licenseStatus"],
-  scannedLicenseKey:
-    (r as any).scannedLicenseKey ?? (r as any).scanned ?? "—",
-});
+// ...ส่วน mapping/installationSection เหมือนเดิม
 
 export default function ClientDetail({
   item,
   installations,
-  users,      
-  devices,   
+  users,
+  devices,
   history,
   total,
 }: {
   item: LicenseItem;
-  installations: AssigenedRow[] | AssigenedRow[][];
+  installations: any;
   users?: string[];
   devices?: string[];
   history: HistoryEvent[];
@@ -44,19 +25,11 @@ export default function ClientDetail({
 }) {
   const onBack = () => window.history.back();
 
-  const onDelete = () => {
-    // TODO: เรียก API/Server Action เพื่อลบ แล้ว redirect
-    console.log("Delete", item.id);
+  // mock submit: เปลี่ยนเป็น call API จริงของพี่
+  const onSubmit = async (values: any) => {
+    console.log("save license:", values);
+    // await api.updateLicense(item.id, values);
   };
-
-  // ⚙️ flatten array ซ้อน -> 1 มิติ
-  const flatInstallations: AssigenedRow[] = React.useMemo(
-    () => (Array.isArray(installations) ? (installations as any).flat() : []),
-    [installations]
-  );
-
-  // ถ้าไม่ส่ง total -> ใช้จำนวน rows
-  const resolvedTotal = typeof total === "number" ? total : flatInstallations.length;
 
   return (
     <DetailView
@@ -70,30 +43,41 @@ export default function ClientDetail({
         ],
         right: [
           { label: "Total", value: item.total },
-          { label: "inUse", value: item.inUse },
-          { label: "available", value: item.available },
+          { label: "In Use", value: item.inUse },
+          { label: "Available", value: item.available },
           { label: "Expiry Date", value: item.expiryDate ?? "-" },
           { label: "Status", value: item.status },
         ],
       }}
       installationSection={
-        <InstallationSection<AssigenedRow>
-          rows={flatInstallations}
-          mapRow={mapLicenseAssignedRow}
-          // ถ้าอยากให้ระบบ derive users/devices จาก rows อัตโนมัติ ให้คอมเมนต์ 2 บรรทัดข้างล่างทิ้งได้
-          users={users}
-          devices={devices}
-          total={resolvedTotal} // ให้ตรงกับ "กล่อง summary" ด้านบน
-          resetKey={`license-${item.id}`}
-          initialPage={1}
-          pageSize={10}
-          onExport={(fmt) => console.log("Export:", fmt)}
-          onAction={(act) => console.log("Action:", act)}
-        />
+        // ...InstallationSection ของพี่ตามเดิม
+        <div />
       }
       history={history}
       onBack={onBack}
-      onDelete={onDelete}
+      onDelete={() => console.log("delete", item.id)}
+
+      // ✅ ตรงนี้คือการส่ง config ให้ EditModal
+      editConfig={{
+        title: "Edit License",
+        fields: licenseEditFields,
+        initialValues: {
+          productName: item.softwareName,
+          // licenseKey: item.licenseKey ?? "",
+          licenseType: item.licenseType ? String(item.licenseType).toLowerCase() : "per-user",
+          total: item.total,
+          inUse: item.inUse,
+          expiryDate: item.expiryDate ?? "",
+          status: item.status ? String(item.status).toLowerCase() : "active",
+          vendor: item.manufacturer ?? "",
+          licenseCost: (item as any).cost ?? 0,
+          maintenanceCost: (item as any).maintenanceCost ?? 0,
+          notes: (item as any).notes ?? "",
+        },
+        onSubmit,                 // ฟังก์ชันบันทึก
+        submitLabel: "Save",      // ป้ายปุ่ม
+        cancelLabel: "Cancel",
+      }}
     />
   );
 }

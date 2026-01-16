@@ -55,17 +55,3 @@ export type DataTableProps<T extends { id?: string | number }> = {
 
   clientSideSort?: boolean;
 };
-
-/** ตัวอย่างโดเมน */
-export type LicenseItem = {
-  id: string | number;
-  softwareName: string;
-  manufacturer: string;
-  licenseType?: string;
-  compliance: Compliance;
-  total: number;
-  inUse: number;
-  available?: number;
-  expiryDate?: string | null;
-  status?: string;
-};

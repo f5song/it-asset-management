@@ -1,109 +1,55 @@
+
 "use client";
+
+import React, { ReactNode, useState } from "react";
 import { Compliance, HistoryEvent } from "../../types";
 import { DetailHeader } from "../../components/detail/DetailHeader";
 import { TabList, TabPanel, TabTrigger } from "../../components/ui/Tabs";
 import { HistoryList } from "../../components/detail/HistoryList";
 import { DetailInfoGrid } from "../../components/detail/DetailInfo";
 import { ConfirmModal } from "../../components/modals/ConfirmModal";
-import React, { ReactNode, useState } from "react";
 import { EditModal } from "../../components/modals/EditModal";
 import { EditField } from "../../types/modal";
 
-const fields: EditField[] = [
-  {
-    name: "name",
-    label: "Software Name",
-    required: true,
-    placeholder: "e.g. Acme Tool",
-  },
-  {
-    name: "version",
-    label: "Version",
-    required: true,
-    placeholder: "e.g. 2.3.1",
-  },
-  { name: "vendor", label: "Vendor", placeholder: "e.g. Acme Inc." },
-  {
-    name: " License Model",
-    label: " License Model",
-    type: "select",
-    required: true,
-    options: [
-      { label: "Free", value: "free" },
-      { label: "Perpetual", value: "perpetual" },
-      { label: "Subscription", value: "subscription" },
-    ],
-    placeholder: "Select license…",
-  },
-  {
-    name: "Category",
-    label: "Category",
-    type: "select",
-    required: true,
-    options: [
-      { label: "Design", value: "commercial" },
-      { label: "Utility", value: "oss" },
-      { label: "Internal", value: "Internal" },
-    ],
-    placeholder: "Select license…",
-  },
-  {
-    name: "Software Type",
-    label: "Software Type",
-    type: "select",
-    required: true,
-    options: [
-      { label: "Standrad", value: "Standrad" },
-      { label: "Special", value: "Special" },
-    ],
-    placeholder: "Select license…",
-  },
-  {
-    name: "Policy Compliance",
-    label: "Policy Compliance",
-    type: "select",
-    required: true,
-    options: [
-      { label: "Allowed", value: "Allowed" },
-      { label: "Restricted", value: "Restricted" },
-      { label: "Prohibited", value: "Prohibited" },
-    ],
-    placeholder: "Select license…",
-  },
-  {
-    name: "status",
-    label: "Status",
-    type: "select",
-    options: [
-      { label: "Active", value: "active" },
-      { label: "Inactive", value: "inactive" },
-    ],
-  },
-  {
-    name: "client/server",
-    label: "Client/Server",
-    type: "select",
-    options: [
-      { label: "Client", value: "client" },
-      { label: "Server", value: "server" },
-    ],
-  },
-];
+/* ---------------- Types ---------------- */
 
 export type DetailInfoProps = {
   left: Array<{ label: string; value?: React.ReactNode }>;
   right: Array<{ label: string; value?: React.ReactNode }>;
 };
 
-export function DetailView({
+/** ฟอร์มแก้ไขแบบ config ได้ (ใช้กับ License/Software/Device ได้หมด) */
+export type EditConfig<TValues extends Record<string, any>> = {
+  title: string;
+  fields: EditField[];
+  initialValues: TValues;
+  onSubmit: (values: TValues) => void | Promise<void>;
+  submitting?: boolean;
+  submitLabel?: string;
+  cancelLabel?: string;
+};
+
+/** ควบคุม layout/overlay ของ EditModal จากภายนอก (ออปชัน) */
+export type EditModalForwardProps = {
+  /** 'adaptive' | 'scroll' | 'fit' ; default = 'adaptive' */
+  heightMode?: "adaptive" | "scroll" | "fit";
+  /** ตัวเลข px หรือ string '90vh' | 'calc(...)' ; default = '90vh' */
+  maxHeight?: number | string;
+  /** โปร่งแสงของ overlay 10/20/30/40/50/60 ; default = 20 */
+  overlayOpacity?: 10 | 20 | 30 | 40 | 50 | 60;
+};
+
+export function DetailView<TValues extends Record<string, any>>({
   title,
   compliance,
   info,
-  installationSection, // React node รวม Toolbar+Table
+  installationSection,
   history,
   onBack,
-  onEdit,
+  onEdit, // ถ้าอยากทำ side-effect อื่นก่อนเปิดโมดอล
   onDelete,
+  editConfig, // ✅ ใช้ config จากภายนอก
+  modalProps, // ✅ ใหม่: ตัวเลือกของ EditModal
 }: {
   title: string;
   compliance?: Compliance;
@@ -113,43 +59,37 @@ export function DetailView({
   onBack: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  editConfig?: EditConfig<TValues>;
+  modalProps?: EditModalForwardProps;
 }) {
-  const [tab, setTab] = useState<"detail" | "installation" | "history">(
-    "detail"
-  );
+  const [tab, setTab] = useState<"detail" | "installation" | "history">("detail");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [open, setOpen] = useState(false);
 
+  const handleOpenEdit = () => {
+    onEdit?.();     // เผื่ออยาก preload / tracking ฯลฯ
+    setOpen(true);  // ✅ เปิด EditModal
+  };
+
   return (
-    <main>
+    <main aria-labelledby="detail-view-title">
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <DetailHeader
           title={title}
           compliance={compliance}
           onBack={onBack}
-          onEdit={() => {
-            setOpen(true); // ✅ กด Edit → เปิดโมดอล
-          }}
+          onEdit={handleOpenEdit}
           onDeleteClick={onDelete ? () => setConfirmOpen(true) : undefined}
         />
 
         <TabList>
-          <TabTrigger
-            active={tab === "detail"}
-            onClick={() => setTab("detail")}
-          >
-            Software Detail
+          <TabTrigger active={tab === "detail"} onClick={() => setTab("detail")}>
+            Detail
           </TabTrigger>
-          <TabTrigger
-            active={tab === "installation"}
-            onClick={() => setTab("installation")}
-          >
+          <TabTrigger active={tab === "installation"} onClick={() => setTab("installation")}>
             Installation
           </TabTrigger>
-          <TabTrigger
-            active={tab === "history"}
-            onClick={() => setTab("history")}
-          >
+          <TabTrigger active={tab === "history"} onClick={() => setTab("history")}>
             History
           </TabTrigger>
         </TabList>
@@ -169,6 +109,7 @@ export function DetailView({
         )}
       </section>
 
+      {/* Confirm delete */}
       <ConfirmModal
         open={confirmOpen}
         title={`Delete “${title}”?`}
@@ -180,22 +121,25 @@ export function DetailView({
         }}
       />
 
-      <EditModal
-        title="Edit Software"
-        open={open}
-        fields={fields}
-        initialValues={{
-          name: "Acme Tool",
-          version: "1.0",
-          vendor: "Acme Inc.",
-        }}
-        onSubmit={(values) => {
-          // TODO: call API / update state ตามที่ต้องการ
-          console.log(values.name);
-          setOpen(false); // ✅ ปิดหลังบันทึก
-        }}
-        onClose={() => setOpen(false)} // ✅ ปิดเมื่อกด Cancel/Backdrop
-      />
+      {/* ✅ ใช้ EditModal เฉพาะเมื่อส่ง editConfig มา */}
+      {editConfig && (
+        <EditModal
+          title={editConfig.title}
+          open={open}
+          fields={editConfig.fields}
+          initialValues={editConfig.initialValues}
+          submitting={editConfig.submitting}
+          submitLabel={editConfig.submitLabel ?? "Save"}
+          cancelLabel={editConfig.cancelLabel ?? "Cancel"}
+          onSubmit={async (formValues) => {
+            await editConfig.onSubmit(formValues);
+            setOpen(false);
+          }}
+          onClose={() => setOpen(false)}
+          // ✅ forward ตัวควบคุม layout/overlay ไปยัง EditModal (optional)
+          {...modalProps}
+        />
+      )}
     </main>
   );
 }

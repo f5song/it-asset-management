@@ -48,7 +48,7 @@ export default async function LicenseDetailPage({ params }: PageProps) {
     <div style={{ padding: 6 }}>
       <BackButton />
       <PageHeader
-        title={`License: ${license.softwareName}`}
+        title={`${license.softwareName}`}
         breadcrumbs={breadcrumbs}
       />
       <ClientDetail
