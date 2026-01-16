@@ -1,15 +1,17 @@
-
-'use client';
+"use client";
 
 import React from "react";
 import { HistoryEvent, InstallationRow, SoftwareItem } from "../../../../types";
 import { DetailView } from "../../../../features/detail-view/DetailView";
 import { InstallationSection } from "../../../../features/detail-view/InstallationSection";
 import { InstallationDisplayRow } from "../../../../types/tab";
+import { softwareEditFields } from "../../../../features/software/editFields";
 
 // --- mapper: Software InstallationRow -> InstallationDisplayRow ---
 
-const mapSoftwareInstallationRow = (r: InstallationRow): InstallationDisplayRow => ({
+const mapSoftwareInstallationRow = (
+  r: InstallationRow
+): InstallationDisplayRow => ({
   id: r.id,
   deviceName: r.device ?? "—",
   workStation: "—",
@@ -18,7 +20,6 @@ const mapSoftwareInstallationRow = (r: InstallationRow): InstallationDisplayRow 
   licenseStatus: "Active", // ✅ ใช้ literal ที่อยู่ใน union
   scannedLicenseKey: "—",
 });
-
 
 export default function ClientDetail({
   item,
@@ -50,8 +51,14 @@ export default function ClientDetail({
         left: [
           { label: "Manufacturer", value: item.manufacturer },
           { label: "Version", value: item.version },
-          { label: "License Type", value: item.licenseType ?? item.licenseModel },
-          { label: "Policy Compliance", value: item.policyCompliance ?? item.compliance },
+          {
+            label: "License Type",
+            value: item.licenseType ?? item.licenseModel,
+          },
+          {
+            label: "Policy Compliance",
+            value: item.policyCompliance ?? item.compliance,
+          },
         ],
         right: [
           { label: "Category", value: item.category },
@@ -82,6 +89,28 @@ export default function ClientDetail({
       history={history}
       onBack={onBack}
       onDelete={onDelete}
+      editConfig={{
+        title: "Edit Software Detail",
+        fields: softwareEditFields,
+        initialValues: {
+          softwareName: item.softwareName ?? "",
+          manufacturer: item.manufacturer ?? "",
+          version: item.version ?? "v120",
+          category: (item.category ?? "free").toString().toLowerCase(), // 'free' | 'paid' | 'open-source'
+          licenseType: (item.licenseType ?? "free")
+            .toString()
+            .toLowerCase(), // 'free' | 'perpetual' | 'subscription' | 'concurrent'
+          policyCompliance: (item.policyCompliance ?? "allowed")
+            .toString()
+            .toLowerCase(), // 'allowed' | 'restricted' | 'prohibited'
+        },
+        onSubmit: async (values) => {
+          // TODO: call API update software
+          console.log("save software:", values);
+        },
+        submitLabel: "Confirm", // ← ตรงภาพ
+        cancelLabel: "Cancel",
+      }}
     />
   );
 }
