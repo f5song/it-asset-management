@@ -2,24 +2,13 @@
 'use client';
 
 import React from 'react';
+import { LicenseActivity } from '../../types';
 
-export type LicenseAction =
-  | 'Assign'
-  | 'Deallocate'
-  | 'Request Approved'
-  | 'Request Rejected';
-
-export type LicenseActivity = {
-  date: string | Date;
-  action: LicenseAction;
-  software: string;
-  employee: string;
-};
 
 export function RecentLicenseActivityTable({
   items,
   className,
-  maxHeight = 260,
+  maxHeight = 220, // ลดความสูงลงนิดให้ดูแน่นขึ้น (แก้ได้ตอนใช้งาน)
 }: {
   items: LicenseActivity[];
   className?: string;
@@ -37,28 +26,57 @@ export function RecentLicenseActivityTable({
   return (
     <div className={className}>
       <div className="rounded-md border bg-white overflow-hidden">
-        <div className="max-h-[260px] overflow-auto" style={{ maxHeight }}>
-          <table className="min-w-full text-sm">
-            <thead className="sticky top-0 bg-white">
-              <tr className="text-slate-500">
-                <th className="px-3 py-2 text-left font-semibold">Date</th>
-                <th className="px-3 py-2 text-left font-semibold">Action</th>
-                <th className="px-3 py-2 text-left font-semibold">Software</th>
-                <th className="px-3 py-2 text-left font-semibold">Employee</th>
+        {/* scroll ภายใน + จำกัดความสูง */}
+        <div
+          className="overflow-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent"
+          style={{ maxHeight }}
+        >
+          <table className="min-w-full table-fixed text-xs leading-tight">
+            <thead className="sticky top-0 bg-white z-10">
+              <tr className="text-slate-500 border-b">
+                {/* กำหนดความกว้างคอลัมน์ให้พอดีการ์ด */}
+                <th className="px-2 py-1 text-left font-semibold text-[11px] w-[74px] min-w-[68px]">
+                  Date
+                </th>
+                <th className="px-2 py-1 text-left font-semibold text-[11px] w-[92px] min-w-[88px]">
+                  Action
+                </th>
+                <th className="px-2 py-1 text-left font-semibold text-[11px] w-[140px] min-w-[120px]">
+                  Software
+                </th>
+                <th className="px-2 py-1 text-left font-semibold text-[11px] w-[120px] min-w-[110px]">
+                  Employee
+                </th>
               </tr>
             </thead>
-            <tbody>
+
+            <tbody className="divide-y divide-slate-100">
               {items.map((r, i) => (
-                <tr key={i} className="border-t">
-                  <td className="px-3 py-2">{formatDate(r.date)}</td>
-                  <td className="px-3 py-2">{r.action}</td>
-                  <td className="px-3 py-2">{r.software}</td>
-                  <td className="px-3 py-2">{r.employee}</td>
+                <tr
+                  key={i}
+                  className={i % 2 === 1 ? 'bg-slate-50/40' : undefined}
+                >
+                  <td className="px-2 py-1 text-slate-700 whitespace-nowrap">
+                    {formatDate(r.date)}
+                  </td>
+                  <td className="px-2 py-1 text-slate-700 whitespace-nowrap truncate">
+                    {r.action}
+                  </td>
+                  <td className="px-2 py-1 text-slate-700 whitespace-nowrap truncate">
+                    {r.software}
+                  </td>
+                  <td className="px-2 py-1 text-slate-700 whitespace-nowrap truncate">
+                    {r.employee}
+                  </td>
                 </tr>
               ))}
+
               {items.length === 0 && (
                 <tr>
-                  <td className="px-3 py-6 text-center text-slate-500" colSpan={4}>
+                  <td
+                    className="px-2 py-4 text-center text-slate-500 text-xs"
+                    colSpan={4}
+                  >
                     No activity
                   </td>
                 </tr>

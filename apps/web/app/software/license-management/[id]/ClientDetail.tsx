@@ -30,10 +30,10 @@ const mapLicenseAssignedRow = (r: AssigenedRow): InstallationDisplayRow => ({
 export default function ClientDetail({
   item,
   installations,
-  users,      // ✅ optional
-  devices,   // ✅ optional
+  users,      
+  devices,   
   history,
-  total,     // ✅ optional ถ้าไม่ส่ง จะ derive จาก rows
+  total,
 }: {
   item: LicenseItem;
   installations: AssigenedRow[] | AssigenedRow[][];

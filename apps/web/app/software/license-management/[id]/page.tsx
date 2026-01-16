@@ -13,7 +13,6 @@ import { getHistoryBySoftware } from "../../../../mock/history.mock"; // ← เ
 type PageProps = { params: { id: string } };
 
 export default async function LicenseDetailPage({ params }: PageProps) {
-  // ❌ ไม่ต้อง await กับ params
   const { id } = await params;
 
   // 1) ดึงข้อมูลหลัก (license)

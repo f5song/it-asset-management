@@ -1,5 +1,5 @@
 // src/components/installation/types.ts
-export type InstallationFilters = {
+export type Filters = {
   user: string | "ALL";
   device: string | "ALL";
   status: "Active" | "Expiring Soon" | "Expired" | "ALL";

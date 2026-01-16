@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { InstallationDisplayRow, InstallationFilters } from "../../types/tab";
+import { InstallationDisplayRow, Filters } from "../../types/tab";
 import { InstallationToolbar } from "../../components/tabbar/InstallationToolbar";
 import { InstallationTable } from "../../components/tabbar/InstallationTable";
 
@@ -12,7 +12,7 @@ function uniq<T>(arr: T[]): T[] {
 }
 
 /** ฟิลเตอร์เริ่มต้น */
-const defaultFilters: InstallationFilters = {
+const defaultFilters: Filters = {
   user: "ALL",
   device: "ALL",
   status: "ALL",
@@ -60,7 +60,7 @@ export function InstallationSection<R>({
   onAction,
 }: SectionProps<R>) {
   // --- State ---
-  const [filters, setFilters] = React.useState<InstallationFilters>(defaultFilters);
+  const [filters, setFilters] = React.useState<Filters>(defaultFilters);
   const [page, setPage] = React.useState<number>(initialPage);
 
   // --- Reset เมื่อ context เปลี่ยน ---

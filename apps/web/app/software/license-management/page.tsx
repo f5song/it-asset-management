@@ -1,3 +1,5 @@
+
+// src/pages/software/license-management/page.tsx (หรือไฟล์ที่คุณวางอยู่)
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -6,15 +8,14 @@ import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { ColumnDef, LicenseItem } from "../../../types";
 import { useLicenseInventory } from "../../../hooks/useLicenseInventory";
 import { PageHeader } from "../../../components/ui/PageHeader";
-import { FilterBar } from "../../../components/ui/FilterBar";
+import { FilterBar, type SimpleFilters } from "../../../components/ui/FilterBar";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { formatDate } from "../../../utils/date";
 import { DataTable } from "../../../components/table";
+import type { ExportFormat, ToolbarAction } from "../../../types/tab";
 
 // ----------------------------
 // 1) กำหนดคอลัมน์ตาราง (ตามโดเมน License)
-//    - เพิ่ม cell ที่เป็น <a> สำหรับ softwareName
-//    - จัด format วันที่/สถานะ เพื่ออ่านง่าย
 // ----------------------------
 const columns: ColumnDef<LicenseItem>[] = [
   {
@@ -22,41 +23,25 @@ const columns: ColumnDef<LicenseItem>[] = [
     header: "Software Name",
     accessorKey: "softwareName",
     width: 220,
-    // ✅ คลิกชื่อลิงก์เพื่อเปิดหน้ารายละเอียด (เปิดแท็บใหม่ได้)
     cell: (v, row) => (
       <a
         href={`/software/license-management/${row.id}`}
-        onClick={(e) => e.stopPropagation()} // ป้องกันกระทบ onRowClick ของแถว
+        onClick={(e) => e.stopPropagation()}
         style={{
-          color: "inherit", // ใช้สีตาม parent (ไม่เป็นสีฟ้า)
-          textDecoration: "none", // ลบเส้นใต้
-          cursor: "pointer", // คง cursor แบบลิงก์
+          color: "inherit",
+          textDecoration: "none",
+          cursor: "pointer",
         }}
       >
         {String(v ?? "-")}
       </a>
     ),
   },
-  {
-    id: "manufacturer",
-    header: "Manufacturer",
-    accessorKey: "manufacturer",
-    width: 160,
-  },
-  {
-    id: "licenseType",
-    header: "License Type",
-    accessorKey: "licenseType",
-    width: 140,
-  },
+  { id: "manufacturer", header: "Manufacturer", accessorKey: "manufacturer", width: 160 },
+  { id: "licenseType", header: "License Type", accessorKey: "licenseType", width: 140 },
   { id: "total", header: "Total License", accessorKey: "total", width: 120 },
   { id: "inUse", header: "In Use", accessorKey: "inUse", width: 100 },
-  {
-    id: "available",
-    header: "Available",
-    accessorKey: "available",
-    width: 100,
-  },
+  { id: "available", header: "Available", accessorKey: "available", width: 100 },
   {
     id: "expiryDate",
     header: "Expiry Date",
@@ -77,7 +62,7 @@ const columns: ColumnDef<LicenseItem>[] = [
 // 2) หน้า License (Client-side filtering + sorting + pagination)
 // ----------------------------
 export default function LicenseManagementPage() {
-  /** ---------- ใช้ฮุค inventory (client-side dataset + filtering) ---------- */
+  /** ---------- ใช้ฮุค inventory ---------- */
   const {
     filters,
     setFilter,
@@ -106,32 +91,24 @@ export default function LicenseManagementPage() {
     if (!sorting || sorting.length === 0) return rows;
 
     const [{ id, desc }] = sorting;
-
-    // ใช้ id ของคอลัมน์ (เราเซ็ตให้ตรงกับคีย์ใน row อยู่แล้ว)
     const getVal = (r: LicenseItem) => (r as any)?.[id];
 
-    // คอมแพร์ที่รองรับ number / date / string / undefined
     const cmp = (a: any, b: any) => {
       if (a == null && b == null) return 0;
       if (a == null) return -1;
       if (b == null) return 1;
 
-      // ถ้าเป็นตัวเลข
       if (typeof a === "number" && typeof b === "number") {
         return a - b;
       }
 
-      // ถ้าเป็นวัน (string/Date ที่ parse ได้)
       const da = new Date(a);
       const db = new Date(b);
       const aIsDate = !isNaN(da.valueOf());
       const bIsDate = !isNaN(db.valueOf());
       if (aIsDate && bIsDate) return da.getTime() - db.getTime();
 
-      // อื่นๆ เทียบเป็น string (case-insensitive)
-      return String(a).localeCompare(String(b), undefined, {
-        sensitivity: "base",
-      });
+      return String(a).localeCompare(String(b), undefined, { sensitivity: "base" });
     };
 
     const copy = [...rows];
@@ -145,22 +122,50 @@ export default function LicenseManagementPage() {
   /** ---------- Client-side paginate หลังจาก sort แล้ว ---------- */
   const start = pagination.pageIndex * pagination.pageSize;
   const end = start + pagination.pageSize;
-  const pageRows = useMemo(
-    () => sortedRows.slice(start, end),
-    [sortedRows, start, end]
-  );
+  const pageRows = useMemo(() => sortedRows.slice(start, end), [sortedRows, start, end]);
 
   /** ---------- รีเซ็ตหน้าเมื่อมีการเปลี่ยน filter / dataset ---------- */
   useEffect(() => {
     setPagination((p) => ({ ...p, pageIndex: 0 }));
   }, [filters, rows.length]);
 
-  /** ---------- Action handlers ---------- */
-  const handleExport = (fmt: "CSV" | "XLSX" | "PDF") => {
-    console.log("Export as:", fmt);
+  /** ---------- Adapter: map filters (domain) <-> FilterBar(Simple) ---------- */
+  const toSimpleFilters = React.useCallback((): SimpleFilters<string, string> => {
+    return {
+      status: filters.status && filters.status !== "All Status" ? filters.status : undefined,
+      type: filters.licenseType && filters.licenseType !== "All License Type" ? filters.licenseType : undefined,
+      manufacturer:
+        filters.manufacturer && filters.manufacturer !== "All manufacturer"
+          ? filters.manufacturer
+          : undefined,
+      searchText: filters.search ?? "",
+    };
+  }, [filters]);
+
+  const fromSimpleFilters = React.useCallback(
+    (sf: SimpleFilters<string, string>) => {
+      // แปลงกลับมาเก็บรูปแบบเดิม (ใช้สตริง "All …")
+      setFilter({
+        status: sf.status ?? "All Status",
+        licenseType: sf.type ?? "All License Type",
+        manufacturer: sf.manufacturer ?? "All manufacturer",
+        search: sf.searchText ?? "",
+      });
+    },
+    [setFilter]
+  );
+
+  const simpleFilters = useMemo(() => toSimpleFilters(), [toSimpleFilters]);
+
+  /** ---------- Actions ---------- */
+  const handleExport = (fmt: ExportFormat) => {
+    // ExportFormat มักเป็น: 'csv' | 'xlsx' | 'pdf'
+    console.log("Export as:", fmt.toUpperCase());
+    // TODO: เรียกฟังก์ชันดาวน์โหลดจริงตาม fmt
   };
-  const handleAddLicense = () => {
-    console.log("Add License clicked");
+
+  const handleAction = (act: ToolbarAction) => {
+      console.log("Add License");
   };
 
   return (
@@ -173,33 +178,20 @@ export default function LicenseManagementPage() {
         ]}
       />
 
-      {/* Filter Bar — ใช้ string-based filters เหมือน useSoftwareInventory */}
+      {/* Filter Bar — ใช้เวอร์ชัน Simple + adapter */}
       <FilterBar<string, string>
-        // map manufacturer
-        manufacturerFilter={filters.manufacturer}
-        setManufacturerFilter={(v) =>
-          setFilter({ manufacturer: v ?? "All manufacturer" })
-        }
-        // status
-        statusFilter={filters.status}
-        setStatusFilter={(v) => setFilter({ status: v ?? "All Status" })}
-        // licenseType
-        typeFilter={filters.licenseType}
-        setTypeFilter={(v) =>
-          setFilter({ licenseType: v ?? "All License Type" })
-        }
-        // search
-        searchText={filters.search}
-        setSearchText={(t) => setFilter({ search: t })}
-        // actions
+        filters={simpleFilters}
+        onFiltersChange={fromSimpleFilters}
+        // ❗️ไม่ต้องใส่ "All …" ใน options เพราะ FilterBar เติมเองแล้ว
+        statusOptions={statusOptions as readonly string[]}
+        typeOptions={licenseTypeOptions as readonly string[]}
+        manufacturerOptions={manufacturerOptions as readonly string[]}
         onExport={handleExport}
-        onAdd={handleAddLicense}
-        // dropdown options
-        statusOptions={["All Status", ...statusOptions] as const}
-        typeOptions={["All License Type", ...licenseTypeOptions] as const}
-        manufacturerOptions={
-          ["All manufacturer", ...manufacturerOptions] as const
-        }
+        onAction={handleAction}
+        // ปรับ label ให้ตรงโดเมน License
+        allStatusLabel="All Status"
+        allTypeLabel="All License Type"
+        allManufacturerLabel="All manufacturer"
       />
 
       {/* DataTable */}
@@ -217,7 +209,6 @@ export default function LicenseManagementPage() {
         isError={false}
         errorMessage={undefined}
         maxBodyHeight={420}
-        // ✅ ทำให้คลิกทั้งแถวแล้วนำทางไปหน้า Detail ตาม id
         rowHref={(row) => `/software/license-management/${row.id}`}
       />
     </div>
