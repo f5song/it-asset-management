@@ -1,10 +1,9 @@
-
-// src/features/devices/DeviceFilters.tsx
 "use client";
 
 import * as React from "react";
-import { FilterBar, type SimpleFilters } from "../../components/ui/FilterBar";
+import { FilterBar } from "../ui/FilterBar";
 import type { ExportFormat, ToolbarAction } from "../../types/tab";
+import { SimpleFilters } from "../../types";
 
 export type DeviceFilterState = {
   deviceGroup: string;

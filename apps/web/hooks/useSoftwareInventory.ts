@@ -1,98 +1,61 @@
 
 // src/hooks/useSoftwareInventory.ts
-'use client';
+"use client";
+import * as React from "react";
+import { getItemsStock } from "services/software.service.mock";
 
-import { useMemo, useState } from 'react';
+import type { SoftwareItem } from "types/software";
 
-export type PolicyCompliance = 'Allowed' | 'Not Allowed' | 'Requires' | 'N/A';
-export type Status = 'Active' | 'Expired' | 'Expiring';
+export function useSoftwareInventory(
+  query: { pageIndex: number; pageSize: number; sortBy?: string; sortOrder?: "asc" | "desc" },
+  filters?: { status?: string; type?: string; manufacturer?: string; search?: string }
+) {
+  const [rows, setRows] = React.useState<SoftwareItem[]>([]);
+  const [totalRows, setTotalRows] = React.useState(0);
+  const [isLoading, setLoading] = React.useState(false);
+  const [isError, setError] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState<string | undefined>(undefined);
 
-export interface SoftwareItem {
-  id: string;
-  name: string;
-  manufacturer: string;
-  version: string;
-  category: string;
-  policyCompliance: PolicyCompliance;
-  expiryDate?: string; // ISO string
-  status: Status;
+  // ถ้ายังไม่มี options จาก BE ก็ mock แบบเดิมไปก่อน
+  const statusOptions = React.useMemo(() => ["Active", "Expired", "Expiring"], []);
+  const typeOptions = React.useMemo(() => ["Standard", "Special", "Exception"], []);
+  const manufacturerOptions = React.useMemo(() => ["Microsoft", "Adobe", "Autodesk", "JetBrains"], []);
+
+  React.useEffect(() => {
+    const ac = new AbortController();
+    const run = async () => {
+      try {
+        setLoading(true);
+        setError(false);
+        setErrorMessage(undefined);
+
+        const res = await getItemsStock({
+          page: query.pageIndex + 1,   // server ใช้ 1-based
+          limit: query.pageSize,
+          sortBy: query.sortBy,
+          sortOrder: query.sortOrder,
+          statusFilter: filters?.status ?? "",
+          typeFilter: filters?.type ?? "",
+          manufacturerFilter: filters?.manufacturer ?? "",
+          searchText: filters?.search ?? "",
+        });
+
+        setRows(res.data ?? []);
+        setTotalRows(res.pagination?.total ?? 0);
+      } catch (e: any) {
+        if (e?.name === "AbortError") return;
+        setError(true);
+        setErrorMessage(e?.message ?? "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    };
+    run();
+    return () => ac.abort();
+  }, [
+    query.pageIndex, query.pageSize, query.sortBy, query.sortOrder,
+    filters?.status, filters?.type, filters?.manufacturer, filters?.search
+  ]);
+
+  return { rows, totalRows, isLoading, isError, errorMessage, statusOptions, typeOptions, manufacturerOptions };
 }
-
-export interface Filters {
-  type: string;
-  manufacturer: string;
-  software: string;
-  search: string;
-}
-
-const baseItems: SoftwareItem[] = [
-  { id: '1', name: 'Microsoft Office 365', manufacturer: 'Microsoft', version: 'v2025', category: 'Utility', policyCompliance: 'Allowed', expiryDate: '2025-11-11', status: 'Active' },
-  { id: '2', name: 'Adobe Photoshop', manufacturer: 'Adobe', version: 'v2025', category: 'Design', policyCompliance: 'Not Allowed', expiryDate: '2025-10-10', status: 'Expired' },
-  { id: '3', name: 'LINE PC', manufacturer: 'LINE Corp', version: 'v2025', category: 'Utility', policyCompliance: 'Requires', expiryDate: '2025-09-02', status: 'Active' },
-  { id: '4', name: 'AutoCAD', manufacturer: 'Autodesk', version: 'v2025', category: 'Productivity', policyCompliance: 'Not Allowed', expiryDate: '2025-02-05', status: 'Expiring' },
-  { id: '5', name: 'USB Tools', manufacturer: 'Generic', version: 'v2025', category: 'Utility', policyCompliance: 'Allowed', expiryDate: '2025-12-15', status: 'Active' },
-  { id: '6', name: 'Microsoft Office 365', manufacturer: 'Microsoft', version: 'v2409', category: 'Utility', policyCompliance: 'Allowed', expiryDate: '2014-10-10', status: 'Expired' },
-  { id: '7', name: 'Adobe Photoshop', manufacturer: 'Adobe', version: 'v2409', category: 'Design', policyCompliance: 'Not Allowed', expiryDate: '2024-10-10', status: 'Active' },
-  { id: '8', name: 'LINE PC', manufacturer: 'LINE Corp', version: 'v2409', category: 'Utility', policyCompliance: 'Requires', expiryDate: '2023-09-02', status: 'Active' },
-];
-
-function expandDataset(targetCount = 1250): SoftwareItem[] {
-  const arr: SoftwareItem[] = [];
-  let id = 1;
-  while (arr.length < targetCount) {
-    for (const b of baseItems) {
-      if (arr.length >= targetCount) break;
-      arr.push({ ...b, id: String(id++) });
-    }
-  }
-  return arr;
-}
-
-const ALL_ITEMS = expandDataset(); // ให้จำนวนมากเพื่อให้หน้าตา pagination เหมือนภาพ
-
-export function useSoftwareInventory(pageSize = 10) {
-  const [filters, setFilters] = useState<Filters>({
-    type: 'All Type',
-    manufacturer: 'All Manufacturer',
-    software: 'All Software',
-    search: '',
-  });
-
-  const setFilter = (patch: Partial<Filters>) =>
-    setFilters((prev) => ({ ...prev, ...patch }));
-
-  const filtered = useMemo(() => {
-    let data = [...ALL_ITEMS];
-
-    if (filters.type !== 'All Type') data = data.filter((i) => i.category === filters.type);
-    if (filters.manufacturer !== 'All Manufacturer') data = data.filter((i) => i.manufacturer === filters.manufacturer);
-    if (filters.software !== 'All Software') data = data.filter((i) => i.name === filters.software);
-
-    if (filters.search.trim().length > 0) {
-      const s = filters.search.toLowerCase();
-      data = data.filter(
-        (i) =>
-          i.name.toLowerCase().includes(s) ||
-          i.manufacturer.toLowerCase().includes(s) ||
-          i.category.toLowerCase().includes(s)
-      );
-    }
-    return data;
-  }, [filters]);
-
-  const typeOptions = Array.from(new Set(ALL_ITEMS.map((i) => i.category)));
-  const manufacturerOptions = Array.from(new Set(ALL_ITEMS.map((i) => i.manufacturer)));
-  const softwareOptions = Array.from(new Set(ALL_ITEMS.map((i) => i.name)));
-
-  return {
-    filters,
-    setFilter,
-    rows: filtered,
-    pageSize,
-    typeOptions,
-    manufacturerOptions,
-    softwareOptions,
-    total: filtered.length,
-  };
-}
-``

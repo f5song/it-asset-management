@@ -2,7 +2,8 @@
 // hooks/useSoftwareQuery.ts
 import type { PaginationState, SortingState } from '@tanstack/react-table';
 import type { SoftwareItem } from '../types/software';
-import type { LegacySorting } from '../components/page/ListPageShell';
+import { LegacySorting } from './useItemsTable';
+
 
 export function useSoftwareQuery({
   pagination,

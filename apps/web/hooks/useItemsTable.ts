@@ -2,7 +2,7 @@
 // src/hooks/useItemsTable.ts
 import { useQuery } from '@tanstack/react-query';
 import type { PaginationState, SortingState } from '@tanstack/react-table';
-import { getItemsStock } from '../services/itemsService';
+import { getItemsStock } from '../app/api/itemsService';
 import { SoftwareItem, SoftwareStatus, SoftwareType } from '../types';
 
 export type BaseItem = { id: string | number };

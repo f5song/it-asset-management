@@ -1,5 +1,5 @@
 
-import { AssigenedRow, LicenseStatus } from "../types";
+import { LicenseStatus } from "../types";
 
 export const ASSIGNED_TO: AssigenedRow[] = [
   {

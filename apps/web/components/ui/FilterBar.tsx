@@ -1,4 +1,4 @@
-// src/components/common/FilterBar.tsx
+
 "use client";
 
 import React from "react";
@@ -7,14 +7,7 @@ import { ActionSelect } from "./ActionSelect";
 import { SelectField } from "./SelectField";
 import { ExportFormat, ToolbarAction } from "../../types/tab";
 import { SearchInput } from "./SearchInput";
-
-/** ฟิลเตอร์ที่เป็น single object */
-export type SimpleFilters<TStatus extends string, TType extends string> = {
-  status?: TStatus;
-  type?: TType;
-  manufacturer?: string;
-  searchText: string;
-};
+import { SimpleFilters } from "../../types";
 
 export type FilterBarProps<TStatus extends string, TType extends string> = {
   /** state เดียว รวมทุกฟิลด์ */
@@ -22,9 +15,9 @@ export type FilterBarProps<TStatus extends string, TType extends string> = {
   /** อัปเดตฟิลเตอร์ */
   onFiltersChange: (next: SimpleFilters<TStatus, TType>) => void;
 
-  /** ตัวเลือก dropdown */
-  statusOptions?: readonly TStatus[];
-  typeOptions?: readonly TType[];
+  /** 🔁 ปรับ options ให้เป็น string[] เพื่อรับจากทุกหน้าได้ง่าย */
+  statusOptions?: readonly string[];
+  typeOptions?: readonly string[];
   manufacturerOptions?: readonly string[];
 
   /** action เสริม */
@@ -40,8 +33,8 @@ export type FilterBarProps<TStatus extends string, TType extends string> = {
 export function FilterBar<TStatus extends string, TType extends string>({
   filters,
   onFiltersChange,
-  statusOptions = [] as readonly TStatus[],
-  typeOptions = [] as readonly TType[],
+  statusOptions = [] as readonly string[],
+  typeOptions = [] as readonly string[],
   manufacturerOptions = [] as readonly string[],
   onExport,
   onAction,

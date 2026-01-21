@@ -1,33 +1,17 @@
-import { LicenseModel, LicenseType } from "./license";
+import type { LicenseModel } from "./license";
 
-
-// src/types/software.ts
 export type SoftwareStatus = 'Active' | 'Expired' | 'Expiring';
-export type Compliance = 'Compliant' | 'Non-compliant' | 'Pending';
-export type PolicyCompliance = 'Allowed' | 'Not Allowed';
+export type Compliance = 'Compliant' | 'Non-Compliant' | 'Pending';
 export type SoftwareType = 'Standard' | 'Special' | 'Exception';
-
 export type ClientServer = 'Client' | 'Server';
 
-
-
+// ✅ ให้ SoftwareFilters สอดคล้องกับการใช้งานจริงในเพจ/ฮุค
 export type SoftwareFilters = {
   manufacturer?: string;
-  status?: SoftwareStatus;
+  status?: string;
+  type?: string;
+  search?: string;
 };
-
-// src/types/software.ts
-export type ItemsQuery<S extends string = SoftwareStatus, T extends string = SoftwareType> = {
-  page: number; // 1-based
-  limit: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  statusFilter?: S;
-  typeFilter?: T;
-  manufacturerFilter?: string;
-  searchText?: string;
-};
-
 
 export type SoftwareItem = {
   id: string;
@@ -37,13 +21,11 @@ export type SoftwareItem = {
   category: string;
   expiryDate?: string | null; // ISO date string, optional
   status: SoftwareStatus;
-  licenseModel: LicenseModel;
-  compliance: Compliance;
-  policyCompliance: PolicyCompliance;
+  policyCompliance: Compliance;
   softwareType: SoftwareType;
   clientServer: ClientServer;
-  licenseType: LicenseType;
-}
+  licenseModel: LicenseModel;
+};
 
 export type InstallationRow = {
   id: string;
@@ -59,4 +41,3 @@ export type HistoryEvent = {
   actor: string;
   date: string;
 };
-

@@ -1,8 +1,8 @@
 
 // src/services/itemsService.ts
-import { MOCK_ITEMS } from '../mock/software.mock';
-import type { ItemsQuery, SoftwareItem } from '../types';
-import type { ItemsResponse } from '../types/service';
+import { MOCK_ITEMS } from '../../mock/software.mock';
+import type { ItemsQuery, SoftwareItem } from '../../types';
+import type { ItemsResponse } from '../../types/service';
 
 /** normalize keyword */
 function normalize(s?: string) {

@@ -8,18 +8,20 @@ import { DataTableHeader } from './DataTableHeader';
 import { DataTableBody } from './DataTableBody';
 import { LoadingBody, ErrorBody, EmptyBody } from './DataTableStates';
 import { DataTablePaginationBar } from './DataTablePaginationBar';
-import { ColumnDef, DataTableProps, SortingState } from '../../types';
 import { cn } from '../ui';
 
-export function DataTable<T extends { id?: string | number }>(props: DataTableProps<T>) {
+// ✅ ใช้ type กลางใหม่
+import type { AppColumnDef, DataTableProps } from '../../types/table';
+
+export function DataTable<TRow extends { id?: string | number }>(props: DataTableProps<TRow>) {
   const {
     columns,
     rows,
     totalRows,
     pagination,
     onPaginationChange,
-    sorting,              // ✅ TanStack: [{ id, desc }]
-    onSortingChange,      // ✅ TanStack handler
+    sorting,
+    onSortingChange,
     variant = 'default',
     size = 'xs',
     emptyMessage = 'ไม่มีข้อมูล',
@@ -42,7 +44,7 @@ export function DataTable<T extends { id?: string | number }>(props: DataTablePr
   const tableWrapperClass = 'overflow-x-auto overflow-y-auto';
   const tableClass = 'w-full min-w-[680px]';
 
-  const handleRowNavigate = (row: T) => {
+  const handleRowNavigate = (row: TRow) => {
     if (onRowClick) {
       onRowClick(row);
       return;
@@ -52,41 +54,35 @@ export function DataTable<T extends { id?: string | number }>(props: DataTablePr
       if (path) router.push(path);
       return;
     }
-    const id = row.id;
-    if (id !== undefined && id !== null) {
-      router.push(`/software/inventory/${id}`);
-    } else {
-      console.warn('[DataTable] Cannot navigate: row.id is missing and rowHref not provided.', row);
-    }
+    // ❌ ตัด fallback ที่ฮาร์ดโค้ดโดเมนออก เพื่อความ reusable
+    // ถ้าอยากแจ้งเตือน:
+    // console.warn('[DataTable] rowHref/onRowClick not provided. Navigation skipped.', row);
   };
 
   // ✅ toggleSort: TanStack style
-  const toggleSort = (col: ColumnDef<T>) => {
+  const toggleSort = (col: AppColumnDef<TRow>) => {
     const colId = String(col.accessorKey);
     const cur = sorting ?? [];
     const curFirst = cur[0];
 
-    let next: SortingState;
+    let next;
     if (curFirst && curFirst.id === colId) {
-      // toggle desc
       next = [{ id: colId, desc: !curFirst.desc }];
     } else {
-      // เริ่ม sort คอลัมน์ใหม่ -> asc (desc=false)
       next = [{ id: colId, desc: false }];
     }
-    onSortingChange?.(next);
+    onSortingChange?.(next as any);
   };
 
-  // ✅ (ตัวเลือก) ทำ client-side sort ที่นี่ ด้วย TanStack sorting
+  // ✅ (ตัวเลือก) ทำ client-side sort ที่นี่
   const effectiveRows = React.useMemo(() => {
     if (!clientSideSort) return rows;
     if (!sorting?.length) return rows;
 
-    // ตอนนี้ใช้เฉพาะคอลัมน์แรก (รองรับ multi-column ได้ถ้าต้องการ)
     const { id, desc } = sorting[0];
     const col = columns.find((c) => String(c.accessorKey) === id);
 
-    const getValue = (row: T) => {
+    const getValue = (row: TRow) => {
       if (col?.getSortValue) return col.getSortValue(row);
       return (row as any)[id];
     };
@@ -107,7 +103,7 @@ export function DataTable<T extends { id?: string | number }>(props: DataTablePr
       return String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
     };
 
-    const arr = [...rows];
+    const arr = [...rows]; // ✅ rows เป็น readonly ก็ clone มาก่อน
     arr.sort((ra, rb) => {
       const va = getValue(ra);
       const vb = getValue(rb);
@@ -123,9 +119,9 @@ export function DataTable<T extends { id?: string | number }>(props: DataTablePr
     <div className={containerClass}>
       <div className={tableWrapperClass} style={{ maxHeight: maxBodyHeight }}>
         <table className={tableClass}>
-          <DataTableHeader<T>
+          <DataTableHeader<TRow>
             columns={columns}
-            sorting={sorting}                // ✅ TanStack sorting
+            sorting={sorting}
             onToggleSort={toggleSort}
             size={size}
             defaultColMinWidth={defaultColMinWidth}
@@ -138,7 +134,7 @@ export function DataTable<T extends { id?: string | number }>(props: DataTablePr
           )}
 
           {!isLoading && !isError && effectiveRows.length > 0 && (
-            <DataTableBody<T>
+            <DataTableBody<TRow>
               columns={columns}
               rows={effectiveRows}
               variant={variant}

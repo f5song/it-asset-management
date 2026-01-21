@@ -1,59 +1,58 @@
 
-// app/software/license/[id]/page.tsx
+// app/software/license-management/[id]/page.tsx
+import BackButton from "components/ui/BackButton";
+import { PageHeader } from "components/ui/PageHeader";
+import { getAssignedTo, getAssignedToFilters } from "mock/assigned.mock";
+import { getHistoryBySoftware } from "mock/history.mock";
 import { notFound } from "next/navigation";
-import { PageHeader } from "../../../../components/ui/PageHeader";
-import BackButton from "../../../../components/ui/BackButton";
-import ClientDetail from "./ClientDetail";
+import { getLicenseById } from "services/licenses.service.mock";
+import LicenseDetail from "./LicenseDetail";
 
-// ✅ mock/data loaders (ปรับ path ให้ตรงโปรเจกต์จริงของคุณ)
-import { getLicenseById } from "../../../../mock";
-import { getAssignedTo, getAssignedToFilters } from "../../../../mock/assigned.mock";
-import { getHistoryBySoftware } from "../../../../mock/history.mock"; // ← เพิ่ม import ให้ถูกไฟล์
 
 type PageProps = { params: { id: string } };
+
+// ถ้าต้องการไม่แคช ให้เปิดหนึ่งในนี้:
+// export const dynamic = "force-dynamic";
+// export const revalidate = 0;
 
 export default async function LicenseDetailPage({ params }: PageProps) {
   const { id } = await params;
 
-  // 1) ดึงข้อมูลหลัก (license)
+  // 1) โหลดข้อมูลหลัก (license)
   const license = await getLicenseById(id);
   if (!license) {
-    notFound(); // แสดงหน้า 404 อัตโนมัติ
+    return notFound();
   }
 
-  // 2) Breadcrumbs
+  // 2) โหลดข้อมูลอื่น ๆ แบบขนาน: assigned (installations), filters (users/devices), history
+  const [assigned, assignedFilters, history] = await Promise.all([
+    getAssignedTo(id),
+    getAssignedToFilters(id),
+    getHistoryBySoftware(id),
+  ]);
+
+  // 3) สร้าง breadcrumbs ให้ตรงกับเส้นทาง list (/software/license-management)
   const breadcrumbs = [
     { label: "Software Inventory", href: "/software/inventory" },
     { label: "License Management", href: "/software/license-management" },
-    { label: license.softwareName, href: `/software/license/${id}` },
+    { label: license.softwareName, href: `/software/license-management/${id}` },
   ];
 
-  // 3) ดึงข้อมูลส่วนติดตั้ง/กำหนดสิทธิ์ และ filter ที่เกี่ยวข้อง
-  // - assigned: ส่วนใหญ่ฝั่ง license จะได้เป็น array ซ้อน (AssigenedRow[][]) → flatten ภายหลัง/ใน ClientDetail
-  // - getAssignedToFilters(id): ให้ users/devices (ถ้าฟังก์ชันของคุณคืนโครงอื่น ปรับ destructure ให้ตรง)
-  const assigned = await getAssignedTo(id);
-  const history = await getHistoryBySoftware(id);
-
-  // ป้องกันไม่มีค่า (กัน undefined)
-
-
-  // (ตัวอย่าง) total ที่โชว์ในกล่อง summary
-  // - ถ้ามี total จาก API จริง ให้ใช้ของจริง
-  // - ถ้าไม่มีก็ใส่คงที่/หรือ derive จาก assigned.flat().length
-  const total = typeof license.total === "number"
-    ? license.total
-    : (Array.isArray(assigned) ? assigned.flat().length : 0);
+  // 4) ค่านับรวม (ถ้า API ให้มาก็ใช้ของจริง, ถ้าไม่ก็ derive จาก assigned)
+  const total =
+    typeof license.total === "number"
+      ? license.total
+      : Array.isArray(assigned)
+      ? assigned.flat().length
+      : 0;
 
   return (
-    <div style={{ padding: 6 }}>
+    <div className="p-2">
       <BackButton />
-      <PageHeader
-        title={`${license.softwareName}`}
-        breadcrumbs={breadcrumbs}
-      />
-      <ClientDetail
+      <PageHeader title={license.softwareName} breadcrumbs={breadcrumbs} />
+      <LicenseDetail
         item={license}
-        installations={assigned} // ⛳ ส่งเป็น AssigenedRow[][] ไปให้ ClientDetail จัดการ flatten/map ต่อ
+        installations={assigned}     // ถ้าเป็น Array<Array<...>> ให้จัดการ flatten/map ต่อใน ClientDetail
         history={history}
         total={total}
       />

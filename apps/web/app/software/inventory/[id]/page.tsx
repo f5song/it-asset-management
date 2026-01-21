@@ -1,18 +1,19 @@
-// app/software/[id]/page.tsx
-import { notFound } from "next/navigation";
 
-import ClientDetail from "./ClientDetail";
-import { getItemById } from "../../../../mock/software.mock";
-import {
-  getInstallationFilters,
-  getInstallationsBySoftware,
-} from "../../../../mock/installation.mock";
-import { getHistoryBySoftware } from "../../../../mock/history.mock";
-import { PageHeader } from "../../../../components/ui/PageHeader";
-import BackButton from "../../../../components/ui/BackButton";
+// app/software/inventory/[id]/page.tsx
+import BackButton from "components/ui/BackButton";
+import { PageHeader } from "components/ui/PageHeader";
+import { getHistoryBySoftware } from "mock/history.mock";
+import { getInstallationFilters, getInstallationsBySoftware } from "mock/installation.mock";
+import { notFound } from "next/navigation";
+import { getItemById } from "services/software.service.mock";
+import SoftwareDetail from "./SoftwareDetail";
+
+// (ถ้าต้องการให้ไม่แคช)
+// export const dynamic = "force-dynamic";
+// หรือ: export const revalidate = 0;
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 export default async function Page({ params }: PageProps) {
@@ -21,21 +22,24 @@ export default async function Page({ params }: PageProps) {
   const item = await getItemById(id);
   if (!item) return notFound();
 
-  const installations = await getInstallationsBySoftware(id);
-  const { users, devices } = await getInstallationFilters(id);
-  const history = await getHistoryBySoftware(id);
+  // รันขนานเพื่อความเร็ว
+  const [installations, { users, devices }, history] = await Promise.all([
+    getInstallationsBySoftware(id),
+    getInstallationFilters(id),
+    getHistoryBySoftware(id),
+  ]);
 
   return (
-    <div style={{ padding: 6 }}>
+    <div className="p-2"> 
       <BackButton />
       <PageHeader
-        title={item.softwareName} // ✅ ใช้ฟิลด์ที่เป็น string
+        title={item.softwareName}
         breadcrumbs={[
           { label: "Software Inventory", href: "/software/inventory" },
-          { label: item.softwareName, href: `/software/inventory/${item.id}` }, // ✅ label เป็น string, href ต่อ URL ถูกต้อง
+          { label: item.softwareName, href: `/software/inventory/${item.id}` },
         ]}
       />
-      <ClientDetail
+      <SoftwareDetail
         item={item}
         installations={installations}
         users={users}

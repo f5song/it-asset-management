@@ -1,149 +1,114 @@
-// src/components/installation/InstallationTable.tsx
+
+// InstallationTable.tsx (refactor ใช้ DataTable สไตล์เดียวกับของคุณ)
 "use client";
 import React, { useMemo } from "react";
-import { Pagination } from "../pagination/Pagination";
+// <— ปรับ path ให้ถูกกับโครงสร้างโปรเจกต์ของคุณ
+import type { AppColumnDef as CoreAppColumnDef, DataTableProps } from "../../types/table"; // <— ใช้ type กลาง
+import { DataTable } from "components/table";
+// ^^^ ปรับ path ให้ตรงของจริง
 
-// ✅ ใช้ชนิดสำหรับการแสดงผลตามภาพ
-export type InstallationDisplayRow = {
-  id: string;
-  deviceName: string;
-  workStation: string;
-  user: string;
-  licenseKey: string;
-  licenseStatus: "Active" | "Expiring Soon" | "Expired";
-  scannedLicenseKey: string;
+// ---------- types ของเวอร์ชันเดิม ----------
+export type AppColumnDef<R> = {
+  header: string;
+  accessor: (r: R) => React.ReactNode;
 };
 
-function StatusBadge({
-  label,
-}: {
-  label: InstallationDisplayRow["licenseStatus"];
-}) {
-  const map: Record<InstallationDisplayRow["licenseStatus"], string> = {
-    Active: "text-green-700 bg-green-100",
-    "Expiring Soon": "text-amber-700 bg-amber-100",
-    Expired: "text-red-700 bg-red-100",
-  };
-  return (
-    <span
-      className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${map[label]}`}
-    >
-      {label}
-    </span>
-  );
-}
-
 export type InstallationFilters = {
-  user: string | "ALL";
-  device: string | "ALL";
-  status: "Active" | "Expiring Soon" | "Expired" | "ALL";
   query: string;
 };
 
-export function InstallationTable({
-  rows, // ✅ รับเป็น Display rows ตรง ๆ
+// ---------- InstallationTable ใหม่ (wrapper DataTable) ----------
+export function InstallationTable<R extends { id?: string | number }>({
+  rows,
+  columns,
   filters,
   page,
   pageSize,
   onPageChange,
+  // (optionals เผื่ออนาคต)
+  emptyMessage = "No data found.",
+  maxBodyHeight = 340,
 }: {
-  rows: InstallationDisplayRow[];
+  rows: R[];
+  columns: AppColumnDef<R>[];
   filters: InstallationFilters;
   page: number;
   pageSize: number;
-  onPageChange: (next: number) => void;
+  onPageChange: (p: number) => void;
+  emptyMessage?: string;
+  maxBodyHeight?: number;
 }) {
-  const filtered = useMemo(() => {
-    const q = filters.query.trim().toLowerCase();
-    return rows.filter((r) => {
-      const passUser = filters.user === "ALL" || r.user === filters.user;
-      const passDevice =
-        filters.device === "ALL" || r.deviceName === filters.device;
-      const passStatus =
-        filters.status === "ALL" || r.licenseStatus === filters.status;
-      const passQuery =
-        q.length === 0 ||
-        [r.deviceName, r.workStation, r.user, r.licenseKey, r.scannedLicenseKey]
-          .join(" ")
-          .toLowerCase()
-          .includes(q);
-      return passUser && passDevice && passStatus && passQuery;
-    });
-  }, [rows, filters]);
+  const q = (filters.query ?? "").trim().toLowerCase();
 
-  const total = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const safePage = Math.min(Math.max(page, 1), totalPages);
+  // 1) client-side filter (เทียบเท่าเดิม)
+  const filtered = useMemo(() => {
+    if (!q) return rows;
+    return rows.filter((r) => JSON.stringify(r).toLowerCase().includes(q));
+  }, [rows, q]);
+
+  // 2) client-side pagination (เทียบเท่าเดิม)
+  const totalRows = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const safePage = Math.min(Math.max(1, page), totalPages);
   const start = (safePage - 1) * pageSize;
   const pageRows = filtered.slice(start, start + pageSize);
 
-  return (
-    <>
-      <div className="mt-4 overflow-hidden rounded-md border border-slate-200">
-        <table className="min-w-full border-collapse">
-          <thead className="bg-slate-50">
-            <tr className="text-left">
-              <th className="px-3 py-2 text-sm font-medium text-slate-600">
-                Device Name
-              </th>
-              <th className="px-3 py-2 text-sm font-medium text-slate-600">
-                Work Station
-              </th>
-              <th className="px-3 py-2 text-sm font-medium text-slate-600">
-                User
-              </th>
-              <th className="px-3 py-2 text-sm font-medium text-slate-600">
-                License Key
-              </th>
-              <th className="px-3 py-2 text-sm font-medium text-slate-600">
-                License Status
-              </th>
-              <th className="px-3 py-2 text-sm font-medium text-slate-600">
-                Scanned License Key
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white">
-            {pageRows.length === 0 ? (
-              <tr>
-                <td className="px-3 py-3 text-sm text-slate-500" colSpan={6}>
-                  No installations found.
-                </td>
-              </tr>
-            ) : (
-              pageRows.map((r) => (
-                <tr key={r.id} className="border-t border-slate-100">
-                  <td className="px-3 py-2 text-sm text-slate-900">
-                    {r.deviceName}
-                  </td>
-                  <td className="px-3 py-2 text-sm text-slate-900">
-                    {r.workStation}
-                  </td>
-                  <td className="px-3 py-2 text-sm text-slate-900">{r.user}</td>
-                  <td className="px-3 py-2 text-sm text-slate-900">
-                    {r.licenseKey}
-                  </td>
-                  <td className="px-3 py-2 text-sm">
-                    <StatusBadge label={r.licenseStatus} />
-                  </td>
-                  <td className="px-3 py-2 text-sm text-slate-900">
-                    {r.scannedLicenseKey}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+  // 3) map simple columns -> Core AppColumnDef ของ DataTable
+  //    - ใช้ accessorKey เป็น string index ที่ไม่ชนกัน
+  //    - ใช้ cell เพื่อ render จาก accessor(r)
+  const mappedColumns: CoreAppColumnDef<R>[] = columns.map((c, idx) => {
+    const id = String(idx); // กำหนด id / accessorKey เป็น index ตามลำดับ
+    return {
+      id,
+      header: c.header,
+      accessorKey: id, // จำเป็นตามสัญญา DataTable
+      cell: (_value, row) => c.accessor(row as R),
+      // (optional) กำหนด min width เริ่มต้นให้สอดคล้อง DataTableHeader ถ้าต้องการ
+      // minWidth: 88,
+    } as CoreAppColumnDef<R>;
+  });
 
-      <div className="px-3 pb-3">
-        <Pagination
-          currentPage={safePage} // ✅ ใช้ currentPage
-          pageSize={pageSize}
-          totalCount={total}
-          onPageChange={onPageChange}
-        />
-      </div>
-    </>
-  );
+  // 4) สร้าง props ให้ DataTable
+  const dataTableProps: DataTableProps<R> = {
+    columns: mappedColumns,
+    rows: pageRows,            // แสดงเฉพาะ rows ที่ถูก paginate แล้ว
+    totalRows,                 // ให้ DataTablePaginationBar คำนวณ totalPages ได้
+    isLoading: false,
+    isError: false,
+    errorMessage: undefined,
+    emptyMessage,
+    maxBodyHeight,
+    // ปิด sorting ฝั่ง client (ของเดิมไม่มี)
+    clientSideSort: false,
+
+    // ใช้สไตล์/ขนาดตาม default ของ DataTable
+    variant: "default",
+    size: "xs",
+
+    // ส่ง pagination ให้ DataTable แสดง PaginationBar แบบกลาง
+    pagination: {
+      pageIndex: safePage,     // ใช้เลขหน้าเริ่ม 1 (ให้ตรงกับของเดิม)
+      pageSize,
+    },
+    onPaginationChange: (next) => {
+      // DataTable จะส่ง back { pageIndex, pageSize }
+      // ที่นี่สนใจแค่ pageIndex เพื่อให้ behavior เหมือนของเดิม
+      if (next?.pageIndex && next.pageIndex !== safePage) {
+        onPageChange(next.pageIndex);
+      }
+    },
+
+    // (optional) กรณีคลิกแถวเพื่อนำทาง/เปิดรายละเอียดในอนาคต
+    onRowClick: undefined,
+    rowHref: undefined,
+
+    // (optional) ให้ DataTableHeader กำหนด min width
+    defaultColMinWidth: 88,
+
+    // (optional) sorting props ถ้าอยากเปิดภายหลัง
+    sorting: undefined,
+    onSortingChange: undefined,
+  };
+
+  return <DataTable<R> {...dataTableProps} />;
 }

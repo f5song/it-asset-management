@@ -1,6 +1,6 @@
 
 // src/features/software/editFields.ts
-import { EditField } from "../../types/modal";
+import { EditField } from "../../../types/modal";
 
 /**
  * แบบฟอร์ม "Edit Software Detail"
@@ -32,24 +32,25 @@ export const softwareEditFields: EditField[] = [
     type: "select",
     required: true,
     options: [
-      { label: "Free", value: "free" },
-      { label: "Paid", value: "paid" },
-      { label: "Open Source", value: "open-source" },
+      { label: "Design", value: "Design" },
+      { label: "Productivity", value: "Productivity" },
+      { label: "Utility", value: "Utility" },
     ],
     placeholder: "Select category…",
   },
 
   // แถวล่างสองคอลัมน์: License Type | Policy Compliance
   {
-    name: "licenseType",
-    label: "License Type",
+    name: "licenseModel",
+    label: "License Model",
     type: "select",
     required: true,
     options: [
-      { label: "Free", value: "free" },
-      { label: "Perpetual", value: "perpetual" },
-      { label: "Subscription", value: "subscription" },
-      { label: "Concurrent", value: "concurrent" },
+      { label: "Per-User", value: "Per-User" },
+      { label: "Per-Device", value: "Per-Device" },
+      { label: "Open Source", value: "Open Source" },
+      { label: "Subscription", value: "Subscription" },
+      { label: "Perpetual", value: "Perpetual" },
     ],
     placeholder: "Select license type…",
   },
@@ -59,9 +60,9 @@ export const softwareEditFields: EditField[] = [
     type: "select",
     required: true,
     options: [
-      { label: "Allowed", value: "allowed" },
-      { label: "Restricted", value: "restricted" },
-      { label: "Prohibited", value: "prohibited" },
+      { label: "Allowed", value: "Allowed" },
+      { label: "Restricted", value: "Restricted" },
+      { label: "Prohibited", value: "Prohibited" },
     ],
     placeholder: "Select policy…",
   },

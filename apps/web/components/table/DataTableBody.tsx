@@ -1,15 +1,14 @@
 
-// src/components/datatable/DataTableBody.tsx
 'use client';
 
 import React from 'react';
-import { ColumnDef } from '../../types';
+// ใช้ AppColumnDef จากที่คุณประกาศกลาง (ถ้าคุณย้ายไปที่ 'types/table' ก็เปลี่ยน path ตรงนี้)
+import type { AppColumnDef } from '../../types';
 import { cn } from '../ui';
 
-
 type Props<T extends { id?: string | number }> = {
-  columns: ColumnDef<T>[];
-  rows: T[];
+  columns: AppColumnDef<T>[];
+  rows: readonly T[];                 // ✅ รองรับ readonly เพื่อความยืดหยุ่น
   onRowActivate: (row: T) => void;
   variant: 'default' | 'striped';
   size: 'xs' | 'sm' | 'md';
@@ -24,7 +23,8 @@ export function DataTableBody<T extends { id?: string | number }>({
   size,
   defaultColMinWidth,
 }: Props<T>) {
-  const rowBase = 'border-b border-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-blue-300';
+  const rowBase =
+    'border-b border-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-blue-300';
   const rowHover = 'hover:bg-slate-50';
   const rowStriped = variant === 'striped' ? 'odd:bg-slate-50' : '';
 
@@ -52,11 +52,16 @@ export function DataTableBody<T extends { id?: string | number }>({
             }}
           >
             {columns.map((c) => {
-              const value = (row as any)[c.accessorKey];
+              const value = (row as any)[c.accessorKey as any];
               return (
                 <td
-                  key={c.id}
-                  className={cn(tdSize, 'text-slate-900', alignToClass(c.align), c.cellClassName)}
+                  key={String(c.id)}
+                  className={cn(
+                    tdSize,
+                    'text-slate-900',
+                    alignToClass((c as any).align),
+                    (c as any).cellClassName, // ถ้า AppColumnDef ของคุณมี field นี้
+                  )}
                   style={{ minWidth: c.width ?? defaultColMinWidth, whiteSpace: 'nowrap' }}
                   // ป้องกันปุ่ม/ลิงก์ภายในเซลล์ทำให้แถว trigger navigate
                   onClick={(e) => {

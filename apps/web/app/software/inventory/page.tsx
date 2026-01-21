@@ -1,204 +1,162 @@
-// src/pages/software/inventory/page.tsx (หรือที่วางอยู่)
+
+// src/pages/software/inventory/page.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
-
-import {
+import * as React from "react";
+import { InventoryPageShell } from "components/inventory/InventoryPageShell";
+import { useServerTableController } from "hooks/useServerTableController";
+import { useSoftwareInventory } from "hooks/useSoftwareInventory";
+import type {
   ColumnDef,
+  SimpleFilters,
+  SoftwareFilters,
   SoftwareItem,
   SoftwareStatus,
-  SoftwareType,
-} from "../../../types";
-import { useItemsTable } from "../../../hooks/useItemsTable";
-import { PageHeader } from "../../../components/ui/PageHeader";
-import {
-  FilterBar,
-  type SimpleFilters,
-} from "../../../components/ui/FilterBar";
-import { DataTable } from "../../../components/table";
-import { PaginationState, SortingState } from "@tanstack/react-table";
-import type { ExportFormat, ToolbarAction } from "../../../types/tab";
+  SoftwareType
+} from "types";
 
-// ----------------------------
-// 1) กำหนดคอลัมน์ตาราง
-// ----------------------------
-const columns: ColumnDef<SoftwareItem>[] = [
-  {
-    id: "softwareName",
-    header: "Software Name",
-    accessorKey: "softwareName",
-    width: 200,
-  },
-  {
-    id: "manufacturer",
-    header: "Manufacturer",
-    accessorKey: "manufacturer",
-    width: 160,
-  },
-  { id: "version", header: "Version", accessorKey: "version", width: 100 },
-  { id: "category", header: "Category", accessorKey: "category", width: 140 },
-  {
-    id: "policyCompliance",
-    header: "Policy Compliance",
-    accessorKey: "policyCompliance",
-    width: 160,
-  },
-  {
-    id: "expiryDate",
-    header: "Expiry Date",
-    accessorKey: "expiryDate",
-    width: 140,
-  },
-  { id: "status", header: "Status", accessorKey: "status", width: 120 },
-  {
-    id: "softwareType",
-    header: "Software Type",
-    accessorKey: "softwareType",
-    width: 140,
-  },
-  {
-    id: "licenseModel",
-    header: "License Model",
-    accessorKey: "licenseModel",
-    width: 140,
-  },
-  {
-    id: "clientServer",
-    header: "Client/Server",
-    accessorKey: "clientServer",
-    width: 140,
-  },
-];
+const toUndef = <T extends string | undefined>(v: T | ""): T | undefined =>
+  v === "" ? undefined : v;
 
-// ----------------------------
-// 2) แปลง SortingState (v8) → legacy สำหรับ useItemsTable
-// ----------------------------
-function sortingToLegacy(sorting: SortingState | undefined): {
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
-} {
-  if (!Array.isArray(sorting) || sorting.length === 0) return {};
-  const first = sorting[0];
-  return {
-    sortBy: first.id,
-    sortOrder: first.desc ? "desc" : "asc",
+// 🔧 ปรับให้ค่าจาก UI (label) -> internal value ที่ service คาดหวัง
+// ปรับ mapping ตามโดเมนจริงของโปรเจกต์คุณ
+const normalizeStatus = (s?: string): string => {
+  if (!s) return "";
+  const map: Record<string, string> = {
+    Active: "Active",
+    Expired: "Expired",
+    Expiring: "Expiring",
   };
-}
+  return map[s] ?? s.toLowerCase();
+};
+
+const normalizeType = (t?: string): string => {
+  if (!t) return "";
+  const map: Record<string, string> = {
+    "Standard": "Standard",
+    "Special": "Special",
+    "Exception": "Exception",
+  };
+  return map[t] ?? t.toLowerCase();
+};
 
 export default function SoftwarePage() {
-  /** ---------- ฟิลเตอร์ (state แยกของหน้า) ---------- */
-  const [status, setStatus] = useState<SoftwareStatus | undefined>(undefined);
-  const [type, setType] = useState<SoftwareType | undefined>(undefined);
-  const [mfgr, setMfgr] = useState<string | undefined>(undefined);
-  const [searchText, setSearchText] = useState("");
-
-  /** ---------- ตาราง ---------- */
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 8,
+  // ฟิลเตอร์เริ่มเป็น undefined เพื่อสื่อว่า "ไม่กรอง"
+  const [filters, setFilters] = React.useState<SoftwareFilters>({
+    status: undefined,
+    type: undefined,
+    manufacturer: undefined,
+    search: "",
   });
 
-  // v8 SortingState (array ของ column sort)
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "softwareName", desc: false },
-  ]);
+  // columns memo
+  const columns = React.useMemo<ColumnDef<SoftwareItem>[]>(() => [
+    { id: "softwareName", header: "Software Name", accessorKey: "softwareName", width: 200 },
+    { id: "manufacturer", header: "Manufacturer", accessorKey: "manufacturer", width: 160 },
+    { id: "version", header: "Version", accessorKey: "version", width: 100 },
+    { id: "category", header: "Category", accessorKey: "category", width: 140 },
+    { id: "policyCompliance", header: "Policy Compliance", accessorKey: "policyCompliance", width: 160 },
+    { id: "expiryDate", header: "Expiry Date", accessorKey: "expiryDate", width: 140 },
+    { id: "status", header: "Status", accessorKey: "status", width: 120 },
+    { id: "softwareType", header: "Software Type", accessorKey: "softwareType", width: 140 },
+    { id: "licenseModel", header: "License Model", accessorKey: "licenseModel", width: 140 },
+    { id: "clientServer", header: "Client/Server", accessorKey: "clientServer", width: 140 },
+  ], []);
 
-  // ถ้าฮุคยังเป็นแบบ legacy → สร้างค่า legacySorting จาก v8
-  const legacySorting = useMemo(() => sortingToLegacy(sorting), [sorting]);
-
-  /** ---------- ดึงข้อมูลพร้อมฟิลเตอร์ ---------- */
-  const { rows, totalRows, isLoading, isError, errorMessage } = useItemsTable<
-    SoftwareItem,
-    SoftwareStatus,
-    SoftwareType
-  >({
-    pagination,
-    // ✅ ถ้า useItemsTable รองรับ v8 แล้ว ให้ส่ง `sorting` ได้เลย และลบ `legacySorting`
-    legacySorting,
-    statusFilter: status,
-    typeFilter: type,
-    manufacturerFilter: mfgr,
-    searchText,
-  });
-
-  /** ---------- Adapter: map split-state ↔ FilterBar(Simple) ---------- */
-  const simpleFilters: SimpleFilters<SoftwareStatus, SoftwareType> = useMemo(
-    () => ({
-      status: status ?? undefined,
-      type: type ?? undefined,
-      manufacturer: mfgr ?? undefined,
-      searchText,
+  // bridge: Domain <-> Simple (strongly-typed)
+  const toSimple = React.useCallback(
+    (): SimpleFilters<SoftwareStatus, SoftwareType> => ({
+      status: toUndef(filters.status as SoftwareStatus | ""),
+      type: toUndef(filters.type as SoftwareType | ""),
+      manufacturer: toUndef(filters.manufacturer as string | ""),
+      searchText: filters.search ?? "",
     }),
-    [status, type, mfgr, searchText]
+    [filters]
   );
 
-  const handleSimpleChange = (
-    next: SimpleFilters<SoftwareStatus, SoftwareType>
-  ) => {
-    // อัปเดต state แยกให้ตรงกับค่าใน FilterBar(Simple)
-    setStatus(next.status ?? undefined);
-    setType(next.type ?? undefined);
-    setMfgr(next.manufacturer ?? undefined);
-    setSearchText(next.searchText ?? "");
-    // เคสนี้เราไม่ได้ใช้ "ALL" string ใด ๆ → ตรงกับ FilterBar(Simple)
-  };
+  const fromSimple = React.useCallback(
+    (sf: SimpleFilters<SoftwareStatus, SoftwareType>): SoftwareFilters => ({
+      status: toUndef(sf.status),
+      type: toUndef(sf.type),
+      manufacturer: toUndef(sf.manufacturer),
+      search: sf.searchText ?? "",
+    }),
+    []
+  );
 
-  /** ---------- Action handlers ---------- */
-  const handleExport = (fmt: ExportFormat) => {
-    const upper = fmt.toUpperCase() as "CSV" | "XLSX" | "PDF";
-    console.log("Export as:", upper);
+  const ctl = useServerTableController<
+    SoftwareItem,
+    SoftwareStatus,
+    SoftwareType,
+    SoftwareFilters
+  >({
+    pageSize: 10,
+    defaultSort: { id: "softwareName", desc: false },
+    domainFilters: filters,
+    setDomainFilters: setFilters,
+    toSimple,
+    fromSimple,
+    // เลือกรีเซ็ตเฉพาะเมื่อ status/type/manufacturer เปลี่ยน
+    resetDeps: [filters.status, filters.type, filters.manufacturer],
+  });
 
-    // ตัวอย่างการเรียกจริง
-    // if (fmt === 'csv') downloadCSV();
-    // else if (fmt === 'xlsx') downloadXLSX();
-    // else if (fmt === 'pdf') downloadPDF();
-  };
+  // ✅ แปลง simpleFilters -> service filters (normalize)
+  const serviceFilters = React.useMemo(
+    () => ({
+      status: normalizeStatus(ctl.simpleFilters.status as string | undefined),
+      type: normalizeType(ctl.simpleFilters.type as string | undefined),
+      manufacturer: (ctl.simpleFilters.manufacturer as string | undefined) ?? "",
+      search: ctl.simpleFilters.searchText ?? "",
+    }),
+    [ctl.simpleFilters]
+  );
 
-  const handleAction = (act: ToolbarAction) => {
-    // ตัวอย่าง: กดจาก ActionSelect
-    console.log("Action:", act);
-  };
+  // ✅ เรียก hook พร้อมส่ง filters เข้าไปด้วย (เหมือนหน้า License)
+  const {
+    rows,
+    totalRows,
+    isLoading,
+    isError,
+    errorMessage,
+    statusOptions,
+    typeOptions,
+    manufacturerOptions,
+  } = useSoftwareInventory(ctl.serverQuery, serviceFilters);
+
+  const getRowHref = React.useCallback(
+    (row: SoftwareItem) => `/software/inventory/${row.id}`,
+    []
+  );
 
   return (
-    <div style={{ padding: 6 }}>
-      <PageHeader
-        title="Software Inventory"
-        breadcrumbs={[
-          { label: "Software Inventory", href: "/software/inventory" },
-        ]}
-      />
+    <InventoryPageShell<SoftwareItem, SoftwareStatus, SoftwareType>
+      title="Software Inventory"
+      breadcrumbs={[{ label: "Software Inventory", href: "/software/inventory" }]}
 
-      {/* Filter Bar (Simple + adapter) */}
-      <FilterBar<SoftwareStatus, SoftwareType>
-        filters={simpleFilters}
-        onFiltersChange={handleSimpleChange}
-        statusOptions={["Active", "Expired", "Expiring"]}
-        typeOptions={["Standard", "Special", "Exception"]}
-        manufacturerOptions={["Adobe", "Autodesk", "Microsoft"]}
-        onExport={handleExport}
-        onAction={handleAction}
-        // (เลือกได้) ปรับข้อความป้าย "All ..." ได้
-        allStatusLabel="All Status"
-        allTypeLabel="All Types"
-        allManufacturerLabel="All Manufacturers"
-      />
+      // FilterBar
+      filters={ctl.simpleFilters}
+      onFiltersChange={ctl.onSimpleFiltersChange}
+      statusOptions={statusOptions}
+      typeOptions={typeOptions}
+      manufacturerOptions={manufacturerOptions}
+      allStatusLabel="All Status"
+      allTypeLabel="All Types"
+      allManufacturerLabel="All Manufacturers"
 
-      {/* DataTable */}
-      <DataTable<SoftwareItem>
-        columns={columns}
-        rows={rows}
-        totalRows={totalRows}
-        pagination={pagination}
-        onPaginationChange={setPagination}
-        sorting={sorting}
-        onSortingChange={setSorting}
-        variant="striped"
-        emptyMessage="ไม่พบรายการ"
-        isLoading={isLoading}
-        isError={isError}
-        errorMessage={errorMessage}
-        maxBodyHeight={420}
-      />
-    </div>
+      // DataTable
+      columns={columns}
+      rows={rows}
+      totalRows={totalRows}
+      pagination={ctl.pagination}
+      onPaginationChange={ctl.setPagination}
+      sorting={ctl.sorting}
+      onSortingChange={ctl.setSorting}
+      rowHref={getRowHref}
+
+      // States
+      isLoading={isLoading}
+      isError={isError}
+      errorMessage={errorMessage}
+    />
   );
 }

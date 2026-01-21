@@ -13,10 +13,10 @@ export type ItemsResponse = {
 export type ItemsQuery = {
   page: number; // 1-based
   limit: number;
-  sortBy?: keyof SoftwareItem;
+  sortBy?: string;
   sortOrder?: "asc" | "desc";
-  statusFilter?: SoftwareStatus;
-  typeFilter?: SoftwareType;
+  statusFilter?: string;
+  typeFilter?: string;
   manufacturerFilter?: string;
   searchText?: string;
 };

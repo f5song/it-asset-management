@@ -1,21 +1,21 @@
 
-// src/components/datatable/DataTableHeader.tsx
 'use client';
 
 import React from 'react';
-import type { ColumnDef } from '../../types';
-import { cn } from '../ui';
 import type { SortingState } from '@tanstack/react-table';
+// ใช้ AppColumnDef จากที่คุณประกาศกลาง (ถ้าคุณย้ายไปที่ 'types/table' ก็เปลี่ยน path ตรงนี้)
+import type { AppColumnDef } from '../../types';
+import { cn } from '../ui';
 
-type Props<T> = {
-  columns: ColumnDef<T>[];
-  sorting?: SortingState;                 // ✅ TanStack: [{ id: string; desc: boolean }]
-  onToggleSort?: (col: ColumnDef<T>) => void;
+type Props<T extends { id?: string | number }> = {
+  columns: AppColumnDef<T>[];            // คอลัมน์ของตาราง
+  sorting?: SortingState;             // TanStack: [{ id: string; desc: boolean }]
+  onToggleSort?: (col: AppColumnDef<T>) => void;
   size: 'xs' | 'sm' | 'md';
   defaultColMinWidth: number;
 };
 
-export function DataTableHeader<T>({
+export function DataTableHeader<T extends { id?: string | number }>({
   columns,
   sorting,
   onToggleSort,
@@ -31,7 +31,7 @@ export function DataTableHeader<T>({
   const alignToClass = (align?: 'left' | 'center' | 'right') =>
     align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left';
 
-  // ✅ TanStack sorting ใช้ตัวแรกเป็นตัวหลัก (ขยายเป็น multi-column ภายหลังได้)
+  // ใช้ตัวแรกเป็นคอลัมน์ sorting หลัก (ขยายเป็น multi-column ภายหลังได้)
   const current = sorting?.[0];
   const activeId = current?.id ?? null;
   const isDesc = current?.desc ?? false;
@@ -46,12 +46,12 @@ export function DataTableHeader<T>({
 
           return (
             <th
-              key={col.id}
+              key={String(col.id)}
               className={cn(
                 'font-semibold text-slate-700',
                 sizeClass,
-                alignToClass(col.align),
-                col.headerClassName
+                alignToClass(col.align as any),
+                (col as any).headerClassName, // ถ้า AppColumnDef ของคุณมี field นี้
               )}
               style={{ minWidth: col.width ?? defaultColMinWidth, whiteSpace: 'nowrap' }}
               aria-sort={active ? (isDesc ? 'descending' : 'ascending') : 'none'}

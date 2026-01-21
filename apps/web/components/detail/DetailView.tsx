@@ -3,12 +3,12 @@
 
 import React, { ReactNode, useState } from "react";
 import { Compliance, HistoryEvent } from "../../types";
-import { DetailHeader } from "../../components/detail/DetailHeader";
-import { TabList, TabPanel, TabTrigger } from "../../components/ui/Tabs";
-import { HistoryList } from "../../components/detail/HistoryList";
-import { DetailInfoGrid } from "../../components/detail/DetailInfo";
-import { ConfirmModal } from "../../components/modals/ConfirmModal";
-import { EditModal } from "../../components/modals/EditModal";
+import { DetailHeader } from "./DetailHeader";
+import { TabList, TabPanel, TabTrigger } from "../ui/Tabs";
+import { HistoryList } from "./HistoryList";
+import { DetailInfoGrid } from "./DetailInfo";
+import { ConfirmModal } from "../modals/ConfirmModal";
+import { EditModal } from "../modals/EditModal";
 import { EditField } from "../../types/modal";
 
 /* ---------------- Types ---------------- */
@@ -50,6 +50,7 @@ export function DetailView<TValues extends Record<string, any>>({
   onDelete,
   editConfig, // ✅ ใช้ config จากภายนอก
   modalProps, // ✅ ใหม่: ตัวเลือกของ EditModal
+  installationTabLabel,
 }: {
   title: string;
   compliance?: Compliance;
@@ -61,6 +62,7 @@ export function DetailView<TValues extends Record<string, any>>({
   onDelete?: () => void;
   editConfig?: EditConfig<TValues>;
   modalProps?: EditModalForwardProps;
+  installationTabLabel: string;
 }) {
   const [tab, setTab] = useState<"detail" | "installation" | "history">("detail");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -87,7 +89,7 @@ export function DetailView<TValues extends Record<string, any>>({
             Detail
           </TabTrigger>
           <TabTrigger active={tab === "installation"} onClick={() => setTab("installation")}>
-            Installation
+            {installationTabLabel}
           </TabTrigger>
           <TabTrigger active={tab === "history"} onClick={() => setTab("history")}>
             History

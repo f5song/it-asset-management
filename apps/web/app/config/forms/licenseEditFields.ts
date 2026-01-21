@@ -1,21 +1,21 @@
 
-import { EditField } from "../../types/modal";
+import { EditField } from "../../../types/modal";
 
 // ✅ ชื่อ name ต้อง "ไม่ซ้ำ" และไม่มีช่องว่าง/ตัวพิเศษ
 export const licenseEditFields: EditField[] = [
   { name: "productName", label: "Software Name", required: true, placeholder: "e.g. Adobe Photoshop" },
   { name: "licenseKey", label: "License Key", required: true, placeholder: "XXXX-XXXX-XXXX-XXXX" },
   {
-    name: "licenseType",
-    label: "License Type",
+    name: "licenseModel",
+    label: "License Model",
     type: "select",
     required: true,
     options: [
-      { label: "Per-User", value: "per-user" },
-      { label: "Per-Device", value: "per-device" },
-      { label: "Concurrent", value: "concurrent" },
-      { label: "Subscription", value: "subscription" },
-      { label: "Perpetual", value: "perpetual" },
+      { label: "Per-User", value: "Per-User" },
+      { label: "Per-Device", value: "Per-Device" },
+      { label: "Open Source", value: "Open Source" },
+      { label: "Subscription", value: "Subscription" },
+      { label: "Perpetual", value: "Perpetual" },
     ],
     placeholder: "Select license type…",
   },
@@ -27,10 +27,10 @@ export const licenseEditFields: EditField[] = [
     label: "Status",
     type: "select",
     options: [
-      { label: "Active", value: "active" },
-      { label: "Expiring Soon", value: "expiring-soon" },
-      { label: "Expired", value: "expired" },
-      { label: "Inactive", value: "inactive" },
+      { label: "Active", value: "Active" },
+      { label: "Expiring Soon", value: "Expiring Soon" },
+      { label: "Expired", value: "Expired" },
+      { label: "Inactive", value: "Inactive" },
     ],
     placeholder: "Select status…",
   },

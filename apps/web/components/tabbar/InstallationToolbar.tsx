@@ -9,7 +9,8 @@ import {
   Filters,
   ToolbarAction,
 } from "../../types/tab";
-import { FilterBar, SimpleFilters } from "../ui/FilterBar";
+import { FilterBar } from "../ui/FilterBar";
+import { SimpleFilters } from "../../types";
 
 
 /** ---------- Helpers: map Installation <-> FilterBar(Simple) ---------- */

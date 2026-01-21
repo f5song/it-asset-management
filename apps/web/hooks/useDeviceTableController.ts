@@ -3,7 +3,8 @@
 
 import * as React from "react";
 import type { SortingState, PaginationState } from "@tanstack/react-table";
-import { DeviceItem } from "../types";
+import { DeviceItem } from "types";
+
 
 
 // sorting comparator เหมือนเดิม (รองรับ number/date/string)
