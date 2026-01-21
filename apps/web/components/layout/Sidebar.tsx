@@ -124,7 +124,7 @@ export default function Sidebar({
                       onClick={() => onNavigate(child.path!)}
                       className={cn(
                         "w-full text-left px-3 py-2 rounded-md mt-1",
-                        "text-gray-700 hover:bg-gray-100",
+                        "text-sm text-gray-700 hover:bg-gray-100",
                         isActive(child.path) && "text-blue-600 bg-blue-50 font-medium"
                       )}
                     >

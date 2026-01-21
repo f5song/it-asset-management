@@ -161,7 +161,6 @@ export default function LicenseManagementPage() {
     <InventoryPageShell<LicenseItem, LicenseStatus, LicenseModel>
       title="License Management"
       breadcrumbs={[
-        { label: "Software Inventory", href: "/software/inventory" },
         { label: "License Management", href: "/software/license-management" },
       ]}
       // FilterBar
