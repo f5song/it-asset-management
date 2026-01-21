@@ -98,7 +98,7 @@ export function Pagination({
       {/* Page size */}
       {onPageSizeChange && (
         <label className="mr-2 flex items-center gap-1 text-sm text-gray-700">
-          <span>ต่อหน้า:</span>
+          <span>Per page:</span>
           <select
             className="rounded border-gray-300 bg-white px-2 py-1 text-sm"
             value={pageSize}
@@ -119,7 +119,7 @@ export function Pagination({
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage <= 1}
       >
-        ก่อนหน้า
+        Previous
       </button>
 
       {/* Numbers */}
@@ -150,7 +150,7 @@ export function Pagination({
         onClick={() => onPageChange(Math.min(totalPagesComputed, currentPage + 1))}
         disabled={currentPage >= totalPagesComputed}
       >
-        ถัดไป
+        Next
       </button>
     </div>
   );

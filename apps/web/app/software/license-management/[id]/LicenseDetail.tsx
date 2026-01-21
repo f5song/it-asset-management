@@ -6,92 +6,72 @@ import { licenseEditFields } from "app/config/forms/licenseEditFields";
 import { DetailView } from "components/detail/DetailView";
 import { InstallationSection } from "components/tabbar/InstallationSection";
 import type { HistoryEvent, InstallationRow, LicenseItem } from "types";
-import type { InstallationDisplayRow } from "types/tab";
 
-// --- (ตัวอย่าง) Mapping Display -> Internal form values (ปรับให้ตรงโดเมนจริงของโปรเจกต์) ---
-/**
- * ถ้าในระบบคุณ item.* เป็น internal อยู่แล้ว (เช่น "per-user", "active") ให้ตัด MAP พวกนี้ทิ้งได้
- *และใช้ค่าเดิมตรง ๆ
- */
-const LICENSE_MODEL_MAP: Record<string, string> = {
-  "Per User": "Per-User",
-  "Per Device": "Per-Device",
-  "Perpetual": "Perpetual",
-  "Subscription": "Subscription",
-  "Concurrent": "Concurrent",
+type SimpleColumn<R> = {
+  header: string;
+  accessor: (r: R) => React.ReactNode;
 };
 
-const STATUS_MAP: Record<string, string> = {
-  Active: "Active",
-  Inactive: "Inactive",
-  Expired: "Expired",
-};
+const show = (v: unknown) => (v === undefined || v === null || v === "" ? "—" : String(v));
 
-const toFormValue = <T extends string>(
-  v: string | undefined,
-  map: Record<string, T>,
-  fallback: T
-): T => (v && map[v] ? map[v] : fallback);
+/** ---------------- DEMO: Installations (ใช้เมื่อ API ว่าง) ---------------- **/
+const demoInstallations: InstallationRow[] = [
+  { id: "lic-ins-1", device: "NB-201", user: "mike" } as any,
+  { id: "lic-ins-2", device: "PC-304", user: "nina" } as any,
+  { id: "lic-ins-3", device: "SRV-09", user: "system" } as any,
+];
 
-// --- แปลง "" ให้เป็น dash สำหรับแสดงผล ---
-const show = (v: unknown) => (v === undefined || v === null || v === "" ? "-" : String(v));
+/** ---------------- DEMO: History (ใช้เมื่อ API ว่าง) ---------------- **/
+const demoHistory: HistoryEvent[] = [
+  { id: "lh1", timestamp: new Date().toISOString(), actor: "system", action: "sync",   detail: "License sync finished" } as any,
+  { id: "lh2", timestamp: new Date().toISOString(), actor: "admin",  action: "update", detail: "Adjusted license seats" } as any,
+];
 
-// --- Mapper: InstallationRow -> InstallationDisplayRow ---
-const useInstallationRowMapper = () => {
-  // NOTE: ถ้า union ของ licenseStatus เป็น lowercase ให้แก้เป็น "active" ไม่ใช่ "Active"
-  return React.useCallback(
-    (r: InstallationRow): InstallationDisplayRow => ({
-      id: r.id,
-      deviceName: r.device ?? "—",
-      workStation: "—",
-      user: r.user ?? "—",
-      licenseKey: "—",
-      licenseStatus: "Active", // ✅ ให้ตรงกับ union ภายในของระบบ
-      scannedLicenseKey: "—",
-    }),
-    []
-  );
-};
-
-export default function ClientDetail({
+export default function LicenseDetail({
   item,
   installations,
-  users,
-  devices,
   history,
-  total,
 }: {
   item: LicenseItem;
-  installations: InstallationRow[];   // ❌ เดิมเป็น any -> ✅ ใส่ชนิดจริง
-  users?: string[];
-  devices?: string[];
+  installations: InstallationRow[];
   history: HistoryEvent[];
-  total?: number;
 }) {
-  // ✅ memoized handlers ลด re-render
   const onBack = React.useCallback(() => window.history.back(), []);
   const onDelete = React.useCallback(() => {
-    // TODO: เรียก API/Server Action เพื่อลบ แล้ว redirect
     console.log("Delete", item.id);
   }, [item.id]);
 
-  const onSubmit = React.useCallback(async (values: unknown) => {
-    console.log("save license:", values);
-    // await api.updateLicense(item.id, values);
-  }, [item.id]);
+  const columns = React.useMemo<SimpleColumn<InstallationRow>[]>(() => {
+    return [
+      { header: "Device",           accessor: (r) => show((r as any).device) },
+      { header: "User",             accessor: (r) => show((r as any).user) },
+      { header: "License Status",   accessor: (_r) => "Active" }, // TODO: show(r.licenseStatus)
+      { header: "License Key",      accessor: (_r) => "—" },      // TODO: show(r.licenseKey)
+      { header: "Scanned License",  accessor: (_r) => "—" },      // TODO: show(r.scannedLicenseKey)
+      { header: "Workstation",      accessor: (_r) => "—" },      // TODO: show(r.workStation)
+    ];
+  }, []);
 
-  const mapSoftwareInstallationRow = useInstallationRowMapper();
+  // ✅ ใช้ demo ถ้า API ว่าง
+  const rows = React.useMemo<InstallationRow[]>(
+    () => (installations?.length ? installations : demoInstallations),
+    [installations]
+  );
 
-  // ✅ initial values แบบ type-safe และมี mapping display -> internal
+  // ✅ ใช้ demo history ถ้า API ว่าง
+  const historyData = React.useMemo<HistoryEvent[]>(
+    () => (history?.length ? history : demoHistory),
+    [history]
+  );
+
   const initialFormValues = React.useMemo(
     () => ({
       productName: item.softwareName ?? "",
-      // licenseKey: item.licenseKey ?? "",
-      licenseModel: toFormValue(item.licenseModel, LICENSE_MODEL_MAP, "Per-User"),
+      licenseModel: item.licenseModel ?? "Per-User",
       total: item.total ?? 0,
       inUse: item.inUse ?? 0,
       expiryDate: item.expiryDate ?? "",
-      status: toFormValue(item.status, STATUS_MAP, "active"),
+      status: item.status ?? "Active",
       vendor: item.manufacturer ?? "",
       licenseCost: (item as any).cost ?? 0,
       maintenanceCost: (item as any).maintenanceCost ?? 0,
@@ -104,6 +84,7 @@ export default function ClientDetail({
     <DetailView
       title={item.softwareName}
       compliance={item.compliance}
+      installationTabLabel="Installations"
       info={{
         left: [
           { label: "Manufacturer", value: show(item.manufacturer) },
@@ -120,27 +101,23 @@ export default function ClientDetail({
       }}
       installationSection={
         <InstallationSection<InstallationRow>
-          rows={installations}
-          mapRow={mapSoftwareInstallationRow}
-          users={users}
-          devices={devices}
-          total={total}
-          // 🔄 ใช้คีย์ตามโดเมน "license-..." (สอดคล้องกับ Software ที่ใช้ "software-...")
+          rows={rows}
+          columns={columns}
           resetKey={`license-${item.id}`}
           initialPage={1}
           pageSize={8}
-          onExport={(fmt) => console.log("Export:", fmt)}
-          onAction={(act) => console.log("Action:", act)}
         />
       }
-      history={history}
+      history={historyData}
       onBack={onBack}
       onDelete={onDelete}
       editConfig={{
         title: "Edit License",
         fields: licenseEditFields,
         initialValues: initialFormValues,
-        onSubmit,
+        onSubmit: async (values) => {
+          console.log("save license:", values);
+        },
         submitLabel: "Save",
         cancelLabel: "Cancel",
       }}

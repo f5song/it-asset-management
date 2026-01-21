@@ -2,14 +2,12 @@
 // src/components/inventory/InventoryPageShell.tsx
 "use client";
 
+import { DataTable } from "components/table";
+import { FilterBar } from "components/ui/FilterBar";
+import { PageHeader } from "components/ui/PageHeader";
 import React from "react";
-import { PageHeader } from "../ui/PageHeader";
-import { FilterBar } from "../ui/FilterBar";
-import { DataTable } from "../table";
 
-// ✅ ใช้ type กลาง
-import type { ColumnDef, SimpleFilters } from "../../types/table";
-import type { ExportFormat, ToolbarAction } from "../../types/tab";
+import { AppColumnDef, ExportFormat, SimpleFilters, ToolbarAction } from "types";
 
 type RowBase = { id?: string | number };
 
@@ -28,7 +26,7 @@ type ShellProps<TRow extends RowBase, TStatus extends string, TType extends stri
   allManufacturerLabel: string;
 
   // DataTable
-  columns: ColumnDef<TRow>[];
+  columns: AppColumnDef<TRow>[];
   rows: readonly TRow[];
   totalRows: number;
   pagination: { pageIndex: number; pageSize: number };
