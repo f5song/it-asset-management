@@ -24,6 +24,7 @@ export function ActionSelect({ onAction }: { onAction: (action: ToolbarAction) =
         <option value="">Action ▾</option>
         <option value="delete">Delete</option>
         <option value="reassign">Reassign</option>
+        <option value="assign">Assign</option>
         <option value="add">Add</option>
       </select>
     </>

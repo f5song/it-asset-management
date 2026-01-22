@@ -10,7 +10,7 @@ export type Filters = {
 };
 
 export type ExportFormat = "csv" | "xlsx" | "pdf";
-export type ToolbarAction = "delete" | "reassign" | "add";
+export type ToolbarAction = "delete" | "reassign" | "add" | "assign";
 
 export type Option = { label: string; value: string };
 

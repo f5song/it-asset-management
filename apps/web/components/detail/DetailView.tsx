@@ -52,7 +52,9 @@ export function DetailView<TValues extends Record<string, any>>({
   editConfig, // ✅ ใช้ config จากภายนอก
   modalProps, // ✅ ใหม่: ตัวเลือกของ EditModal
   installationTabLabel = "Installations",
-  breadcrumbs, // ✅ เพิ่มให้รับ breadcrumb จากภายนอก
+  breadcrumbs, // ✅ รับ breadcrumb จากภายนอก
+  // ✅ ใหม่: ช่องทางขวาบนของ Header (เช่น ActionToolbar / ปุ่ม Assign)
+  headerRightExtra,
 }: {
   title: string;
   compliance?: Compliance;
@@ -65,15 +67,16 @@ export function DetailView<TValues extends Record<string, any>>({
   editConfig?: EditConfig<TValues>;
   modalProps?: EditModalForwardProps;
   installationTabLabel?: string;
-  breadcrumbs?: BreadcrumbItem[]; // ✅ ประกาศ prop ใหม่
+  breadcrumbs?: BreadcrumbItem[];
+  headerRightExtra?: React.ReactNode; // ✅ เพิ่ม prop
 }) {
   const [tab, setTab] = useState<"detail" | "installation" | "history">("detail");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [open, setOpen] = useState(false);
 
   const handleOpenEdit = () => {
-    onEdit?.(); // เผื่ออยาก preload / tracking ฯลฯ
-    setOpen(true); // ✅ เปิด EditModal
+    onEdit?.();          // เผื่ออยาก preload / tracking ฯลฯ
+    setOpen(true);       // ✅ เปิด EditModal
   };
 
   return (
@@ -85,17 +88,16 @@ export function DetailView<TValues extends Record<string, any>>({
           onBack={onBack}
           onEdit={handleOpenEdit}
           onDeleteClick={onDelete ? () => setConfirmOpen(true) : undefined}
-          breadcrumbs={breadcrumbs} // ✅ ส่งต่อให้ Header
+          breadcrumbs={breadcrumbs}
+          // ✅ ส่ง content ฝั่งขวาบนของ header
+          rightExtra={headerRightExtra}
         />
 
         <TabList>
           <TabTrigger active={tab === "detail"} onClick={() => setTab("detail")}>
             Detail
           </TabTrigger>
-          <TabTrigger
-            active={tab === "installation"}
-            onClick={() => setTab("installation")}
-          >
+          <TabTrigger active={tab === "installation"} onClick={() => setTab("installation")}>
             {installationTabLabel}
           </TabTrigger>
           <TabTrigger active={tab === "history"} onClick={() => setTab("history")}>

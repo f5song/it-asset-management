@@ -1,6 +1,7 @@
 
+// components/detail/DetailHeader.tsx
 import { ComplianceBadge } from "components/ui/ComplianceBadge";
-import { BreadcrumbItem, Compliance } from "types";
+import type { BreadcrumbItem, Compliance } from "types";
 
 export function DetailHeader({
   title,
@@ -9,6 +10,8 @@ export function DetailHeader({
   onEdit,
   onDeleteClick,
   breadcrumbs,
+  // ✅ เพิ่มช่องว่างด้านขวา
+  rightExtra,
 }: {
   title: string;
   compliance?: Compliance;
@@ -16,20 +19,19 @@ export function DetailHeader({
   onEdit?: () => void;
   onDeleteClick?: () => void;
   breadcrumbs?: BreadcrumbItem[];
+  rightExtra?: React.ReactNode; // ✅ ใหม่
 }) {
   return (
     <div className="flex items-center gap-3">
       <div className="flex flex-col">
         <h1 className="text-xl font-bold text-slate-900">{title}</h1>
 
-        {/* แสดง Compliance (ถ้ามี) */}
         {typeof compliance !== "undefined" && (
           <div className="mt-1">
             <ComplianceBadge label={compliance} />
           </div>
         )}
 
-        {/* แสดง Breadcrumbs (ถ้ามี) — แยกออกจาก compliance */}
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav className="mt-2 text-sm text-gray-500" aria-label="Breadcrumb">
             <ol className="flex flex-wrap items-center gap-1">
@@ -57,7 +59,9 @@ export function DetailHeader({
         )}
       </div>
 
-      <div className="ml-auto flex gap-2">
+      {/* ✅ ด้านขวา */}
+      <div className="ml-auto flex items-center gap-2">
+        {rightExtra /* ← ปุ่ม/เมนูจากภายนอก */}
         {onEdit && (
           <button
             type="button"

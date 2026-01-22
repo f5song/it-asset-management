@@ -6,15 +6,8 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ActionSelect } from "components/ui/ActionSelect";
 import type { ToolbarAction } from "types/tab";
+import { ActionPathConfig } from "types/action";
 
-/** ฟังก์ชันคำนวณ path จาก action + selectedIds */
-export type ActionPathBuilder = (args: {
-  action: ToolbarAction;
-  selectedIds: string[];
-}) => string | undefined;
-
-/** กำหนดได้ทั้ง string ตายตัว หรือฟังก์ชันคำนวณ path */
-export type ActionPathConfig = string | ActionPathBuilder;
 
 export type ActionToolbarProps = {
   selectedIds: string[];

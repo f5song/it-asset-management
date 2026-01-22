@@ -99,3 +99,15 @@ export async function getDevices(q: DeviceItemsQuery, signal?: AbortSignal): Pro
     },
   };
 }
+
+
+export async function fetchDeviceCountsByUserIds(
+  userIds: string[],
+): Promise<Record<string, number>> {
+  const map: Record<string, number> = {};
+  for (const id of userIds) {
+    // เดโม: 0..2 เครื่อง
+    map[id] = Math.floor(Math.random() * 3);
+  }
+  return map;
+}

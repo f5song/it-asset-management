@@ -1,18 +1,27 @@
-
 "use client";
 
 import * as React from "react";
 import { licenseEditFields } from "app/config/forms/licenseEditFields";
 import { DetailView } from "components/detail/DetailView";
 import { InstallationSection } from "components/tabbar/InstallationSection";
-import type { BreadcrumbItem, HistoryEvent, InstallationRow, LicenseItem } from "types";
+import type {
+  BreadcrumbItem,
+  HistoryEvent,
+  InstallationRow,
+  LicenseItem,
+  ToolbarAction,
+} from "types";
+import { useRouter } from "next/router";
+import { ActionPathConfig } from "types/action";
+import { ActionToolbar } from "components/toolbar/ActionToolbar";
 
 type SimpleColumn<R> = {
   header: string;
   accessor: (r: R) => React.ReactNode;
 };
 
-const show = (v: unknown) => (v === undefined || v === null || v === "" ? "—" : String(v));
+const show = (v: unknown) =>
+  v === undefined || v === null || v === "" ? "—" : String(v);
 
 /** ---------------- DEMO: Installations (ใช้เมื่อ API ว่าง) ---------------- **/
 const demoInstallations: InstallationRow[] = [
@@ -23,15 +32,27 @@ const demoInstallations: InstallationRow[] = [
 
 /** ---------------- DEMO: History (ใช้เมื่อ API ว่าง) ---------------- **/
 const demoHistory: HistoryEvent[] = [
-  { id: "lh1", timestamp: new Date().toISOString(), actor: "system", action: "sync",   detail: "License sync finished" } as any,
-  { id: "lh2", timestamp: new Date().toISOString(), actor: "admin",  action: "update", detail: "Adjusted license seats" } as any,
+  {
+    id: "lh1",
+    timestamp: new Date().toISOString(),
+    actor: "system",
+    action: "sync",
+    detail: "License sync finished",
+  } as any,
+  {
+    id: "lh2",
+    timestamp: new Date().toISOString(),
+    actor: "admin",
+    action: "update",
+    detail: "Adjusted license seats",
+  } as any,
 ];
 
 export default function LicenseDetail({
   item,
   installations,
   history,
-  breadcrumb
+  breadcrumb,
 }: {
   item: LicenseItem;
   installations: InstallationRow[];
@@ -45,25 +66,25 @@ export default function LicenseDetail({
 
   const columns = React.useMemo<SimpleColumn<InstallationRow>[]>(() => {
     return [
-      { header: "Device",           accessor: (r) => show((r as any).device) },
-      { header: "User",             accessor: (r) => show((r as any).user) },
-      { header: "License Status",   accessor: (_r) => "Active" }, // TODO: show(r.licenseStatus)
-      { header: "License Key",      accessor: (_r) => "—" },      // TODO: show(r.licenseKey)
-      { header: "Scanned License",  accessor: (_r) => "—" },      // TODO: show(r.scannedLicenseKey)
-      { header: "Workstation",      accessor: (_r) => "—" },      // TODO: show(r.workStation)
+      { header: "Device", accessor: (r) => show((r as any).device) },
+      { header: "User", accessor: (r) => show((r as any).user) },
+      { header: "License Status", accessor: (_r) => "Active" }, // TODO: show(r.licenseStatus)
+      { header: "License Key", accessor: (_r) => "—" }, // TODO: show(r.licenseKey)
+      { header: "Scanned License", accessor: (_r) => "—" }, // TODO: show(r.scannedLicenseKey)
+      { header: "Workstation", accessor: (_r) => "—" }, // TODO: show(r.workStation)
     ];
   }, []);
 
   // ✅ ใช้ demo ถ้า API ว่าง
   const rows = React.useMemo<InstallationRow[]>(
     () => (installations?.length ? installations : demoInstallations),
-    [installations]
+    [installations],
   );
 
   // ✅ ใช้ demo history ถ้า API ว่าง
   const historyData = React.useMemo<HistoryEvent[]>(
     () => (history?.length ? history : demoHistory),
-    [history]
+    [history],
   );
 
   const initialFormValues = React.useMemo(
@@ -79,7 +100,21 @@ export default function LicenseDetail({
       maintenanceCost: (item as any).maintenanceCost ?? 0,
       notes: (item as any).notes ?? "",
     }),
-    [item]
+    [item],
+  );
+
+  const toolbarTo: Partial<Record<ToolbarAction, ActionPathConfig>> = {
+    assign: `/software/license-management/${item.id}/assign`,
+  };
+
+  const headerRightExtra = (
+    <ActionToolbar
+      selectedIds={[]} // หน้านี้ไม่มี selection ก็ปล่อย [] ได้
+      to={toolbarTo}
+      onAction={(act) => console.log("toolbar action:", act)}
+      openInNewTab={false}
+      enableDefaultMapping={false}
+    />
   );
 
   return (
@@ -124,6 +159,7 @@ export default function LicenseDetail({
         cancelLabel: "Cancel",
       }}
       breadcrumbs={breadcrumb}
+      headerRightExtra={headerRightExtra}
     />
   );
 }

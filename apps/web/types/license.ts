@@ -1,6 +1,7 @@
 
 // types/license.ts
 
+import { Employees } from "./employees";
 import { Compliance } from "./software";
 
 /** ฟิลเตอร์สำหรับหน้า License Management */
@@ -58,4 +59,43 @@ export type LicenseActivity = {
   action: LicenseAction;   // การกระทำ
   software: string;        // ชื่อซอฟต์แวร์
   employee: string;        // ชื่อพนักงาน
+};
+
+
+export type ConsumptionUnit = "perUser" | "perDevice" | "concurrent";
+export type LicenseTerm = "subscription" | "perpetual" | "unknown";
+
+export type LicenseSummary = {
+  id: string;
+  productName: string;
+  vendor?: string;
+  licenseModel: string; // raw เช่น "Per-User" / "Per-Device" / "Subscription ..."
+  total: number;
+  inUse: number;
+  available: number;
+  expiryDate?: string;
+  // normalized
+  consumptionUnit: ConsumptionUnit;
+  term: LicenseTerm;
+};
+
+
+
+// types สำหรับฟอร์ม (ปรับ path ให้ตรงกับโปรเจกต์คุณ)
+export type PolicyDecision = "Allowed" | "NeedsReview" | "Restricted";
+
+export type AssignRow = {
+  employeeId: string;
+  deviceCount?: number;
+  decision?: PolicyDecision;
+  exception?: boolean;
+  reason?: string;
+};
+
+export type LicenseAssignFormValues = {
+  licenseId: string;
+  employees: Employees[];       // หรือ Employees[]
+  mapping: AssignRow[];
+  seatMode: "partial" | "all-or-nothing";
+  installedOn: string;    // YYYY-MM-DD
 };
