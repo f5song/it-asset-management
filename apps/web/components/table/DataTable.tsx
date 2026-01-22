@@ -10,8 +10,23 @@ import { LoadingBody, ErrorBody, EmptyBody } from './DataTableStates';
 import { DataTablePaginationBar } from './DataTablePaginationBar';
 import { cn } from '../ui';
 
-// ✅ ใช้ type กลางใหม่
-import type { AppColumnDef, DataTableProps } from '../../types/table';
+import type { AppColumnDef, DataTableProps as _DataTableProps } from '../../types/table';
+
+type ExtraSelectionProps<TRow extends { id?: string | number }> = {
+  /** เปิด/ปิด checkbox selection */
+  selectable?: boolean;
+  /** ชุด ids ที่ถูกเลือก (controlled) */
+  selectedIds?: Set<string | number>;
+  /** รายงานค่า selection ใหม่เมื่อ tick/untick */
+  onSelectionChange?: (next: Set<string | number>) => void;
+  /** กำหนดวิธีอ่าน id ของแถว (ถ้าไม่ใช่ field 'id') */
+  getRowId?: (row: TRow) => string | number;
+  /** 'page' = เลือกเฉพาะในหน้านี้ | 'all' = ทั้ง dataset (ต้องมี backend รองรับ) */
+  selectionScope?: 'page' | 'all';
+};
+
+export type DataTableProps<TRow extends { id?: string | number }> =
+  _DataTableProps<TRow> & ExtraSelectionProps<TRow>;
 
 export function DataTable<TRow extends { id?: string | number }>(props: DataTableProps<TRow>) {
   const {
@@ -33,9 +48,21 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
     rowHref,
     defaultColMinWidth = 88,
     clientSideSort = false,
+
+    // selection
+    selectable = false,
+    selectedIds,
+    onSelectionChange,
+    getRowId,
+    selectionScope = 'page',
   } = props;
 
   const router = useRouter();
+
+  const rowId = React.useCallback(
+    (r: TRow) => (getRowId ? getRowId(r) : (r.id as string | number)),
+    [getRowId],
+  );
 
   const totalPages =
     totalRows && pagination ? Math.max(1, Math.ceil(totalRows / pagination.pageSize)) : undefined;
@@ -54,17 +81,13 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
       if (path) router.push(path);
       return;
     }
-    // ❌ ตัด fallback ที่ฮาร์ดโค้ดโดเมนออก เพื่อความ reusable
-    // ถ้าอยากแจ้งเตือน:
-    // console.warn('[DataTable] rowHref/onRowClick not provided. Navigation skipped.', row);
   };
 
-  // ✅ toggleSort: TanStack style
+  // TanStack toggle sort style
   const toggleSort = (col: AppColumnDef<TRow>) => {
     const colId = String(col.accessorKey);
     const cur = sorting ?? [];
     const curFirst = cur[0];
-
     let next;
     if (curFirst && curFirst.id === colId) {
       next = [{ id: colId, desc: !curFirst.desc }];
@@ -74,7 +97,7 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
     onSortingChange?.(next as any);
   };
 
-  // ✅ (ตัวเลือก) ทำ client-side sort ที่นี่
+  // (optional) client-side sort (ใช้เฉพาะตารางเล็ก / mock)
   const effectiveRows = React.useMemo(() => {
     if (!clientSideSort) return rows;
     if (!sorting?.length) return rows;
@@ -103,7 +126,7 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
       return String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
     };
 
-    const arr = [...rows]; // ✅ rows เป็น readonly ก็ clone มาก่อน
+    const arr = [...rows]; // clone เผื่อ rows เป็น readonly
     arr.sort((ra, rb) => {
       const va = getValue(ra);
       const vb = getValue(rb);
@@ -113,26 +136,85 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
     return arr;
   }, [rows, sorting, columns, clientSideSort]);
 
-  const colSpan = columns.length;
+  // +1 คอลัมน์ ถ้ามีช่อง checkbox
+  const colSpan = columns.length + (selectable ? 1 : 0);
+
+  // เลือกทีละแถว
+  const toggleRow = React.useCallback(
+    (row: TRow, checked: boolean) => {
+      if (!onSelectionChange || !selectedIds) return;
+      const id = rowId(row);
+      const next = new Set(selectedIds);
+      if (checked) next.add(id);
+      else next.delete(id);
+      onSelectionChange(next);
+    },
+    [onSelectionChange, selectedIds, rowId],
+  );
+
+  // เลือกทั้งหน้า
+  const togglePage = React.useCallback(
+    (checked: boolean) => {
+      if (!onSelectionChange || !selectedIds) return;
+      const next = new Set(selectedIds);
+      effectiveRows.forEach((r) => {
+        const id = rowId(r);
+        if (checked) next.add(id);
+        else next.delete(id);
+      });
+      onSelectionChange(next);
+    },
+    [onSelectionChange, selectedIds, effectiveRows, rowId],
+  );
+
+  const headerChecked = React.useMemo(() => {
+    if (!selectedIds || !effectiveRows.length) return false;
+    return effectiveRows.every((r) => selectedIds.has(rowId(r)));
+  }, [selectedIds, effectiveRows, rowId]);
+
+  const headerIndeterminate = React.useMemo(() => {
+    if (!selectedIds || !effectiveRows.length) return false;
+    const countChecked = effectiveRows.filter((r) => selectedIds.has(rowId(r))).length;
+    return countChecked > 0 && countChecked < effectiveRows.length;
+  }, [selectedIds, effectiveRows, rowId]);
 
   return (
     <div className={containerClass}>
       <div className={tableWrapperClass} style={{ maxHeight: maxBodyHeight }}>
         <table className={tableClass}>
+          {/* ✅ Header */}
           <DataTableHeader<TRow>
             columns={columns}
             sorting={sorting}
             onToggleSort={toggleSort}
             size={size}
             defaultColMinWidth={defaultColMinWidth}
+            // ✅ ช่องนำหน้า: checkbox select page
+            leadingHeaderCell={
+              selectable ? (
+                <th className="w-10 px-3 py-2 text-left">
+                  <input
+                    type="checkbox"
+                    aria-label="Select page"
+                    checked={headerChecked}
+                    ref={(el) => {
+                      if (el) el.indeterminate = headerIndeterminate;
+                    }}
+                    onChange={(e) => togglePage(e.target.checked)}
+                  />
+                </th>
+              ) : undefined
+            }
           />
 
+          {/* States */}
           {isLoading && <LoadingBody colSpan={colSpan} size={size} />}
           {isError && !isLoading && <ErrorBody colSpan={colSpan} message={errorMessage} size={size} />}
           {!isLoading && !isError && effectiveRows.length === 0 && (
             <EmptyBody colSpan={colSpan} message={emptyMessage} size={size} />
           )}
 
+          {/* ✅ Body */}
           {!isLoading && !isError && effectiveRows.length > 0 && (
             <DataTableBody<TRow>
               columns={columns}
@@ -141,6 +223,20 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
               size={size}
               defaultColMinWidth={defaultColMinWidth}
               onRowActivate={handleRowNavigate}
+              // ✅ ส่งเฉพาะ “content” ของเซลล์ ไม่ใช่ <td> ครอบ
+              renderLeadingCell={
+                selectable
+                  ? (row) => (
+                      <input
+                        type="checkbox"
+                        checked={!!selectedIds?.has(rowId(row))}
+                        onChange={(e) => toggleRow(row, e.target.checked)}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label="Select row"
+                      />
+                    )
+                  : undefined
+              }
             />
           )}
         </table>

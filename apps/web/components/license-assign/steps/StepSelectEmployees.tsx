@@ -2,53 +2,71 @@
 "use client";
 
 import React from "react";
-import { useFormContext } from "react-hook-form";
 import type { Employees } from "types/employees";
 import type { EmployeeItemsQuery, EmployeeItemsResponse } from "services/employees.service.mock";
+
+import type { AppColumnDef } from "types/table";
+import { DataTable } from "components/table";
 
 type Props = {
   onSelected: (emps: Employees[]) => void;
   fetchEmployees: (q: EmployeeItemsQuery) => Promise<EmployeeItemsResponse>;
 };
 
-export const StepSelectEmployees: React.FC<Props> = ({
-  onSelected,
-  fetchEmployees,
-}) => {
+export const StepSelectEmployees: React.FC<Props> = ({ onSelected, fetchEmployees }) => {
   const [searchText, setSearchText] = React.useState("");
   const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(10);
   const [rows, setRows] = React.useState<Employees[]>([]);
-  const [selected, setSelected] = React.useState<Record<string, Employees>>({});
-  const [totalPages, setTotalPages] = React.useState(1);
+  const [total, setTotal] = React.useState(0);
 
-  const { /* form context but not needed */ } = useFormContext();
+  // ✅ เก็บ selection ข้ามหน้า
+  const [selectedIds, setSelectedIds] = React.useState<Set<string | number>>(new Set());
+  const [selectedMap, setSelectedMap] = React.useState<Record<string, Employees>>({});
 
-  // โหลด employees จาก service ของคุณโดยตรง
   React.useEffect(() => {
     (async () => {
-      const res = await fetchEmployees({
-        searchText,
-        page,
-        limit: 10, // จะ fix หรือเอาจาก props ก็ได้
-      });
-
+      const res = await fetchEmployees({ searchText, page, limit });
       setRows(res.data);
-      setTotalPages(res.pagination.totalPages);
+      setTotal(res.pagination.total);
     })();
-  }, [searchText, page, fetchEmployees]);
+  }, [fetchEmployees, searchText, page, limit]);
 
-  const toggle = (emp: Employees) => {
-    setSelected((prev) => {
+  const columns = React.useMemo<AppColumnDef<Employees>[]>(() => [
+    { id: "name", header: "Name", accessorKey: "name", width: 160 },
+    { id: "email", header: "Email", accessorKey: "email", width: 200 },
+    { id: "department", header: "Department", accessorKey: "department", width: 140 },
+    { id: "status", header: "Status", accessorKey: "status", width: 120 },
+  ], []);
+
+  // ✅ เมื่อมีการเปลี่ยน selectedIds — อัปเดต selectedMap ให้ตรง (เฉพาะรายการบนหน้าปัจจุบัน)
+  const onSelectionChange = React.useCallback((next: Set<string | number>) => {
+    setSelectedIds(next);
+    setSelectedMap((prev) => {
       const copy = { ...prev };
-      if (copy[emp.id]) delete copy[emp.id];
-      else copy[emp.id] = emp;
+      rows.forEach((r) => {
+        const id = r.id;
+        if (!id) return;
+        if (next.has(id)) copy[id] = r;
+        else delete copy[id];
+      });
       return copy;
     });
+  }, [rows]);
+
+  const pagination = {
+    pageIndex: page - 1,
+    pageSize: limit,
+  };
+
+  const onPaginationChange = (p: { pageIndex: number; pageSize: number }) => {
+    setPage(p.pageIndex + 1);
+    setLimit(p.pageSize);
   };
 
   return (
     <section className="grid gap-4">
-      {/* Search bar */}
+      {/* Filter bar */}
       <div className="flex items-center gap-2">
         <input
           value={searchText}
@@ -58,71 +76,43 @@ export const StepSelectEmployees: React.FC<Props> = ({
         />
         <button
           className="rounded-md border border-gray-300 bg-white px-3 py-2"
-          onClick={() => setPage(1)}
+          onClick={() => { setPage(1); }}
         >
           Search
         </button>
       </div>
 
-      {/* Table */}
-      <div className="rounded-lg border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 py-2 text-left w-10">#</th>
-              <th className="px-3 py-2 text-left">Name</th>
-              <th className="px-3 py-2 text-left">Email</th>
-              <th className="px-3 py-2 text-left">Department</th>
-              <th className="px-3 py-2 text-left">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((e) => (
-              <tr key={e.id} className="border-t">
-                <td className="px-3 py-2">
-                  <input
-                    type="checkbox"
-                    checked={!!selected[e.id]}
-                    onChange={() => toggle(e)}
-                  />
-                </td>
-                <td className="px-3 py-2">{e.name}</td>
-                <td className="px-3 py-2">{e.email}</td>
-                <td className="px-3 py-2">{e.department}</td>
-                <td className="px-3 py-2">{e.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Table with selection + pagination */}
+      <DataTable<Employees>
+        columns={columns}
+        rows={rows}
+        totalRows={total}
+        pagination={pagination}
+        onPaginationChange={onPaginationChange}
+        sorting={[]}
+        onSortingChange={() => {}}
+        isLoading={false}
+        isError={false}
+        variant="default"
+        size="xs"
+
+        selectable
+        selectedIds={selectedIds}
+        onSelectionChange={onSelectionChange}
+        getRowId={(r) => r.id!}
+        selectionScope="page"
+      />
 
       {/* Footer */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-700">
-          Selected: <b>{Object.keys(selected).length}</b> users
+          Selected: <b>{Object.keys(selectedMap).length}</b> users
         </div>
-
         <div className="flex items-center gap-2">
           <button
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 disabled:opacity-50"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            Prev
-          </button>
-
-          <button
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 disabled:opacity-50"
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </button>
-
-          <button
             className="rounded-md bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
-            disabled={Object.keys(selected).length === 0}
-            onClick={() => onSelected(Object.values(selected))}
+            disabled={Object.keys(selectedMap).length === 0}
+            onClick={() => onSelected(Object.values(selectedMap))}
           >
             Use Selected
           </button>
