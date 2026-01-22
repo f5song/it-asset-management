@@ -1,4 +1,3 @@
-
 import BackButton from "components/ui/BackButton";
 import { PageHeader } from "components/ui/PageHeader";
 import { getHistoryBySoftware } from "mock/history.mock";
@@ -23,20 +22,19 @@ export default async function Page({ params }: PageProps) {
     getHistoryBySoftware(id),
   ]);
 
+  const breadcrumbs = [
+    { label: "Software Inventory", href: "/software/inventory" },
+    { label: item.softwareName, href: `/software/inventory/${item.id}` },
+  ];
+
   return (
     <div className="p-2">
       <BackButton />
-      <PageHeader
-        title={item.softwareName}
-        breadcrumbs={[
-          { label: "Software Inventory", href: "/software/inventory" },
-          { label: item.softwareName, href: `/software/inventory/${item.id}` },
-        ]}
-      />
       <SoftwareDetail
         item={item}
         installations={installations}
         history={history}
+        breadcrumb={breadcrumbs}
       />
     </div>
   );

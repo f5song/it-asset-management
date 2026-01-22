@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bars3Icon } from "@heroicons/react/24/outline";
 import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "./Sidebar";
@@ -10,43 +11,68 @@ export default function ClientShell({
 }: {
   children: React.ReactNode;
 }) {
-  const [desktopOpen, setDesktopOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
+  // (ออปชัน) ปิด scroll ของ body ตอนเปิด sidebar
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    // cleanup
+    return () => document.body.classList.remove("overflow-hidden");
+  }, [isSidebarOpen]);
+
   return (
-    <div className="min-h-screen md:flex md:items-stretch">
-      {/* ⭐ เรนเดอร์ Sidebar เสมอให้เป็น flex item; คุมกว้างด้วย prop */}
-      <Sidebar
-        isDesktopOpen={desktopOpen}
-        currentPath={pathname}
-        onNavigate={(path) => router.push(path)}
-      />
-
-      {/* Content column: เป็นตัวกำหนดความสูงรวม (ยาวเท่าไหร่ก็ได้) */}
-      <div className="flex-1 flex flex-col">
-        {/* Header เฉพาะ Desktop */}
-
-        <header
-          className="
-    hidden md:flex items-center gap-3 px-4 py-3 bg-white sticky top-0 z-30
-    shadow-[-10px_0_24px_-12px_rgba(0,0,0,0.20)]
-  "
+    <div className="min-h-screen flex flex-col overflow-x-hidden">
+      {/* Header: มีปุ่มเปิด sidebar */}
+      <header
+        className="
+          flex items-center gap-3 px-4 py-3 bg-white sticky top-0 z-30
+          shadow-[0_2px_12px_-6px_rgba(0,0,0,0.20)]
+        "
+      >
+        <button
+          aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          className="p-2 rounded hover:bg-gray-100"
+          onClick={() => setIsSidebarOpen((v) => !v)}
         >
-          <button
-            aria-label={desktopOpen ? "Close sidebar" : "Open sidebar"}
-            className="p-2 rounded hover:bg-gray-100"
-            onClick={() => setDesktopOpen((v) => !v)}
-          >
-            <Bars3Icon className="w-6 h-6 text-gray-700" />
-          </button>
-        </header>
+          <Bars3Icon className="w-6 h-6 text-gray-700" />
+        </button>
 
-        {/* Main content: ยาวได้ → ทำให้ทั้ง flex line สูงขึ้น และ Sidebar ยืดตาม */}
-        <main className="px-4 py-6">
-          <div className="mx-auto max-w-[1200px]">{children}</div>
-        </main>
-      </div>
+        {/* ... ตำแหน่งโลโก้/ชื่อเพจ/แอคชันอื่น ... */}
+        {/* <div className="font-semibold text-gray-800">Your App</div> */}
+      </header>
+
+      {/* Main content (ไม่โดนดันแล้ว เพราะ sidebar จะเป็น fixed overlay) */}
+      <main className="px-4 py-6">
+        <div className="mx-auto max-w-[1200px]">{children}</div>
+      </main>
+
+      {/* ===== Overlay Sidebar + Backdrop ===== */}
+      {/* Backdrop */}
+      {isSidebarOpen && (
+        <button
+          aria-label="Close sidebar backdrop"
+          className="fixed inset-0 z-[60] bg-black/30"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar (fixed overlay) */}
+      <Sidebar
+        variant="overlay"
+        open={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        currentPath={pathname}
+        onNavigate={(path) => {
+          router.push(path);
+          setIsSidebarOpen(false);
+        }}
+      />
     </div>
   );
 }

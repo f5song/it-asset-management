@@ -28,6 +28,9 @@ export type FilterBarProps<TStatus extends string, TType extends string> = {
   allStatusLabel?: string;
   allTypeLabel?: string;
   allManufacturerLabel?: string;
+
+  /** ✅ ช่องทางขวาพิเศษ (เช่น ActionToolbar) */
+  rightExtra?: React.ReactNode;
 };
 
 export function FilterBar<TStatus extends string, TType extends string>({
@@ -41,6 +44,7 @@ export function FilterBar<TStatus extends string, TType extends string>({
   allStatusLabel = "All Status",
   allTypeLabel = "All Types",
   allManufacturerLabel = "All Manufacturers",
+  rightExtra, // ✅ รับเข้ามา
 }: FilterBarProps<TStatus, TType>) {
   // เตรียม options ให้ SelectField
   const statusSelectOptions = React.useMemo(
@@ -115,6 +119,9 @@ export function FilterBar<TStatus extends string, TType extends string>({
         <div className="ml-auto flex items-center gap-2">
           {onExport && <ExportSelect onExport={onExport} />}
           {onAction && <ActionSelect onAction={onAction} />}
+
+          {/* ✅ วางปุ่ม/คอมโพเนนต์พิเศษฝั่งขวา */}
+          {rightExtra}
         </div>
       </div>
 

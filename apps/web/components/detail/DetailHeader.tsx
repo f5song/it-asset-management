@@ -1,6 +1,6 @@
-import { Compliance } from "../../types";
-import { ComplianceBadge } from "../ui/ComplianceBadge";
 
+import { ComplianceBadge } from "components/ui/ComplianceBadge";
+import { BreadcrumbItem, Compliance } from "types";
 
 export function DetailHeader({
   title,
@@ -8,21 +8,52 @@ export function DetailHeader({
   onBack,
   onEdit,
   onDeleteClick,
+  breadcrumbs,
 }: {
   title: string;
   compliance?: Compliance;
   onBack: () => void;
   onEdit?: () => void;
   onDeleteClick?: () => void;
+  breadcrumbs?: BreadcrumbItem[];
 }) {
   return (
     <div className="flex items-center gap-3">
       <div className="flex flex-col">
         <h1 className="text-xl font-bold text-slate-900">{title}</h1>
+
+        {/* แสดง Compliance (ถ้ามี) */}
         {typeof compliance !== "undefined" && (
           <div className="mt-1">
             <ComplianceBadge label={compliance} />
           </div>
+        )}
+
+        {/* แสดง Breadcrumbs (ถ้ามี) — แยกออกจาก compliance */}
+        {breadcrumbs && breadcrumbs.length > 0 && (
+          <nav className="mt-2 text-sm text-gray-500" aria-label="Breadcrumb">
+            <ol className="flex flex-wrap items-center gap-1">
+              {breadcrumbs.map((bc, idx) => (
+                <li key={idx} className="flex items-center">
+                  {bc.href ? (
+                    <a
+                      href={bc.href}
+                      className="hover:text-gray-700 underline-offset-2 hover:underline"
+                    >
+                      {bc.label}
+                    </a>
+                  ) : (
+                    <span>{bc.label}</span>
+                  )}
+                  {idx < breadcrumbs.length - 1 && (
+                    <span className="mx-2 text-gray-400" aria-hidden="true">
+                      ›
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
         )}
       </div>
 

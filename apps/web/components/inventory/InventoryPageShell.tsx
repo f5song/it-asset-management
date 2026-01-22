@@ -1,5 +1,4 @@
 
-// src/components/inventory/InventoryPageShell.tsx
 "use client";
 
 import { DataTable } from "components/table";
@@ -24,6 +23,9 @@ type ShellProps<TRow extends RowBase, TStatus extends string, TType extends stri
   allStatusLabel: string;
   allTypeLabel: string;
   allManufacturerLabel: string;
+
+  // ✅ เพิ่มช่องพิเศษทางขวาของ FilterBar
+  filterBarRightExtra?: React.ReactNode;
 
   // DataTable
   columns: AppColumnDef<TRow>[];
@@ -62,6 +64,7 @@ export function InventoryPageShell<
     allStatusLabel,
     allTypeLabel,
     allManufacturerLabel,
+    filterBarRightExtra, // ✅
     columns,
     rows,
     totalRows,
@@ -83,7 +86,7 @@ export function InventoryPageShell<
     <div style={{ padding: 6 }}>
       <PageHeader title={title} breadcrumbs={breadcrumbs} />
 
-      <FilterBar<TStatus, TType>
+      <FilterBar
         filters={filters}
         onFiltersChange={onFiltersChange}
         statusOptions={statusOptions}
@@ -94,9 +97,10 @@ export function InventoryPageShell<
         allStatusLabel={allStatusLabel}
         allTypeLabel={allTypeLabel}
         allManufacturerLabel={allManufacturerLabel}
+        rightExtra={filterBarRightExtra}  // ✅ ส่งลงไป
       />
 
-      <DataTable<TRow>
+      <DataTable
         columns={columns}
         rows={rows}
         totalRows={totalRows}

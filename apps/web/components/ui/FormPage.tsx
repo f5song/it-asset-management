@@ -18,34 +18,24 @@ import { PageHeader } from "./PageHeader";
 import { FormActions } from "./FormActions";
 import { Container } from "./Container";
 
-/** ... BaseField และ FormPageProps เดิม ... */
-export type FormPageProps<TValues extends FieldValues> = {
-  title: string;
-  breadcrumbs?: { label: string; href?: string }[];
-  sectionTitle: string;
+// ✅ ใช้ชนิดจากไฟล์ types เท่านั้น (อย่าประกาศใหม่ซ้ำ)
+import type { FormPageProps as _FormPageProps, FieldDescriptor } from "types";
 
-  /** ✅ เปลี่ยนเป็น ZodTypeAny */
-  schema?: z.ZodTypeAny;
-
-  /** ✅ defaultValues ต้องเป็น DefaultValues<TValues> */
+// ทำ alias เพื่อเพิ่ม constraint กับ FieldValues ของ RHF
+export type FormPageProps<TValues extends FieldValues> = Omit<
+  _FormPageProps<TValues>,
+  "defaultValues" | "onSubmit"
+> & {
+  /** RHF ต้องการ DefaultValues<TValues> */
   defaultValues?: DefaultValues<TValues>;
-
-  fields: (
-    | { type: "text"; name: keyof TValues & string; label: string; required?: boolean; placeholder?: string; description?: string; colSpan?: 1 | 2 }
-    | { type: "textarea"; name: keyof TValues & string; label: string; required?: boolean; placeholder?: string; description?: string; colSpan?: 1 | 2 }
-    | { type: "select"; name: keyof TValues & string; label: string; required?: boolean; description?: string; options?: { label: string; value: string }[]; colSpan?: 1 | 2 }
-  )[];
-
+  /** RHF SubmitHandler */
   onSubmit: SubmitHandler<TValues>;
-  onCancel?: () => void;
-  submitLabel?: string;
-  cancelLabel?: string;
 };
 
 export function FormPage<TValues extends FieldValues>({
   title,
   breadcrumbs = [],
-  sectionTitle,
+  sectionTitle = "",
   schema,
   defaultValues,
   fields,
@@ -56,7 +46,7 @@ export function FormPage<TValues extends FieldValues>({
 }: FormPageProps<TValues>) {
   const methods = useForm<TValues>({
     defaultValues,
-    resolver: schema ? zodResolver(schema) : undefined, // ✅ ไม่ต้อง cast แปลก ๆ
+    resolver: schema ? zodResolver(schema as z.ZodTypeAny) : undefined,
     mode: "onBlur",
   });
 
@@ -71,9 +61,9 @@ export function FormPage<TValues extends FieldValues>({
     return (e as any)?.message as string | undefined;
   };
 
-  const renderField = (field: (typeof fields)[number]) => {
+  const renderField = (field: FieldDescriptor<keyof TValues & string>) => {
     const id = String(field.name);
-    const errorMsg = getErrorMessage(field.name);
+    const errorMsg = getErrorMessage(id);
     const col = field.colSpan === 2 ? "md:col-span-2" : "md:col-span-1";
 
     switch (field.type) {
@@ -125,11 +115,58 @@ export function FormPage<TValues extends FieldValues>({
               label={field.label}
               required={!!field.required}
               description={field.description}
-              options={field.options ?? []}
+              options={field.options}
               {...register(field.name as any, { required: field.required })}
               aria-invalid={!!errorMsg}
               aria-errormessage={errorMsg ? `${id}-error` : undefined}
               defaultValue=""
+            />
+            {errorMsg && (
+              <p id={`${id}-error`} className="mt-1 text-xs text-red-600">
+                {errorMsg}
+              </p>
+            )}
+          </div>
+        );
+      case "number":
+        return (
+          <div className={col} key={id}>
+            <TextInput
+              id={id}
+              type="number"
+              label={field.label}
+              required={!!field.required}
+              placeholder={field.placeholder}
+              description={field.description}
+              // TIP: valueAsNumber จะให้ RHF แปลงเป็น number อัตโนมัติ
+              {...register(field.name as any, {
+                required: field.required,
+                valueAsNumber: true,
+              })}
+              aria-invalid={!!errorMsg}
+              aria-errormessage={errorMsg ? `${id}-error` : undefined}
+            />
+            {errorMsg && (
+              <p id={`${id}-error`} className="mt-1 text-xs text-red-600">
+                {errorMsg}
+              </p>
+            )}
+          </div>
+        );
+      case "date":
+        return (
+          <div className={col} key={id}>
+            <TextInput
+              id={id}
+              type="date"
+              label={field.label}
+              required={!!field.required}
+              description={field.description}
+              // NOTE: ถ้าใน schema ใช้ string (YYYY-MM-DD) ให้เก็บเป็น string
+              // หลีกเลี่ยง valueAsDate เพื่อไม่ชนกับ zod.string()
+              {...register(field.name as any, { required: field.required })}
+              aria-invalid={!!errorMsg}
+              aria-errormessage={errorMsg ? `${id}-error` : undefined}
             />
             {errorMsg && (
               <p id={`${id}-error`} className="mt-1 text-xs text-red-600">
@@ -151,7 +188,11 @@ export function FormPage<TValues extends FieldValues>({
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {fields.map(renderField)}
           </div>
-          <FormActions submitLabel={submitLabel} cancelLabel={cancelLabel} onCancel={onCancel} />
+          <FormActions
+            submitLabel={submitLabel}
+            cancelLabel={cancelLabel}
+            onCancel={onCancel}
+          />
           {isSubmitting && <p className="text-sm text-gray-500">Processing…</p>}
         </form>
       </Container>

@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { HistoryEvent, InstallationRow, SoftwareItem } from "../../../../types";
+import { BreadcrumbItem, HistoryEvent, InstallationRow, SoftwareItem } from "../../../../types";
 import { DetailView } from "../../../../components/detail/DetailView";
 import { InstallationSection } from "../../../../components/tabbar/InstallationSection";
 
@@ -20,10 +20,12 @@ export default function SoftwareDetail({
   item,
   installations,
   history,
+  breadcrumb,
 }: {
   item: SoftwareItem;
   installations: InstallationRow[];
   history: HistoryEvent[];
+  breadcrumb?: BreadcrumbItem[];
 }) {
   const onBack = React.useCallback(() => window.history.back(), []);
   const onDelete = React.useCallback(() => {
@@ -104,6 +106,7 @@ export default function SoftwareDetail({
         submitLabel: "Confirm",
         cancelLabel: "Cancel",
       }}
+      breadcrumbs={breadcrumb}
     />
   );
 }

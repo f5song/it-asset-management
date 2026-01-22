@@ -1,4 +1,3 @@
-
 // src/pages/devices/page.tsx
 "use client";
 
@@ -7,16 +6,20 @@ import { InventoryPageShell } from "components/inventory/InventoryPageShell";
 import { StatusBadge } from "components/ui/StatusBadge";
 import { useDeviceInventory } from "hooks/useDeviceInventory";
 import { useServerTableController } from "hooks/useServerTableController";
-import type {
+import { useRouter } from "next/navigation"; // ✅ ใช้ next/navigation แทน next/router
 
+import type {
   AppColumnDef,
   DeviceFilters,
   DeviceGroup,
   DeviceOS,
   DeviceType,
-  SimpleFilters
+  ExportFormat,
+  SimpleFilters,
+  ToolbarAction,
 } from "types";
 import type { DeviceItem } from "services/devices.service";
+import { ActionToolbar } from "components/toolbar/ActionToolbar";
 
 // utility: แปลง "" -> undefined ป้องกันส่งค่าว่างไป service
 const toUndef = <T extends string | undefined>(v: T | ""): T | undefined =>
@@ -68,6 +71,8 @@ const normalizeOS = (os?: string): string => {
 };
 
 export default function DevicesPage() {
+  const router = useRouter(); // ✅ ใช้ hook
+
   // ฟิลเตอร์เริ่มเป็น undefined (หมายถึงไม่กรอง)
   const [filters, setFilters] = React.useState<DeviceFilters>({
     deviceGroup: undefined,
@@ -77,21 +82,34 @@ export default function DevicesPage() {
   });
 
   // columns
-  const columns = React.useMemo<AppColumnDef<DeviceItem>[]>(() => [
-    { id: "id", header: "Device ID", accessorKey: "id", width: 140 },
-    { id: "name", header: "Device Name", accessorKey: "name", width: 220 },
-    { id: "type", header: "Type", accessorKey: "type", width: 120 },
-    { id: "assignedTo", header: "Assigned to", accessorKey: "assignedTo", width: 200 },
-    { id: "os", header: "OS", accessorKey: "os", width: 140 },
-    {
-      id: "compliance",
-      header: "Compliant status",
-      accessorKey: "compliance",
-      width: 160,
-      cell: (v) => <StatusBadge label={String(v ?? "-")} />,
-    },
-    { id: "lastScan", header: "Last Scan", accessorKey: "lastScan", width: 140 },
-  ], []);
+  const columns = React.useMemo<AppColumnDef<DeviceItem>[]>(
+    () => [
+      { id: "id", header: "Device ID", accessorKey: "id", width: 140 },
+      { id: "name", header: "Device Name", accessorKey: "name", width: 220 },
+      { id: "type", header: "Type", accessorKey: "type", width: 120 },
+      {
+        id: "assignedTo",
+        header: "Assigned to",
+        accessorKey: "assignedTo",
+        width: 200,
+      },
+      { id: "os", header: "OS", accessorKey: "os", width: 140 },
+      {
+        id: "compliance",
+        header: "Compliant status",
+        accessorKey: "compliance",
+        width: 160,
+        cell: (v) => <StatusBadge label={String(v ?? "-")} />,
+      },
+      {
+        id: "lastScan",
+        header: "Last Scan",
+        accessorKey: "lastScan",
+        width: 140,
+      },
+    ],
+    [],
+  );
 
   // Bridge: Domain ↔ SimpleFilters
   // map: status = deviceGroup, type = deviceType, manufacturer = os
@@ -102,7 +120,7 @@ export default function DevicesPage() {
       manufacturer: toUndef(filters.os as string | ""),
       searchText: filters.search ?? "",
     }),
-    [filters]
+    [filters],
   );
 
   const fromSimple = React.useCallback(
@@ -112,7 +130,7 @@ export default function DevicesPage() {
       os: toUndef(sf.manufacturer),
       search: sf.searchText ?? "",
     }),
-    []
+    [],
   );
 
   // Controller
@@ -135,37 +153,75 @@ export default function DevicesPage() {
   // ✅ simpleFilters -> service filters (normalize) แล้วส่งเข้า hook
   const serviceFilters = React.useMemo(
     () => ({
-      deviceGroup: normalizeDeviceGroup(ctl.simpleFilters.status as string | undefined),
-      deviceType: normalizeDeviceType(ctl.simpleFilters.type as string | undefined),
+      deviceGroup: normalizeDeviceGroup(
+        ctl.simpleFilters.status as string | undefined,
+      ),
+      deviceType: normalizeDeviceType(
+        ctl.simpleFilters.type as string | undefined,
+      ),
       os: normalizeOS(ctl.simpleFilters.manufacturer as string | undefined),
       search: ctl.simpleFilters.searchText ?? "",
     }),
-    [ctl.simpleFilters]
+    [ctl.simpleFilters],
   );
 
-  const {
-    rows,
-    totalRows,
-    isLoading,
-    isError,
-    errorMessage,
-  } = useDeviceInventory(ctl.serverQuery, serviceFilters);
+  const { rows, totalRows, isLoading, isError, errorMessage } =
+    useDeviceInventory(ctl.serverQuery, serviceFilters);
 
   // options (ภายหลังเปลี่ยนมาโหลดจาก service ได้)
   const deviceGroupOptions: readonly DeviceGroup[] = ["Assigned", "Unassigned"];
-  const deviceTypeOptions: readonly DeviceType[] = ["Laptop", "Desktop", "VM", "Mobile"];
-  const osOptions: readonly DeviceOS[] = ["Windows", "macOS", "Linux", "iOS", "Android"];
+  const deviceTypeOptions: readonly DeviceType[] = [
+    "Laptop",
+    "Desktop",
+    "VM",
+    "Mobile",
+  ];
+  const osOptions: readonly DeviceOS[] = [
+    "Windows",
+    "macOS",
+    "Linux",
+    "iOS",
+    "Android",
+  ];
 
   const getRowHref = React.useCallback(
     (row: DeviceItem) => `/devices/${row.id}`,
-    []
+    [],
   );
 
+  const handleExport = React.useCallback((fmt: ExportFormat) => {
+    console.log("Export format:", fmt);
+    // TODO: เรียก service export เช่น exportDevices(fmt, ctl.serverQuery, serviceFilters);
+  }, []);
+
+  // สมมุติว่าคุณมี selectedIds จาก DataTable selection แล้ว
+  const [selectedDeviceIds, setSelectedDeviceIds] = React.useState<string[]>(
+    [],
+  );
+
+  const rightExtra = (
+    <ActionToolbar
+      selectedIds={selectedDeviceIds}
+      enableDefaultMapping={false}
+      to={{
+        add: "/devices/add",
+        reassign: ({ selectedIds }) =>
+          `/devices/reassign?ids=${encodeURIComponent(selectedIds.join(","))}`,
+        delete: ({ selectedIds }) =>
+          `/devices/delete?ids=${encodeURIComponent(selectedIds.join(","))}`,
+      }}
+      onAction={(act) => {
+        if (act === "delete") {
+          // เปิด modal ยืนยัน หรือตรวจสิทธิ์ ฯลฯ
+          console.log("delete selected:", selectedDeviceIds);
+        }
+      }}
+    />
+  );
   return (
     <InventoryPageShell<DeviceItem, DeviceGroup, DeviceType>
       title="Devices"
       breadcrumbs={[{ label: "Devices", href: "/devices" }]}
-
       // FilterBar
       filters={ctl.simpleFilters}
       onFiltersChange={ctl.onSimpleFiltersChange}
@@ -175,7 +231,8 @@ export default function DevicesPage() {
       allStatusLabel="All Device Groups"
       allTypeLabel="All Types"
       allManufacturerLabel="All OS"
-
+      filterBarRightExtra={rightExtra}
+      onExport={handleExport}
       // DataTable
       columns={columns}
       rows={rows}
@@ -185,7 +242,6 @@ export default function DevicesPage() {
       sorting={ctl.sorting}
       onSortingChange={ctl.setSorting}
       rowHref={getRowHref}
-
       // States
       isLoading={isLoading}
       isError={isError}

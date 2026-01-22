@@ -46,11 +46,11 @@ export default async function LicenseDetailPage({ params }: PageProps) {
   return (
     <div className="p-2">
       <BackButton />
-      <PageHeader title={license.softwareName} breadcrumbs={breadcrumbs} />
       <LicenseDetail
         item={license}
         installations={installations}
-        history={history}   // ✅ ส่ง history จริง เพื่อให้แสดงแท็บบาร์ (Installations + History) ได้
+        history={history}
+        breadcrumb={breadcrumbs}
       />
     </div>
   );

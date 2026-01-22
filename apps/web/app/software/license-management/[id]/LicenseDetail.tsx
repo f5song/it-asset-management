@@ -5,7 +5,7 @@ import * as React from "react";
 import { licenseEditFields } from "app/config/forms/licenseEditFields";
 import { DetailView } from "components/detail/DetailView";
 import { InstallationSection } from "components/tabbar/InstallationSection";
-import type { HistoryEvent, InstallationRow, LicenseItem } from "types";
+import type { BreadcrumbItem, HistoryEvent, InstallationRow, LicenseItem } from "types";
 
 type SimpleColumn<R> = {
   header: string;
@@ -31,10 +31,12 @@ export default function LicenseDetail({
   item,
   installations,
   history,
+  breadcrumb
 }: {
   item: LicenseItem;
   installations: InstallationRow[];
   history: HistoryEvent[];
+  breadcrumb: BreadcrumbItem[];
 }) {
   const onBack = React.useCallback(() => window.history.back(), []);
   const onDelete = React.useCallback(() => {
@@ -121,6 +123,7 @@ export default function LicenseDetail({
         submitLabel: "Save",
         cancelLabel: "Cancel",
       }}
+      breadcrumbs={breadcrumb}
     />
   );
 }

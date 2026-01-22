@@ -10,6 +10,7 @@ import { DetailInfoGrid } from "./DetailInfo";
 import { ConfirmModal } from "../modals/ConfirmModal";
 import { EditModal } from "../modals/EditModal";
 import { EditField } from "../../types/modal";
+import type { BreadcrumbItem } from "../../types";
 
 /* ---------------- Types ---------------- */
 
@@ -50,7 +51,8 @@ export function DetailView<TValues extends Record<string, any>>({
   onDelete,
   editConfig, // ✅ ใช้ config จากภายนอก
   modalProps, // ✅ ใหม่: ตัวเลือกของ EditModal
-  installationTabLabel,
+  installationTabLabel = "Installations",
+  breadcrumbs, // ✅ เพิ่มให้รับ breadcrumb จากภายนอก
 }: {
   title: string;
   compliance?: Compliance;
@@ -62,15 +64,16 @@ export function DetailView<TValues extends Record<string, any>>({
   onDelete?: () => void;
   editConfig?: EditConfig<TValues>;
   modalProps?: EditModalForwardProps;
-  installationTabLabel: string;
+  installationTabLabel?: string;
+  breadcrumbs?: BreadcrumbItem[]; // ✅ ประกาศ prop ใหม่
 }) {
   const [tab, setTab] = useState<"detail" | "installation" | "history">("detail");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [open, setOpen] = useState(false);
 
   const handleOpenEdit = () => {
-    onEdit?.();     // เผื่ออยาก preload / tracking ฯลฯ
-    setOpen(true);  // ✅ เปิด EditModal
+    onEdit?.(); // เผื่ออยาก preload / tracking ฯลฯ
+    setOpen(true); // ✅ เปิด EditModal
   };
 
   return (
@@ -82,13 +85,17 @@ export function DetailView<TValues extends Record<string, any>>({
           onBack={onBack}
           onEdit={handleOpenEdit}
           onDeleteClick={onDelete ? () => setConfirmOpen(true) : undefined}
+          breadcrumbs={breadcrumbs} // ✅ ส่งต่อให้ Header
         />
 
         <TabList>
           <TabTrigger active={tab === "detail"} onClick={() => setTab("detail")}>
             Detail
           </TabTrigger>
-          <TabTrigger active={tab === "installation"} onClick={() => setTab("installation")}>
+          <TabTrigger
+            active={tab === "installation"}
+            onClick={() => setTab("installation")}
+          >
             {installationTabLabel}
           </TabTrigger>
           <TabTrigger active={tab === "history"} onClick={() => setTab("history")}>
