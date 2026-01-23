@@ -1,7 +1,6 @@
 
 // src/services/licenses.service.mock.ts
 // แนะนำปรับ path import ให้เป็น alias ของโปรเจกต์คุณ เช่น: "@/types"
-// ในตัวอย่างนี้ยังคงตามของคุณไว้ก่อน
 import type { LicenseItem } from "types";
 
 export type LicensesQuery = {
@@ -83,13 +82,13 @@ const MOCK_LICENSES: LicenseItem[] = Array.from({ length: 57 }).map((_, i) => {
     id: `LIC-${i + 1}`,
     softwareName: `Software ${i + 1}`,
     manufacturer: manufacturers[i % manufacturers.length],
-    licenseModel: licenseModel[i % licenseModel.length], 
+    licenseModel: licenseModel[i % licenseModel.length],
     total,
     inUse,
     available,
     expiryDate: `2026-${String((i % 12) + 1).padStart(2, "0")}-28`,
     status: statuses[i % statuses.length],
-    compliance: complianceOptions[i % complianceOptions.length], // ✅ เติม compliance
+    compliance: complianceOptions[i % complianceOptions.length],
   } as LicenseItem;
 });
 
@@ -97,7 +96,6 @@ const MOCK_LICENSES: LicenseItem[] = Array.from({ length: 57 }).map((_, i) => {
 // Public APIs (mock)
 // -----------------------------
 export async function getLicenseById(id: string): Promise<LicenseItem | null> {
-  // จำลอง latency
   await new Promise((r) => setTimeout(r, 120));
   return MOCK_LICENSES.find((x) => String(x.id) === String(id)) ?? null;
 }
@@ -133,4 +131,34 @@ export async function getLicenses(q: LicensesQuery): Promise<PagedResponse<Licen
       resolve({ items, total: data.length });
     }, 400);
   });
+}
+
+/** -----------------------------
+ *  ✅ Added for assignment service integration
+ *  ----------------------------- */
+export async function getAvailableLicenses(): Promise<LicenseItem[]> {
+  await new Promise((r) => setTimeout(r, 100));
+  return MOCK_LICENSES.filter((x) => (x.available ?? (x.total - x.inUse)) > 0);
+}
+
+export async function consumeSeat(licenseId: string, n = 1): Promise<void> {
+  const idx = MOCK_LICENSES.findIndex((l) => l.id === licenseId);
+  if (idx < 0) throw new Error("License not found");
+  const lic = { ...MOCK_LICENSES[idx] };
+  const available = (lic.available ?? (lic.total - lic.inUse));
+  if (available < n) throw new Error("No seats left");
+
+  lic.inUse = (lic.inUse ?? 0) + n;
+  lic.available = Math.max(0, lic.total - lic.inUse);
+  MOCK_LICENSES[idx] = lic;
+}
+
+export async function releaseSeat(licenseId: string, n = 1): Promise<void> {
+  const idx = MOCK_LICENSES.findIndex((l) => l.id === licenseId);
+  if (idx < 0) return;
+  const lic = { ...MOCK_LICENSES[idx] };
+
+  lic.inUse = Math.max(0, (lic.inUse ?? 0) - n);
+  lic.available = Math.max(0, lic.total - lic.inUse);
+  MOCK_LICENSES[idx] = lic;
 }

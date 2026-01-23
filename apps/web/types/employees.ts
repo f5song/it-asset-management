@@ -1,9 +1,13 @@
+
+// src/types/employees.ts
+
 export enum EmployeeStatus {
   Active = "Active",
   Inactive = "Inactive",
   Contractor = "Contractor",
   Intern = "Intern",
 }
+
 export type Employees = {
   id: string;
   name: string;
@@ -15,7 +19,7 @@ export type Employees = {
 };
 
 export type EmployeesFilters = {
-  department: string | undefined;
-  status: EmployeeStatus | undefined;
-  search: string;
+  department?: string;
+  status?: EmployeeStatus;
+  search?: string;
 };

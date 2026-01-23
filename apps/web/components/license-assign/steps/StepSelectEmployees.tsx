@@ -5,7 +5,7 @@ import React from "react";
 import type { Employees } from "types/employees";
 import type { EmployeeItemsQuery, EmployeeItemsResponse } from "services/employees.service.mock";
 
-import type { AppColumnDef } from "types/table";
+import type { AppColumnDef } from "types/ui-table";
 import { DataTable } from "components/table";
 
 type Props = {

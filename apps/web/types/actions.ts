@@ -1,4 +1,8 @@
-import { ToolbarAction } from "./tab";
+
+// src/types/actions.ts
+
+/** Toolbar actions (รวมเป็นที่เดียว) */
+export type ToolbarAction = "delete" | "reassign" | "add" | "assign";
 
 /** ฟังก์ชันคำนวณ path จาก action + selectedIds */
 export type ActionPathBuilder = (args: {
@@ -8,3 +12,4 @@ export type ActionPathBuilder = (args: {
 
 /** กำหนดได้ทั้ง string ตายตัว หรือฟังก์ชันคำนวณ path */
 export type ActionPathConfig = string | ActionPathBuilder;
+

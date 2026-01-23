@@ -1,33 +1,40 @@
+
+// app/employees/[id]/LicenseDetail.tsx  <-- ปรับ path ตรงกับไฟล์จริงของคุณ
 "use client";
 
 import * as React from "react";
 import { licenseEditFields } from "app/config/forms/licenseEditFields";
 import { DetailView } from "components/detail/DetailView";
 import { InstallationSection } from "components/tabbar/InstallationSection";
-import type {
-  BreadcrumbItem,
-  HistoryEvent,
-  InstallationRow,
-  LicenseItem,
-  ToolbarAction,
-} from "types";
-import { useRouter } from "next/router";
-import { ActionPathConfig } from "types/action";
 import { ActionToolbar } from "components/toolbar/ActionToolbar";
 
+import type {
+  ActionPathConfig,
+  BreadcrumbItem,
+  HistoryEvent,
+  LicenseInstallationRow,
+  LicenseItem,
+  ToolbarAction,
+ // ✅ ต้องมี export จาก barrel "types" (หรือเปลี่ยนเป็น "types/actions")
+} from "types";
+
+/** แถวข้อมูลสำหรับแท็บ Installations ของหน้า License (self-contained) */
+
+// คอลัมน์แบบสั้น: header + accessor
 type SimpleColumn<R> = {
   header: string;
   accessor: (r: R) => React.ReactNode;
 };
 
+// ฟังก์ชันแสดงค่าแบบมี fallback “—”
 const show = (v: unknown) =>
   v === undefined || v === null || v === "" ? "—" : String(v);
 
 /** ---------------- DEMO: Installations (ใช้เมื่อ API ว่าง) ---------------- **/
-const demoInstallations: InstallationRow[] = [
-  { id: "lic-ins-1", device: "NB-201", user: "mike" } as any,
-  { id: "lic-ins-2", device: "PC-304", user: "nina" } as any,
-  { id: "lic-ins-3", device: "SRV-09", user: "system" } as any,
+const demoInstallations: LicenseInstallationRow[] = [
+  { id: "lic-ins-1", deviceName: "NB-201", userName: "mike",   licenseStatus: "Active" },
+  { id: "lic-ins-2", deviceName: "PC-304", userName: "nina",   licenseStatus: "Active" },
+  { id: "lic-ins-3", deviceName: "SRV-09", userName: "system", licenseStatus: "Active" },
 ];
 
 /** ---------------- DEMO: History (ใช้เมื่อ API ว่าง) ---------------- **/
@@ -38,14 +45,14 @@ const demoHistory: HistoryEvent[] = [
     actor: "system",
     action: "sync",
     detail: "License sync finished",
-  } as any,
+  },
   {
     id: "lh2",
     timestamp: new Date().toISOString(),
     actor: "admin",
     action: "update",
     detail: "Adjusted license seats",
-  } as any,
+  },
 ];
 
 export default function LicenseDetail({
@@ -55,7 +62,7 @@ export default function LicenseDetail({
   breadcrumb,
 }: {
   item: LicenseItem;
-  installations: InstallationRow[];
+  installations: LicenseInstallationRow[];
   history: HistoryEvent[];
   breadcrumb: BreadcrumbItem[];
 }) {
@@ -64,19 +71,20 @@ export default function LicenseDetail({
     console.log("Delete", item.id);
   }, [item.id]);
 
-  const columns = React.useMemo<SimpleColumn<InstallationRow>[]>(() => {
+  // คอลัมน์ในแท็บ Installations (ไม่มี any/แคสแล้ว)
+  const columns = React.useMemo<SimpleColumn<LicenseInstallationRow>[]>(() => {
     return [
-      { header: "Device", accessor: (r) => show((r as any).device) },
-      { header: "User", accessor: (r) => show((r as any).user) },
-      { header: "License Status", accessor: (_r) => "Active" }, // TODO: show(r.licenseStatus)
-      { header: "License Key", accessor: (_r) => "—" }, // TODO: show(r.licenseKey)
-      { header: "Scanned License", accessor: (_r) => "—" }, // TODO: show(r.scannedLicenseKey)
-      { header: "Workstation", accessor: (_r) => "—" }, // TODO: show(r.workStation)
+      { header: "Device", accessor: (r) => show(r.deviceName) },
+      { header: "User", accessor: (r) => show(r.userName) },
+      { header: "License Status", accessor: (r) => show(r.licenseStatus ?? "Active") },
+      { header: "License Key", accessor: (r) => show(r.licenseKey) },
+      { header: "Scanned License", accessor: (r) => show(r.scannedLicenseKey) },
+      { header: "Workstation", accessor: (r) => show(r.workStation) },
     ];
   }, []);
 
   // ✅ ใช้ demo ถ้า API ว่าง
-  const rows = React.useMemo<InstallationRow[]>(
+  const rows = React.useMemo<LicenseInstallationRow[]>(
     () => (installations?.length ? installations : demoInstallations),
     [installations],
   );
@@ -87,6 +95,7 @@ export default function LicenseDetail({
     [history],
   );
 
+  // ค่าตั้งต้นของฟอร์มแก้ไข (ให้สอดคล้อง type ใหม่ของ LicenseItem)
   const initialFormValues = React.useMemo(
     () => ({
       productName: item.softwareName ?? "",
@@ -103,6 +112,7 @@ export default function LicenseDetail({
     [item],
   );
 
+  // เส้นทางไปหน้า Assign ของ License นี้
   const toolbarTo: Partial<Record<ToolbarAction, ActionPathConfig>> = {
     assign: `/software/license-management/${item.id}/assign`,
   };
@@ -137,7 +147,7 @@ export default function LicenseDetail({
         ],
       }}
       installationSection={
-        <InstallationSection<InstallationRow>
+        <InstallationSection<LicenseInstallationRow>
           rows={rows}
           columns={columns}
           resetKey={`license-${item.id}`}

@@ -1,4 +1,4 @@
-// app/employees/[id]/EmployeeDetail.tsx
+
 "use client";
 
 import * as React from "react";
@@ -7,7 +7,18 @@ import { InstallationSection } from "components/tabbar/InstallationSection";
 
 // ปรับ path ให้ตรงกับโปรเจกต์ของคุณ
 import type { Employees } from "types/employees";
-import type { BreadcrumbItem, HistoryEvent, InstallationRow } from "types";
+import type { BreadcrumbItem, HistoryEvent } from "types";
+
+/** ตาราง Assignments ในหน้า Employee (self-contained) */
+type EmployeeAssignmentRow = {
+  id: string;
+  deviceName: string;          // ชื่อเครื่อง เช่น "NB-201"
+  userName: string;            // ชื่อผู้ใช้ (โชว์ชื่อพนักงานหรือ user ที่ติดตั้ง)
+  licenseStatus?: "Active" | "Pending" | "Expired";
+  licenseKey?: string | null;
+  scannedLicenseKey?: string | null;
+  workStation?: string | null; // ถ้ามีฟิลด์สถานีทำงาน
+};
 
 // (แบบเดียวกับหน้าอื่น) columns แบบสั้น: header + accessor
 type SimpleColumn<R> = {
@@ -20,11 +31,10 @@ const show = (v: unknown) =>
   v === undefined || v === null || v === "" ? "—" : String(v);
 
 /** ---------------- DEMO: Assignments (ใช้เมื่อ API ว่าง) ---------------- **/
-const demoAssignments: InstallationRow[] = [
-  // ปรับ field ให้ตรง schema ในโปรเจกต์ของคุณ
-  { id: "a-1", device: "NB-201", user: "alice" } as any,
-  { id: "a-2", device: "PC-304", user: "alice" } as any,
-  { id: "a-3", device: "SRV-09", user: "alice" } as any,
+const demoAssignments: EmployeeAssignmentRow[] = [
+  { id: "a-1", deviceName: "NB-201", userName: "alice", licenseStatus: "Active" },
+  { id: "a-2", deviceName: "PC-304", userName: "alice", licenseStatus: "Active" },
+  { id: "a-3", deviceName: "SRV-09", userName: "alice", licenseStatus: "Active" },
 ];
 
 /** ---------------- DEMO: History (ใช้เมื่อ API ว่าง) ---------------- **/
@@ -35,14 +45,14 @@ const demoHistory: HistoryEvent[] = [
     actor: "system",
     action: "sync",
     detail: "Employee profile synced",
-  } as any,
+  },
   {
     id: "eh2",
     timestamp: new Date().toISOString(),
     actor: "admin",
     action: "update",
     detail: "Department changed to Engineering",
-  } as any,
+  },
 ];
 
 export default function EmployeeDetail({
@@ -53,7 +63,7 @@ export default function EmployeeDetail({
 }: {
   item: Employees;
   history: HistoryEvent[];
-  assignments?: InstallationRow[];
+  assignments?: EmployeeAssignmentRow[];
   breadcrumbs?: BreadcrumbItem[];
 }) {
   const onBack = React.useCallback(() => window.history.back(), []);
@@ -61,22 +71,21 @@ export default function EmployeeDetail({
     console.log("Delete employee:", item.id);
   }, [item.id]);
 
-  // คอลัมน์ฝั่งแท็บ Assignments (ปรับ accessor ให้ตรงกับฟิลด์จริง)
-  const columns = React.useMemo<SimpleColumn<InstallationRow>[]>(() => {
+  // คอลัมน์ในแท็บ Assignments
+  const columns = React.useMemo<SimpleColumn<EmployeeAssignmentRow>[]>(() => {
     return [
-      { header: "Device", accessor: (r) => show((r as any).device) },
-      { header: "User", accessor: (r) => show((r as any).user ?? item.name) },
-      // ถ้าคุณมีฟิลด์จริงใน InstallationRow ให้เปลี่ยน “—”/“Active” เป็นค่าจริงได้
-      { header: "License Status", accessor: (_r) => "Active" },
-      { header: "License Key", accessor: (_r) => "—" },
-      { header: "Scanned License", accessor: (_r) => "—" },
-      { header: "Workstation", accessor: (_r) => "—" },
+      { header: "Device", accessor: (r) => show(r.deviceName) },
+      { header: "User", accessor: (r) => show(r.userName || item.name) },
+      { header: "License Status", accessor: (r) => show(r.licenseStatus ?? "Active") },
+      { header: "License Key", accessor: (r) => show(r.licenseKey) },
+      { header: "Scanned License", accessor: (r) => show(r.scannedLicenseKey) },
+      { header: "Workstation", accessor: (r) => show(r.workStation) },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.name]);
 
-  // ใช้ demo ถ้าไม่มี assignments จาก API
-  const rows = React.useMemo<InstallationRow[]>(
+  // ใช้ assignments ที่ได้จาก props; ถ้าไม่มี ใช้ demo
+  const rows = React.useMemo<EmployeeAssignmentRow[]>(
     () => (assignments?.length ? assignments : demoAssignments),
     [assignments],
   );
@@ -107,7 +116,7 @@ export default function EmployeeDetail({
         ],
       }}
       installationSection={
-        <InstallationSection<InstallationRow>
+        <InstallationSection<EmployeeAssignmentRow>
           rows={rows}
           columns={columns}
           resetKey={`employee-${item.id}`}
@@ -136,7 +145,7 @@ export default function EmployeeDetail({
         initialValues: {
           name: item.name ?? "",
           department: item.department ?? "",
-          status: item.status ?? "Active",
+          status: (item.status as any) ?? "Active",
         },
         onSubmit: async (values) => {
           console.log("save employee:", values);

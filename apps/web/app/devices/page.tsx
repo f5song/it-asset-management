@@ -2,40 +2,40 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
+
 import { InventoryPageShell } from "components/inventory/InventoryPageShell";
 import { StatusBadge } from "components/ui/StatusBadge";
+import { ActionToolbar } from "components/toolbar/ActionToolbar";
+// import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
+
 import { useDeviceInventory } from "hooks/useDeviceInventory";
 import { useServerTableController } from "hooks/useServerTableController";
-import { useRouter } from "next/navigation"; // ✅ ใช้ next/navigation แทน next/router
 
+import type { AppColumnDef, ExportFormat, ToolbarAction } from "types";
 import type {
-  AppColumnDef,
-  DeviceFilters,
+  DeviceItem,
   DeviceGroup,
-  DeviceOS,
   DeviceType,
-  ExportFormat,
-  SimpleFilters,
-  ToolbarAction,
-} from "types";
-import type { DeviceItem } from "services/devices.service";
-import { ActionToolbar } from "components/toolbar/ActionToolbar";
+  DeviceOS,
+  DeviceDomainFilters,
+  DeviceFilterValues,
+} from "types/device";
 
-// utility: แปลง "" -> undefined ป้องกันส่งค่าว่างไป service
+/* ---------------- Utilities ---------------- */
+
+// แปลง "" -> undefined ป้องกันส่งค่าว่างไป service
 const toUndef = <T extends string | undefined>(v: T | ""): T | undefined =>
   v === "" ? undefined : v;
 
-// 🔧 Normalizer: แปลง label จาก UI -> internal value ที่ service คาดหวัง
-// ปรับ mapping ตามโดเมนจริงของคุณเพื่อให้ตรงกับ DB/service
-const normalizeDeviceGroup = (g?: string): string => {
-  if (!g) return "";
-  const map: Record<string, string> = {
-    Assigned: "assigned",
-    Unassigned: "unassigned",
-    assigned: "assigned",
-    unassigned: "unassigned",
-  };
-  return map[g] ?? g.toLowerCase();
+// Normalizers: UI label -> internal
+
+// หลัง (แนะนำ)
+const normalizeDeviceGroup = (g?: string): "" | "assigned" | "unassigned" => {
+  const k = (g ?? "").toLowerCase().trim();
+  if (k === "assigned") return "assigned";
+  if (k === "unassigned") return "unassigned";
+  return "";
 };
 
 const normalizeDeviceType = (t?: string): string => {
@@ -70,11 +70,13 @@ const normalizeOS = (os?: string): string => {
   return map[os] ?? os.toLowerCase();
 };
 
+/* ---------------- Page ---------------- */
+
 export default function DevicesPage() {
-  const router = useRouter(); // ✅ ใช้ hook
+  const router = useRouter();
 
   // ฟิลเตอร์เริ่มเป็น undefined (หมายถึงไม่กรอง)
-  const [filters, setFilters] = React.useState<DeviceFilters>({
+  const [filters, setFilters] = React.useState<DeviceDomainFilters>({
     deviceGroup: undefined,
     deviceType: undefined,
     os: undefined,
@@ -111,10 +113,10 @@ export default function DevicesPage() {
     [],
   );
 
-  // Bridge: Domain ↔ SimpleFilters
+  // Bridge: Domain Filters ↔ FilterValues (แทน SimpleFilters เดิม)
   // map: status = deviceGroup, type = deviceType, manufacturer = os
   const toSimple = React.useCallback(
-    (): SimpleFilters<DeviceGroup, DeviceType> => ({
+    (): DeviceFilterValues => ({
       status: toUndef(filters.deviceGroup as DeviceGroup | ""),
       type: toUndef(filters.deviceType as DeviceType | ""),
       manufacturer: toUndef(filters.os as string | ""),
@@ -124,7 +126,7 @@ export default function DevicesPage() {
   );
 
   const fromSimple = React.useCallback(
-    (sf: SimpleFilters<DeviceGroup, DeviceType>): DeviceFilters => ({
+    (sf: DeviceFilterValues): DeviceDomainFilters => ({
       deviceGroup: toUndef(sf.status),
       deviceType: toUndef(sf.type),
       os: toUndef(sf.manufacturer),
@@ -138,7 +140,7 @@ export default function DevicesPage() {
     DeviceItem,
     DeviceGroup,
     DeviceType,
-    DeviceFilters
+    DeviceDomainFilters
   >({
     pageSize: 8,
     defaultSort: { id: "id", desc: false },
@@ -146,11 +148,10 @@ export default function DevicesPage() {
     setDomainFilters: setFilters,
     toSimple,
     fromSimple,
-    // รีเซ็ตเฉพาะเมื่อ select filters เปลี่ยน ไม่รีเซ็ตตอนพิมพ์ search
     resetDeps: [filters.deviceGroup, filters.deviceType, filters.os],
   });
 
-  // ✅ simpleFilters -> service filters (normalize) แล้วส่งเข้า hook
+  // simpleFilters -> service filters (normalize) แล้วส่งเข้า hook
   const serviceFilters = React.useMemo(
     () => ({
       deviceGroup: normalizeDeviceGroup(
@@ -168,7 +169,7 @@ export default function DevicesPage() {
   const { rows, totalRows, isLoading, isError, errorMessage } =
     useDeviceInventory(ctl.serverQuery, serviceFilters);
 
-  // options (ภายหลังเปลี่ยนมาโหลดจาก service ได้)
+  // options
   const deviceGroupOptions: readonly DeviceGroup[] = ["Assigned", "Unassigned"];
   const deviceTypeOptions: readonly DeviceType[] = [
     "Laptop",
@@ -189,12 +190,15 @@ export default function DevicesPage() {
     [],
   );
 
-  const handleExport = React.useCallback((fmt: ExportFormat) => {
-    console.log("Export format:", fmt);
-    // TODO: เรียก service export เช่น exportDevices(fmt, ctl.serverQuery, serviceFilters);
-  }, []);
+  const handleExport = React.useCallback(
+    (fmt: ExportFormat) => {
+      console.log("Export format:", fmt);
+      // TODO: exportDevices(fmt, ctl.serverQuery, serviceFilters);
+    },
+    [ctl.serverQuery, serviceFilters],
+  );
 
-  // สมมุติว่าคุณมี selectedIds จาก DataTable selection แล้ว
+  // selection จาก DataTable
   const [selectedDeviceIds, setSelectedDeviceIds] = React.useState<string[]>(
     [],
   );
@@ -205,25 +209,37 @@ export default function DevicesPage() {
       enableDefaultMapping={false}
       to={{
         add: "/devices/add",
-        reassign: ({ selectedIds }) =>
+        reassign: ({
+          action,
+          selectedIds,
+        }: {
+          action: ToolbarAction;
+          selectedIds: string[];
+        }) =>
           `/devices/reassign?ids=${encodeURIComponent(selectedIds.join(","))}`,
-        delete: ({ selectedIds }) =>
+        delete: ({
+          action,
+          selectedIds,
+        }: {
+          action: ToolbarAction;
+          selectedIds: string[];
+        }) =>
           `/devices/delete?ids=${encodeURIComponent(selectedIds.join(","))}`,
       }}
       onAction={(act) => {
         if (act === "delete") {
-          // เปิด modal ยืนยัน หรือตรวจสิทธิ์ ฯลฯ
           console.log("delete selected:", selectedDeviceIds);
         }
       }}
     />
   );
+
   return (
     <InventoryPageShell<DeviceItem, DeviceGroup, DeviceType>
       title="Devices"
       breadcrumbs={[{ label: "Devices", href: "/devices" }]}
       // FilterBar
-      filters={ctl.simpleFilters}
+      filters={ctl.simpleFilters} // ← เป็น FilterValues แล้ว
       onFiltersChange={ctl.onSimpleFiltersChange}
       statusOptions={deviceGroupOptions}
       typeOptions={deviceTypeOptions}

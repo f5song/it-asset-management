@@ -3,13 +3,15 @@
 'use client';
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { EditField } from '../../types/modal';
 import { ModalFooterActions } from './ModalFooterActions';
+
+// ✅ ใช้ FormField แทน EditField
+import type { FormField } from 'types/forms';
 
 export type EditModalProps<TValues extends Record<string, any>> = {
   title: string;
   open: boolean;
-  fields: EditField[];
+  fields: ReadonlyArray<FormField<keyof TValues & string>>;
   initialValues: TValues;
   onSubmit: (values: TValues) => void | Promise<void>;
   onClose: () => void;
@@ -214,15 +216,15 @@ export function EditModal<TValues extends Record<string, any>>({
 
   const gridClass = 'space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0';
 
-  const renderField = (field: EditField, index: number) => {
+  const renderField = (field: FormField<keyof TValues & string>, index: number) => {
     const commonProps: any = {
       id: `field-${field.name}`,
       name: field.name,
-      placeholder: field.placeholder,
-      'aria-invalid': !!field.error,
-      'aria-describedby': field.helpText ? `help-${field.name}` : undefined,
-      disabled: field.disabled,
-      required: field.required,
+      placeholder: (field as any).placeholder,
+      'aria-invalid': !!(field as any).error,
+      'aria-describedby': (field as any).helpText ? `help-${field.name}` : undefined,
+      disabled: (field as any).disabled,
+      required: (field as any).required,
       className: inputClass,
       ref: index === 0 ? (firstInputRef as any) : undefined,
     };
@@ -248,9 +250,9 @@ export function EditModal<TValues extends Record<string, any>>({
             className={inputClass + ' appearance-none'}
           >
             <option value="" disabled>
-              {field.placeholder ?? 'Select…'}
+              {(field as any).placeholder ?? 'Select…'}
             </option>
-            {(field.options ?? []).map((opt) => (
+            {((field as any).options ?? []).map((opt: { label: string; value: string | number }) => (
               <option key={`${field.name}-${opt.value}`} value={opt.value}>
                 {opt.label}
               </option>
@@ -323,10 +325,16 @@ export function EditModal<TValues extends Record<string, any>>({
   const containerStyle: React.CSSProperties = {
     maxHeight: typeof maxHeight === 'number' ? `${maxHeight}px` : String(maxHeight),
     height:
-      heightMode === 'scroll' ? (typeof maxHeight === 'number' ? `${maxHeight}px` : String(maxHeight)) :
-      heightMode === 'fit' ? 'auto' :
-      clamped
-        ? (typeof maxHeight === 'number' ? `${maxHeight}px` : String(maxHeight))
+      heightMode === 'scroll'
+        ? typeof maxHeight === 'number'
+          ? `${maxHeight}px`
+          : String(maxHeight)
+        : heightMode === 'fit'
+        ? 'auto'
+        : clamped
+        ? typeof maxHeight === 'number'
+          ? `${maxHeight}px`
+          : String(maxHeight)
         : 'auto',
   };
 
@@ -341,10 +349,7 @@ export function EditModal<TValues extends Record<string, any>>({
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
-      onClick={e => {
-        if (!closeOnBackdrop) return;
-        if (e.target === overlayRef.current) onClose();
-      }}
+      onClick={handleBackdropClick}
     >
       <div
         ref={containerRef}
@@ -354,7 +359,10 @@ export function EditModal<TValues extends Record<string, any>>({
         {/* flex ancestors ต้องมี min-h-0 */}
         <div className="flex h-full flex-col min-h-0">
           {/* Header */}
-          <div ref={headerRef} className="z-10 flex items-center gap-2 border-b border-slate-200 bg-white px-5 py-4">
+          <div
+            ref={headerRef}
+            className="z-10 flex items-center gap-2 border-b border-slate-200 bg-white px-5 py-4"
+          >
             <h3 id="modal-title" className="text-base font-semibold text-slate-900">
               {title}
             </h3>
@@ -373,25 +381,39 @@ export function EditModal<TValues extends Record<string, any>>({
             {/* Scroll area: flex-1 + min-h-0; เปิด overflow เฉพาะตอน clamped/scroll mode */}
             <div
               ref={scrollBoxRef}
-              className={'flex-1 min-h-0 px-5 py-5 ' + ((heightMode === 'scroll' || (heightMode === 'adaptive' && clamped)) ? 'overflow-y-auto' : 'overflow-visible')}
+              className={
+                'flex-1 min-h-0 px-5 py-5 ' +
+                (heightMode === 'scroll' || (heightMode === 'adaptive' && clamped)
+                  ? 'overflow-y-auto'
+                  : 'overflow-visible')
+              }
               style={{ maxHeight: 'inherit' }} // รับเพดานจาก container
             >
               <div ref={innerRef} className="pb-4">
                 <div className={gridClass}>
-                  {fields.map((field, idx) => (
-                    <div key={`${field.name}-${idx}`} className="flex flex-col gap-1 min-w-0">
-                      <label htmlFor={`field-${field.name}`} className="text-sm font-medium text-slate-700">
-                        {field.label} {field.required && <span className="text-red-600">*</span>}
-                      </label>
-                      {renderField(field, idx)}
-                      {field.helpText && (
-                        <p id={`help-${field.name}`} className="text-xs text-slate-500">
-                          {field.helpText}
-                        </p>
-                      )}
-                      {field.error && <p className="text-xs text-red-600">{field.error}</p>}
-                    </div>
-                  ))}
+                  {fields.map((field, idx) => {
+                    const spanClass = (field as any).colSpan === 2 ? 'md:col-span-2' : '';
+                    return (
+                      <div key={`${field.name}-${idx}`} className={`flex flex-col gap-1 min-w-0 ${spanClass}`}>
+                        <label
+                          htmlFor={`field-${field.name}`}
+                          className="text-sm font-medium text-slate-700"
+                        >
+                          {field.label}{' '}
+                          {(field as any).required && <span className="text-red-600">*</span>}
+                        </label>
+                        {renderField(field, idx)}
+                        {(field as any).helpText && (
+                          <p id={`help-${field.name}`} className="text-xs text-slate-500">
+                            {(field as any).helpText}
+                          </p>
+                        )}
+                        {(field as any).error && (
+                          <p className="text-xs text-red-600">{(field as any).error}</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

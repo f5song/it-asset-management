@@ -1,45 +1,45 @@
-import { Compliance } from "./software";
-
-// src/types/common.ts
-export type Paged<T> = { items: T[]; total: number };
-export type DeviceGroup = "Assigned" | "Unassigned";
-export type DeviceType = "Laptop" | "Desktop" | "VM" | "Mobile";
-// ถ้ามี enum/union สำหรับ OS ก็สามารถประกาศเป็น type ได้
-export type DeviceOS = "Windows" | "macOS" | "Linux" | "iOS" | "Android";
-
-export type DeviceFilters = {
-  deviceGroup?: DeviceGroup | undefined;
-  deviceType?: DeviceType | undefined;
-  os?: DeviceOS | string | undefined;
-  search: string;
-};
-
 
 // src/types/device.ts
-export type DeviceQuery = {
-  page: number;       // 1-based
-  pageSize: number;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
-  deviceGroup?: string;
-  deviceType?: string;
-  os?: string;
-  search?: string;
-};
 
+import { FilterValues, OffsetPage, OffsetPaginationParams } from "./common";
+import type { Compliance } from "./software";
+
+/** ประเภท/กลุ่ม/OS */
+export type DeviceGroup = "Assigned" | "Unassigned";
+export type DeviceType = "Laptop" | "Desktop" | "VM" | "Mobile";
+export type DeviceOS =
+  | "Windows"
+  | "macOS"
+  | "Linux"
+  | "iOS"
+  | "Android"
+  | (string & {});
+
+/** อุปกรณ์หนึ่งรายการ */
 export type DeviceItem = {
   id: string;
   name: string;
-  type: string;
-  assignedTo?: string;
-  os: string;
+  type: DeviceType | string;
+  assignedTo?: string | null;
+  os: DeviceOS | string;
   compliance?: Compliance;
-  lastScan?: string;
+  lastScan?: string | null;
 };
 
-// ซอฟต์แวร์ที่ "อยู่บนเครื่อง" (สำหรับแท็บ Bundled Software)
+/** Query มาตรฐานสำหรับรายการอุปกรณ์ (internal) */
+export type DeviceListQuery = OffsetPaginationParams & {
+  search?: string;
+  deviceGroup?: "assigned" | "unassigned" | "";
+  deviceType?: string | "";
+  os?: string | "";
+};
+
+/** Response สำหรับรายการอุปกรณ์ */
+export type DeviceListResponse = OffsetPage<DeviceItem>;
+
+/** Bundled Software ต่ออุปกรณ์ */
 export type DeviceBundledSoftware = {
-  id: string;                 // software id
+  id: string; // software id
   softwareName: string;
   manufacturer: string;
   version: string;
@@ -49,10 +49,7 @@ export type DeviceBundledSoftware = {
   lastScan?: string | null;
 };
 
-// Query สำหรับแท็บ Bundled Software
-export type DeviceSoftwareQuery = {
-  page: number;
-  pageSize: number;
+export type DeviceSoftwareQuery = OffsetPaginationParams & {
   sortBy?: "softwareName" | "manufacturer" | "version" | "category" | "lastScan";
   sortOrder?: "asc" | "desc";
   search?: string;
@@ -61,24 +58,15 @@ export type DeviceSoftwareQuery = {
   compliance?: string;
 };
 
-export type DeviceItemsQuery = {
-  page: number;                 // 1-based
-  limit: number;                // page size
-  sortBy?: keyof DeviceItem | string;
-  sortOrder?: "asc" | "desc";
-  // filters
-  searchText?: string;
-  deviceGroupFilter?: "assigned" | "unassigned" | ""; // internal value
-  deviceTypeFilter?: string;                           // internal value
-  osFilter?: string;                                   // internal value
+export type DeviceSoftwareResponse = OffsetPage<DeviceBundledSoftware>;
+
+// ✅ ADDED: ฟิลเตอร์ฝั่งโดเมน (ใช้กับ hook/service)
+export type DeviceDomainFilters = {
+  deviceGroup?: DeviceGroup | undefined;
+  deviceType?: DeviceType | string | undefined;
+  os?: DeviceOS | string | undefined;
+  search?: string;
 };
 
-export type DeviceItemsResponse = {
-  data: DeviceItem[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-};
+// ✅ ADDED: ฟิลเตอร์แบบ UI (ใช้กับ FilterBar/InventoryPageShell)
+export type DeviceFilterValues = FilterValues<DeviceGroup, DeviceType>;

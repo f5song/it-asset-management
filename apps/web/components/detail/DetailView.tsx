@@ -1,4 +1,5 @@
 
+// components/detail/DetailView.tsx
 "use client";
 
 import React, { ReactNode, useState } from "react";
@@ -9,8 +10,10 @@ import { HistoryList } from "./HistoryList";
 import { DetailInfoGrid } from "./DetailInfo";
 import { ConfirmModal } from "../modals/ConfirmModal";
 import { EditModal } from "../modals/EditModal";
-import { EditField } from "../../types/modal";
 import type { BreadcrumbItem } from "../../types";
+
+// ✅ นำเข้า FormField แทน EditField
+import type { FormField } from "types/forms";
 
 /* ---------------- Types ---------------- */
 
@@ -22,7 +25,7 @@ export type DetailInfoProps = {
 /** ฟอร์มแก้ไขแบบ config ได้ (ใช้กับ License/Software/Device ได้หมด) */
 export type EditConfig<TValues extends Record<string, any>> = {
   title: string;
-  fields: EditField[];
+  fields: ReadonlyArray<FormField<keyof TValues & string>>; // ✅ ใช้ FormField
   initialValues: TValues;
   onSubmit: (values: TValues) => void | Promise<void>;
   submitting?: boolean;
@@ -47,13 +50,12 @@ export function DetailView<TValues extends Record<string, any>>({
   installationSection,
   history,
   onBack,
-  onEdit, // ถ้าอยากทำ side-effect อื่นก่อนเปิดโมดอล
+  onEdit,
   onDelete,
-  editConfig, // ✅ ใช้ config จากภายนอก
-  modalProps, // ✅ ใหม่: ตัวเลือกของ EditModal
+  editConfig,
+  modalProps,
   installationTabLabel = "Installations",
-  breadcrumbs, // ✅ รับ breadcrumb จากภายนอก
-  // ✅ ใหม่: ช่องทางขวาบนของ Header (เช่น ActionToolbar / ปุ่ม Assign)
+  breadcrumbs,
   headerRightExtra,
 }: {
   title: string;
@@ -68,15 +70,15 @@ export function DetailView<TValues extends Record<string, any>>({
   modalProps?: EditModalForwardProps;
   installationTabLabel?: string;
   breadcrumbs?: BreadcrumbItem[];
-  headerRightExtra?: React.ReactNode; // ✅ เพิ่ม prop
+  headerRightExtra?: React.ReactNode;
 }) {
   const [tab, setTab] = useState<"detail" | "installation" | "history">("detail");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [open, setOpen] = useState(false);
 
   const handleOpenEdit = () => {
-    onEdit?.();          // เผื่ออยาก preload / tracking ฯลฯ
-    setOpen(true);       // ✅ เปิด EditModal
+    onEdit?.();
+    setOpen(true);
   };
 
   return (
@@ -89,7 +91,6 @@ export function DetailView<TValues extends Record<string, any>>({
           onEdit={handleOpenEdit}
           onDeleteClick={onDelete ? () => setConfirmOpen(true) : undefined}
           breadcrumbs={breadcrumbs}
-          // ✅ ส่ง content ฝั่งขวาบนของ header
           rightExtra={headerRightExtra}
         />
 
@@ -132,7 +133,7 @@ export function DetailView<TValues extends Record<string, any>>({
         }}
       />
 
-      {/* ✅ ใช้ EditModal เฉพาะเมื่อส่ง editConfig มา */}
+      {/* EditModal */}
       {editConfig && (
         <EditModal
           title={editConfig.title}
@@ -147,7 +148,6 @@ export function DetailView<TValues extends Record<string, any>>({
             setOpen(false);
           }}
           onClose={() => setOpen(false)}
-          // ✅ forward ตัวควบคุม layout/overlay ไปยัง EditModal (optional)
           {...modalProps}
         />
       )}

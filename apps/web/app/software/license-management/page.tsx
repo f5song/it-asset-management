@@ -11,14 +11,14 @@ import { formatDate } from "lib/date";
 import { ActionToolbar } from "components/toolbar/ActionToolbar";
 
 import type {
-  SimpleFilters,
   LicenseItem,
   LicenseFilters,
   LicenseStatus,
   LicenseModel,
   AppColumnDef,
-  ToolbarAction,
   ExportFormat,
+  ToolbarAction,
+  FilterValues,
 } from "types";
 
 // helper: แปลง "" เป็น undefined
@@ -125,9 +125,9 @@ export default function LicenseManagementPage() {
     [],
   );
 
-  // Bridge: Domain <-> Simple (strongly-typed)
+  // ✅ Bridge: Domain <-> FilterValues (แทน SimpleFilters)
   const toSimple = React.useCallback(
-    (): SimpleFilters<LicenseStatus, LicenseModel> => ({
+    (): FilterValues<LicenseStatus, LicenseModel> => ({
       status: toUndef(filters.status as LicenseStatus | ""),
       type: toUndef(filters.licenseModel as LicenseModel | ""),
       manufacturer: toUndef(filters.manufacturer as string | ""),
@@ -137,7 +137,7 @@ export default function LicenseManagementPage() {
   );
 
   const fromSimple = React.useCallback(
-    (sf: SimpleFilters<LicenseStatus, LicenseModel>): LicenseFilters => ({
+    (sf: FilterValues<LicenseStatus, LicenseModel>): LicenseFilters => ({
       status: toUndef(sf.status),
       licenseModel: toUndef(sf.type),
       manufacturer: toUndef(sf.manufacturer),
@@ -199,29 +199,26 @@ export default function LicenseManagementPage() {
   }, []);
 
   // (ถ้าจะทำ bulk action จริงๆ ให้ใช้ selectedLicenseIds ที่ sync กับตาราง)
-  const rightExtra = (
-    <ActionToolbar
-      selectedIds={selectedLicenseIds}
-      enableDefaultMapping={false} // ปิด mapping กลาง
-      to={{
-        // ✅ เส้นทางโดเมน License
-        add: "/software/license-management/add",
-        reassign: ({ selectedIds }) =>
-          `/software/license-management/reassign?ids=${encodeURIComponent(
-            selectedIds.join(","),
-          )}`,
-        delete: ({ selectedIds }) =>
-          `/software/license-management/delete?ids=${encodeURIComponent(
-            selectedIds.join(","),
-          )}`,
-      }}
-      onAction={(act) => {
-        if (act === "delete") {
-          console.log("delete selected license ids:", selectedLicenseIds);
-        }
-      }}
-    />
-  );
+ 
+const rightExtra = (
+  <ActionToolbar
+    selectedIds={selectedLicenseIds}
+    enableDefaultMapping={false}
+    to={{
+      add: "/software/license-management/add",
+      reassign: ({  selectedIds }: { action: ToolbarAction; selectedIds: string[] }) =>
+        `/software/license-management/reassign?ids=${encodeURIComponent(selectedIds.join(","))}`,
+      delete: ({ selectedIds }: { action: ToolbarAction; selectedIds: string[] }) =>
+        `/software/license-management/delete?ids=${encodeURIComponent(selectedIds.join(","))}`,
+    }}
+    onAction={(act) => {
+      if (act === "delete") {
+        console.log("delete selected license ids:", selectedLicenseIds);
+      }
+    }}
+  />
+);
+
 
   return (
     <InventoryPageShell<LicenseItem, LicenseStatus, LicenseModel>
@@ -230,7 +227,7 @@ export default function LicenseManagementPage() {
         { label: "License Management", href: "/software/license-management" },
       ]}
       // FilterBar
-      filters={ctl.simpleFilters}
+      filters={ctl.simpleFilters}          
       onFiltersChange={ctl.onSimpleFiltersChange}
       statusOptions={statusOptions}
       typeOptions={licenseModelOptions}
@@ -239,7 +236,7 @@ export default function LicenseManagementPage() {
       allTypeLabel="All License Types"
       allManufacturerLabel="All Manufacturers"
       onExport={handleExport}
-      filterBarRightExtra={rightExtra}  // ✅ ใช้ Toolbar ทางขวา
+      filterBarRightExtra={rightExtra}            // ✅ ใช้ Toolbar ทางขวา
 
       // DataTable
       columns={columns}

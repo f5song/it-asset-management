@@ -3,7 +3,7 @@
 "use client";
 import React, { useMemo } from "react";
 // <— ปรับ path ให้ถูกกับโครงสร้างโปรเจกต์ของคุณ
-import type { AppColumnDef as CoreAppColumnDef, DataTableProps } from "../../types/table"; // <— ใช้ type กลาง
+import type { AppColumnDef as CoreAppColumnDef, DataTableProps } from "../../types/ui-table"; // <— ใช้ type กลาง
 import { DataTable } from "components/table";
 // ^^^ ปรับ path ให้ตรงของจริง
 

@@ -1,53 +1,75 @@
 
-// types/license.ts
+// src/types/license.ts
+import type { Compliance } from "./software";
+import type { ISODateString } from "./common";
+import type { Employees } from "./employees";
 
-import { Employees } from "./employees";
-import { Compliance } from "./software";
+/** โมเดลลิขสิทธิ์ (ระดับสินค้า/ซอฟต์แวร์) */
+export enum LicenseModel {
+  "Per-User" = "Per-User",
+  "Per-Device" = "Per-Device",
+  Perpetual = "Perpetual",
+  Subscription = "Subscription",
+}
 
-/** ฟิลเตอร์สำหรับหน้า License Management */
+/** สถานะของ License */
+export enum LicenseStatus {
+  Active = "Active",
+  Pending = "Pending",
+  Expired = "Expired",
+}
+
+/** หน่วยการบริโภค */
+export type ConsumptionUnit = "perUser" | "perDevice" | "concurrent";
+
+/** อายุสัญญา */
+export type LicenseTerm = "subscription" | "perpetual" | "unknown";
+
+/** ฟิลเตอร์หน้า License */
 export type LicenseFilters = {
   manufacturer?: string;
-  /** สถานะของ License */
-  status?: LicenseStatus; // ใช้ enum value เพื่อให้สอดคล้องกับ UI และคอลัมน์
-  // ถ้าอนาคตต้องการกรองตามประเภท license ให้เปิดบรรทัดล่างนี้:
+  status?: LicenseStatus;
   licenseModel?: LicenseModel;
   search?: string;
 };
 
-/** โมเดลลิขสิทธิ์ (ระดับสินค้า/ซอฟต์แวร์) — ใช้ในโดเมน Software มากกว่า */
-export enum LicenseModel {
-  "Per-User" = 'Per-User' ,
-  "Per-Device" = 'Per-Device',
-  Perpetual = 'Perpetual',
-  Subscription= 'Subscription'
-
-} 
-
-/** สถานะของ License บน UI (ตรงกับสีที่โชว์ในตาราง) */
-export enum LicenseStatus {
-  Active = 'Active',
-  Pending = 'Pending',
-  Expired = 'Expired',
-}
-
-/** ประเภทสัญญา/โมเดลลิขสิทธิ์ (ระดับ License) */
-
-
-/** รายการ license ที่ใช้ในตาราง License Management */
+/** รายการ License (ข้อมูลหลัก) */
 export interface LicenseItem {
   id: string;
   softwareName: string;
-  compliance: Compliance;
   manufacturer: string;
-  licenseModel: LicenseModel;
+
+  // ใช้สำหรับการ Assign
+  licenseModel: LicenseModel;          // "Per-User" | "Per-Device" | ...
+  perType: "per_user" | "per_device";  // แปลงจาก LicenseModel เพื่อใช้งานใน UI
+  sku?: string;
+  edition?: string;
+  version?: string;
+  consumptionUnit: ConsumptionUnit;    // seat/device/instance/core...
+  term: LicenseTerm;                   // subscription/perpetual/unknown
+
+  // จำนวน seat
   total: number;
   inUse: number;
   available: number;
-  expiryDate: string;
+
+  // วงจรสัญญา
+  expiryDate: ISODateString;
   status: LicenseStatus;
+  contractId?: string;
+  costCenter?: string;
+  purchaseDate?: ISODateString;
+  renewDate?: ISODateString;
+
+  // Compliance
+  compliance: Compliance;
+
+  // Metadata
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-
+/** กิจกรรมที่เกี่ยวกับ License */
 export type LicenseAction =
   | "Assign"
   | "Deallocate"
@@ -55,33 +77,13 @@ export type LicenseAction =
   | "Request Rejected";
 
 export type LicenseActivity = {
-  date: string | Date;     // วันที่ (สามารถเป็น Date หรือ string)
-  action: LicenseAction;   // การกระทำ
-  software: string;        // ชื่อซอฟต์แวร์
-  employee: string;        // ชื่อพนักงาน
+  date: string | Date; // อนุญาตทั้ง Date และ string
+  action: LicenseAction;
+  software: string;
+  employee: string;
 };
 
-
-export type ConsumptionUnit = "perUser" | "perDevice" | "concurrent";
-export type LicenseTerm = "subscription" | "perpetual" | "unknown";
-
-export type LicenseSummary = {
-  id: string;
-  productName: string;
-  vendor?: string;
-  licenseModel: string; // raw เช่น "Per-User" / "Per-Device" / "Subscription ..."
-  total: number;
-  inUse: number;
-  available: number;
-  expiryDate?: string;
-  // normalized
-  consumptionUnit: ConsumptionUnit;
-  term: LicenseTerm;
-};
-
-
-
-// types สำหรับฟอร์ม (ปรับ path ให้ตรงกับโปรเจกต์คุณ)
+/** ใช้ในฟอร์ม Assign */
 export type PolicyDecision = "Allowed" | "NeedsReview" | "Restricted";
 
 export type AssignRow = {
@@ -94,8 +96,8 @@ export type AssignRow = {
 
 export type LicenseAssignFormValues = {
   licenseId: string;
-  employees: Employees[];       // หรือ Employees[]
+  employees: Employees[];
   mapping: AssignRow[];
   seatMode: "partial" | "all-or-nothing";
-  installedOn: string;    // YYYY-MM-DD
+  installedOn: ISODateString; // YYYY-MM-DD
 };

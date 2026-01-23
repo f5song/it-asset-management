@@ -1,15 +1,17 @@
+
+// src/types/software.ts
 import type { LicenseModel } from "./license";
 
-export type SoftwareStatus = 'Active' | 'Expired' | 'Expiring';
-export type Compliance = 'Compliant' | 'Non-Compliant' | 'Pending';
-export type SoftwareType = 'Standard' | 'Special' | 'Exception';
-export type ClientServer = 'Client' | 'Server';
+export type SoftwareStatus = "Active" | "Expired" | "Expiring";
+export type Compliance = "Compliant" | "Non-Compliant" | "Pending";
+export type SoftwareType = "Standard" | "Special" | "Exception";
+export type ClientServer = "Client" | "Server";
 
-// ✅ ให้ SoftwareFilters สอดคล้องกับการใช้งานจริงในเพจ/ฮุค
+/** ฟิลเตอร์หน้า Software */
 export type SoftwareFilters = {
   manufacturer?: string;
-  status?: string;
-  type?: string;
+  status?: SoftwareStatus | string;
+  type?: SoftwareType | string;
   search?: string;
 };
 
@@ -19,25 +21,10 @@ export type SoftwareItem = {
   manufacturer: string;
   version: string;
   category: string;
-  expiryDate?: string | null; // ISO date string, optional
+  expiryDate?: string | null;      // ISO date
   status: SoftwareStatus;
   policyCompliance: Compliance;
   softwareType: SoftwareType;
   clientServer: ClientServer;
   licenseModel: LicenseModel;
-};
-
-export type InstallationRow = {
-  id: string;
-  device: string;
-  user: string;
-  date: string;
-  version: string;
-};
-
-export type HistoryEvent = {
-  id: string;
-  title: string;
-  actor: string;
-  date: string;
 };

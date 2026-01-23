@@ -1,12 +1,26 @@
 
 // src/hooks/useDeviceInventory.ts
 "use client";
+
 import * as React from "react";
 import { getDevices } from "services/devices.service.mock";
-import type { DeviceItem } from "types/device"; // หรือ "types" ตามโปรเจกต์คุณ
+import type { DeviceItem, DeviceListQuery } from "types/device"; // ใช้ type กลาง
 
-type Query = { pageIndex: number; pageSize: number; sortBy?: string; sortOrder?: "asc" | "desc" };
-type Filters = { deviceGroup: string; deviceType: string; os: string; search: string };
+// Query ที่มาจาก controller (TanStack-style หรือของคุณเอง)
+type Query = {
+  pageIndex: number;                   // 0-based
+  pageSize: number;
+  sortBy?: string;                     // ชื่อคอลัมน์
+  sortOrder?: "asc" | "desc";          // ทิศทาง
+};
+
+// ฟิลเตอร์ที่ถูก normalize แล้ว (string ว่าง = ไม่กรอง)
+type Filters = {
+  deviceGroup?: "assigned" | "unassigned" | "" ;                // "assigned" | "unassigned" | "" (normalize แล้ว)
+  deviceType?: string;                 // "laptop" | "desktop" | ... | ""
+  os?: string;                         // "windows" | "macos" | ... | ""
+  search?: string;                     // คำค้น
+};
 
 export function useDeviceInventory(query: Query, filters?: Filters) {
   const [rows, setRows] = React.useState<DeviceItem[]>([]);
@@ -24,31 +38,34 @@ export function useDeviceInventory(query: Query, filters?: Filters) {
         setError(false);
         setErrorMessage(undefined);
 
-        const res = await getDevices(
-          {
-            page: query.pageIndex + 1,         // ✅ map pageIndex -> page
-            limit: query.pageSize,              // ✅ map pageSize -> limit
-            sortBy: query.sortBy,
-            sortOrder: query.sortOrder,
-            searchText: filters?.search || "",  // ✅ ใช้คีย์ใหม่ที่ service รับ
-            deviceTypeFilter: filters?.deviceType || "",
-            osFilter: filters?.os || "",
-          },
-          ac.signal
-        );
+        // ✅ map เป็น DeviceListQuery (API ใหม่)
+        const q: DeviceListQuery = {
+          page: (query.pageIndex ?? 0) + 1,     // 1-based
+          pageSize: query.pageSize ?? 10,
+          sortBy: query.sortBy,
+          sortOrder: query.sortOrder,
+          search: filters?.search ?? "",
+          deviceGroup: filters?.deviceGroup ?? "",
+          deviceType: filters?.deviceType ?? "",
+          os: filters?.os ?? "",
+        };
 
-        setRows(res.data ?? []);                                  // ✅ ใช้ data
-        setTotalRows(res.pagination?.total ?? 0);                 // ✅ ใช้ pagination.total
+        const res = await getDevices(q, ac.signal);
+
+        // ✅ อ่านผลลัพธ์จาก keys ใหม่
+        setRows(res.items ?? []);
+        setTotalRows(res.totalCount ?? 0);
       } catch (e: any) {
         if (e?.name === "AbortError") return;
         setError(true);
-        setErrorMessage(e?.message ?? "Unknown error");
+        setErrorMessage(e?.message ?? "โหลดข้อมูลไม่สำเร็จ");
       } finally {
         setLoading(false);
       }
     };
 
     run();
+    // ใส่ deps ให้ครอบคลุมทุก key ที่ใช้คำนวน q
     return () => ac.abort();
   }, [
     query.pageIndex,

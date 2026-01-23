@@ -2,9 +2,10 @@
 // src/components/datatable/DataTableBody.tsx
 'use client';
 
+import { cn } from 'components/ui';
 import React from 'react';
-import type { AppColumnDef } from '../../types/table';
-import { cn } from '../ui';
+import { AppColumnDef } from 'types';
+
 
 type Props<T extends { id?: string | number }> = {
   columns: AppColumnDef<T>[];
