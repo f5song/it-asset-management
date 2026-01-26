@@ -2,7 +2,7 @@
 // src/components/installation/ActionSelect.tsx
 "use client";
 import React from "react";
-import { ToolbarAction } from "../../types/tab";
+import { ToolbarAction } from "types";
 
 export function ActionSelect({ onAction }: { onAction: (action: ToolbarAction) => void }) {
   const id = React.useId();

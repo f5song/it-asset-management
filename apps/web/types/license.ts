@@ -1,4 +1,3 @@
-
 // src/types/license.ts
 import type { Compliance } from "./software";
 import type { ISODateString } from "./common";
@@ -40,13 +39,13 @@ export interface LicenseItem {
   manufacturer: string;
 
   // ใช้สำหรับการ Assign
-  licenseModel: LicenseModel;          // "Per-User" | "Per-Device" | ...
-  perType: "per_user" | "per_device";  // แปลงจาก LicenseModel เพื่อใช้งานใน UI
+  licenseModel: LicenseModel; // "Per-User" | "Per-Device" | ...
+  perType: "per_user" | "per_device"; // แปลงจาก LicenseModel เพื่อใช้งานใน UI
   sku?: string;
   edition?: string;
   version?: string;
-  consumptionUnit: ConsumptionUnit;    // seat/device/instance/core...
-  term: LicenseTerm;                   // subscription/perpetual/unknown
+  consumptionUnit: ConsumptionUnit; // seat/device/instance/core...
+  term: LicenseTerm; // subscription/perpetual/unknown
 
   // จำนวน seat
   total: number;
@@ -67,6 +66,11 @@ export interface LicenseItem {
   // Metadata
   createdAt?: string;
   updatedAt?: string;
+
+  cost: number;
+  maintenanceCost: number;
+  notes: string;
+  licenseKey: string;
 }
 
 /** กิจกรรมที่เกี่ยวกับ License */
@@ -100,4 +104,18 @@ export type LicenseAssignFormValues = {
   mapping: AssignRow[];
   seatMode: "partial" | "all-or-nothing";
   installedOn: ISODateString; // YYYY-MM-DD
+};
+
+export type LicenseEditValues = {
+  productName: string;
+  licenseKey: string;
+  licenseModel: LicenseModel;
+  total: number;
+  inUse: number;
+  expiryDate: string; // <input type=date> compatible
+  status: LicenseStatus;
+  manufacturer: string;
+  licenseCost?: number;
+  maintenanceCost?: number;
+  notes?: string;
 };

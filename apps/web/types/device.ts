@@ -70,3 +70,13 @@ export type DeviceDomainFilters = {
 
 // ✅ ADDED: ฟิลเตอร์แบบ UI (ใช้กับ FilterBar/InventoryPageShell)
 export type DeviceFilterValues = FilterValues<DeviceGroup, DeviceType>;
+
+
+export interface DeviceEditValues {
+  name: string;
+  type: string;
+  assignedTo?: string;
+  os: string;
+  compliance: string;
+  lastScan?: string;  // ใช้ string เพราะ <input type="date"> ส่งค่า string (YYYY-MM-DD)
+}

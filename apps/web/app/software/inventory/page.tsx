@@ -10,7 +10,7 @@ import { useSoftwareInventory } from "hooks/useSoftwareInventory";
 import type {
   AppColumnDef,
   ExportFormat,
-  SimpleFilters,
+  FilterValues,
   SoftwareFilters,
   SoftwareItem,
   SoftwareStatus,
@@ -80,7 +80,7 @@ export default function SoftwarePage() {
 
   // Bridge: Domain <-> Simple
   const toSimple = React.useCallback(
-    (): SimpleFilters<SoftwareStatus, SoftwareType> => ({
+    (): FilterValues<SoftwareStatus, SoftwareType> => ({
       status: toUndef(filters.status as SoftwareStatus | ""),
       type: toUndef(filters.type as SoftwareType | ""),
       manufacturer: toUndef(filters.manufacturer as string | ""),
@@ -90,7 +90,7 @@ export default function SoftwarePage() {
   );
 
   const fromSimple = React.useCallback(
-    (sf: SimpleFilters<SoftwareStatus, SoftwareType>): SoftwareFilters => ({
+    (sf: FilterValues<SoftwareStatus, SoftwareType>): SoftwareFilters => ({
       status: toUndef(sf.status),
       type: toUndef(sf.type),
       manufacturer: toUndef(sf.manufacturer),

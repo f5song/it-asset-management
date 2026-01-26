@@ -1,23 +1,23 @@
+import { AssignedDisplayRow, LicenseStatus } from "types";
 
-import { LicenseStatus } from "../types";
 
-export const ASSIGNED_TO: AssigenedRow[] = [
+
+export const ASSIGNED_TO: AssignedDisplayRow[] = [
   {
     employeeId: "1",
     employeeName: "Puttaraporn Jitpranee",
     expiryDate: "2025-01-01",
-    AssignedDate: "2025.1",
+    assignedDate: "2025.1",
     softwareId: "SW-3DSMAX",
     softwareName: "3ds Max",
     department: "Information Technology",
     status: LicenseStatus.Active,
   },
-  // ... อื่น ๆ
 ];
 
 export async function getAssignedTo(
   softwareId: string
-): Promise<AssigenedRow[]> {
+): Promise<AssignedDisplayRow[]> {
   return ASSIGNED_TO.filter((row) => row.softwareId === softwareId);
 }
 

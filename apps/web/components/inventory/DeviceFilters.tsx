@@ -2,8 +2,7 @@
 
 import * as React from "react";
 import { FilterBar } from "../ui/FilterBar";
-import type { ExportFormat, ToolbarAction } from "../../types/tab";
-import { SimpleFilters } from "../../types";
+import { ExportFormat, FilterValues, ToolbarAction } from "types";
 
 export type DeviceFilterState = {
   deviceGroup: string;
@@ -29,7 +28,7 @@ export function DeviceFilters({
   onExport: (fmt: ExportFormat) => void;     // ✅ ใช้ ExportFormat
   onAction: (act: ToolbarAction) => void;    // ✅ ใช้ ToolbarAction
 }) {
-  const simpleFilters: SimpleFilters<string, string> = React.useMemo(
+  const simpleFilters: FilterValues<string, string> = React.useMemo(
     () => ({
       status:       filters.deviceGroup !== "All Device" ? filters.deviceGroup : undefined,
       type:         filters.deviceType  !== "All Type"   ? filters.deviceType  : undefined,
@@ -39,7 +38,7 @@ export function DeviceFilters({
     [filters]
   );
 
-  const handleChange = (sf: SimpleFilters<string, string>) => {
+  const handleChange = (sf: FilterValues<string, string>) => {
     setFilter({
       deviceGroup: sf.status       ?? "All Device",
       deviceType:  sf.type         ?? "All Type",

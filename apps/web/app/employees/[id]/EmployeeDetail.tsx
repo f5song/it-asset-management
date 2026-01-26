@@ -8,6 +8,7 @@ import { InstallationSection } from "components/tabbar/InstallationSection";
 // ปรับ path ให้ตรงกับโปรเจกต์ของคุณ
 import type { Employees } from "types/employees";
 import type { BreadcrumbItem, HistoryEvent } from "types";
+import { employeesEditFields } from "app/config/forms/employeeEditFields";
 
 /** ตาราง Assignments ในหน้า Employee (self-contained) */
 type EmployeeAssignmentRow = {
@@ -130,22 +131,15 @@ export default function EmployeeDetail({
       // ถ้าต้องการแก้ไขข้อมูลพนักงาน ใส่ editConfig ได้ตามรูปแบบเดียวกับหน้าอื่น
       editConfig={{
         title: "Edit Employee",
-        fields: [
-          { name: "name", label: "Name", type: "text", required: true },
-          { name: "department", label: "Department", type: "text" },
-          {
-            name: "status",
-            label: "Status",
-            type: "select",
-            options: ["Active", "Inactive", "Contractor", "Intern"].map(
-              (v) => ({ label: v, value: v }),
-            ),
-          },
-        ],
+        fields: employeesEditFields,
         initialValues: {
           name: item.name ?? "",
           department: item.department ?? "",
-          status: (item.status as any) ?? "Active",
+          status: item.status ?? "Active",
+          phone: item.phone ?? "",
+          jobTitle: item.jobTitle ?? "",
+          device: item.device ?? "",
+          
         },
         onSubmit: async (values) => {
           console.log("save employee:", values);

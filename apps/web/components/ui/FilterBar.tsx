@@ -5,15 +5,16 @@ import React from "react";
 import { ExportSelect } from "./ExportSelect";
 import { ActionSelect } from "./ActionSelect";
 import { SelectField } from "./SelectField";
-import { ExportFormat, ToolbarAction } from "../../types/tab";
+
 import { SearchInput } from "./SearchInput";
-import { SimpleFilters } from "../../types";
+import { ExportFormat, FilterValues, ToolbarAction } from "types";
+
 
 export type FilterBarProps<TStatus extends string, TType extends string> = {
   /** state เดียว รวมทุกฟิลด์ */
-  filters: SimpleFilters<TStatus, TType>;
+  filters: FilterValues<TStatus, TType>;
   /** อัปเดตฟิลเตอร์ */
-  onFiltersChange: (next: SimpleFilters<TStatus, TType>) => void;
+  onFiltersChange: (next: FilterValues<TStatus, TType>) => void;
 
   /** 🔁 ปรับ options ให้เป็น string[] เพื่อรับจากทุกหน้าได้ง่าย */
   statusOptions?: readonly string[];
@@ -77,9 +78,9 @@ export function FilterBar<TStatus extends string, TType extends string>({
   const manufacturerValue = (filters.manufacturer ?? "ALL") as string;
 
   // updater สั้น ๆ
-  const patch = <K extends keyof SimpleFilters<TStatus, TType>>(
+  const patch = <K extends keyof FilterValues<TStatus, TType>>(
     key: K,
-    value: SimpleFilters<TStatus, TType>[K]
+    value: FilterValues<TStatus, TType>[K]
   ) => onFiltersChange({ ...filters, [key]: value });
 
   return (

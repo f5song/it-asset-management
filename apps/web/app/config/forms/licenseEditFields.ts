@@ -1,10 +1,9 @@
+import { LicenseEditValues } from "types";
+import { FormField } from "types/forms";
 
-import { EditField } from "../../../types/modal";
-
-// ✅ ชื่อ name ต้อง "ไม่ซ้ำ" และไม่มีช่องว่าง/ตัวพิเศษ
-export const licenseEditFields: EditField[] = [
-  { name: "productName", label: "Software Name", required: true, placeholder: "e.g. Adobe Photoshop" },
-  { name: "licenseKey", label: "License Key", required: true, placeholder: "XXXX-XXXX-XXXX-XXXX" },
+export const licenseEditFields: FormField<keyof LicenseEditValues & string>[] = [
+  { name: "productName", label: "Software Name", required: true, placeholder: "e.g. Adobe Photoshop", type: "text" },
+  { name: "licenseKey", label: "License Key", required: true, placeholder: "XXXX-XXXX-XXXX-XXXX", type: "text" },
   {
     name: "licenseModel",
     label: "License Model",
@@ -34,7 +33,7 @@ export const licenseEditFields: EditField[] = [
     ],
     placeholder: "Select status…",
   },
-  { name: "vendor", label: "Vendor", placeholder: "e.g. Adobe" },
+  { name: "manufacturer", label: "Vendor", placeholder: "e.g. Adobe", type: "text" },
 
   // 🟡 ถ้าต้องมีหลาย cost ให้ตั้งชื่อคนละตัว ห้ามซ้ำกัน
   { name: "licenseCost", label: "Cost (USD)", type: "number" },

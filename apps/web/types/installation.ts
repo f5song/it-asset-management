@@ -44,3 +44,22 @@ export type LicenseInstallationRow = {
   scannedLicenseKey?: string | null;
   workStation?: string | null;
 };
+
+
+export interface DeviceInstallationRow {
+  id: string;
+
+  softwareName: string;
+  manufacturer: string;
+  version: string;
+  category: string;
+
+  // Optional fields — appears in some datasets
+  status?: string;
+  softwareType?: string;
+  policyCompliance?: string;
+  clientServer?: string;
+
+  // For flexibility & forward compatibility
+  [key: string]: unknown;
+}

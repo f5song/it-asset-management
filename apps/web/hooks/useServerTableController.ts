@@ -4,8 +4,8 @@
 
 import React from "react";
 import type { PaginationState, SortingState } from "@tanstack/react-table";
-import { SimpleFilters } from "types";
 import { ServerSort, sortingToServer } from "lib/sortingToServer";
+import { FilterValues } from "types/common";
 
 
 type UseServerTableControllerOptions<T, FK extends string, FT extends string, DF> = {
@@ -15,8 +15,8 @@ type UseServerTableControllerOptions<T, FK extends string, FT extends string, DF
   domainFilters: DF;
   setDomainFilters: (next: DF) => void;
 
-  toSimple: (df: DF) => SimpleFilters<FK, FT>;
-  fromSimple: (sf: SimpleFilters<FK, FT>) => DF;
+  toSimple: (df: DF) => FilterValues<FK, FT>;
+  fromSimple: (sf: FilterValues<FK, FT>) => DF;
 
   /** ถ้าฟิลเตอร์/เงื่อนไขเปลี่ยน ให้รีเซ็ต pageIndex = 0 */
   resetDeps?: React.DependencyList;
@@ -45,7 +45,7 @@ export function useServerTableController<T, FK extends string, FT extends string
   // แปลง filters โดเมน ↔︎ SimpleFilters (สำหรับ FilterBar)
   const simpleFilters = React.useMemo(() => toSimple(domainFilters), [domainFilters, toSimple]);
   const onSimpleFiltersChange = React.useCallback(
-    (sf: SimpleFilters<FK, FT>) => setDomainFilters(fromSimple(sf)),
+    (sf: FilterValues<FK, FT>) => setDomainFilters(fromSimple(sf)),
     [fromSimple, setDomainFilters]
   );
 

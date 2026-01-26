@@ -16,6 +16,7 @@ export type Employees = {
   email: string;
   jobTitle: string;
   phone: string;
+  device: string;
 };
 
 export type EmployeesFilters = {
@@ -23,3 +24,13 @@ export type EmployeesFilters = {
   status?: EmployeeStatus;
   search?: string;
 };
+
+
+export interface EmployeesEditValues {
+  name: string;
+  department?: string;
+  status: string;
+  phone?: string;
+  jobTitle?: string;
+  device?: string;
+}

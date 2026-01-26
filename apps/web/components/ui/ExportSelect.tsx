@@ -2,7 +2,8 @@
 // src/components/installation/ExportSelect.tsx
 "use client";
 import React from "react";
-import { ExportFormat } from "../../types/tab";
+import { ExportFormat } from "types";
+
 
 export function ExportSelect({ onExport }: { onExport: (format: ExportFormat) => void }) {
   const id = React.useId();

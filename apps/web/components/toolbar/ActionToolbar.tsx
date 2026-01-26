@@ -5,8 +5,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { ActionSelect } from "components/ui/ActionSelect";
-import type { ToolbarAction } from "types/tab";
-import { ActionPathConfig } from "types/action";
+import { ActionPathConfig, ToolbarAction } from "types";
 
 
 export type ActionToolbarProps = {

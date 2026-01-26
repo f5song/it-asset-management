@@ -4,7 +4,7 @@
 
 import React from "react";
 import { z } from "zod";
-import { FieldDescriptor } from "../../../types";
+
 import { FormPage } from "../../../components/ui/FormPage";
 import BackButton from "../../../components/ui/BackButton";
 

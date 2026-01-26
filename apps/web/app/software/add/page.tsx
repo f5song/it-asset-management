@@ -1,10 +1,11 @@
 // src/pages/AddSoftwarePage.tsx
 "use client";
+import BackButton from "components/ui/BackButton";
+import { FormPage } from "components/ui/FormPage";
 import React from "react";
+import { FormField } from "types/forms";
 import { z } from "zod";
-import { FieldDescriptor } from "../../../types";
-import { FormPage } from "../../../components/ui/FormPage";
-import BackButton from "../../../components/ui/BackButton";
+
 
 const schema = z.object({
   softwareName: z.string().min(1, "กรุณากรอกชื่อซอฟต์แวร์"),
@@ -26,7 +27,7 @@ const defaultValues: SoftwareFormValues = {
   notes: "",
 };
 
-const fields: FieldDescriptor<keyof SoftwareFormValues & string>[] = [
+const fields: FormField<keyof SoftwareFormValues & string>[] = [
   {
     name: "softwareName",
     label: "Software Name",

@@ -28,3 +28,30 @@ export type SoftwareItem = {
   clientServer: ClientServer;
   licenseModel: LicenseModel;
 };
+
+
+export interface SoftwareEditValues {
+  softwareName: string;
+  manufacturer?: string;
+  version?: string;
+  category: string;
+  licenseModel: string;
+  policyCompliance: string;
+}
+
+
+export interface InstallationRow {
+  id: string;
+
+  // License installation fields
+  deviceName?: string;
+  userName?: string;
+  licenseStatus?: string;
+  licenseKey?: string;
+  scannedLicenseKey?: string;
+  workStation?: string;
+
+  // Software installation fields
+  device?: string;
+  user?: string;
+}

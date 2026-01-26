@@ -4,13 +4,6 @@
 import React from "react";
 
 import { ToolbarSummary } from "./ToolbarSummary";
-import {
-  ExportFormat,
-  Filters,
-  ToolbarAction,
-} from "../../types/tab";
-import { FilterBar } from "../ui/FilterBar";
-import { SimpleFilters } from "../../types";
 
 
 /** ---------- Helpers: map Installation <-> FilterBar(Simple) ---------- */

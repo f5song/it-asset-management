@@ -2,61 +2,79 @@
 "use client";
 
 import * as React from "react";
-import { BreadcrumbItem, HistoryEvent, InstallationRow, SoftwareItem } from "../../../../types";
-import { DetailView } from "../../../../components/detail/DetailView";
-import { InstallationSection } from "../../../../components/tabbar/InstallationSection";
+import { DetailView } from "components/detail/DetailView";
+import { InstallationSection } from "components/tabbar/InstallationSection";
+import { ActionToolbar } from "components/toolbar/ActionToolbar";
+import type {
+  BreadcrumbItem,
+  HistoryEvent,
+  InstallationRow,
+  SoftwareItem,
+  ActionPathConfig,
+  ToolbarAction,
+} from "types";
+import { show } from "lib/show";
+import { softwareEditFields } from "app/config/forms/softwareEditFields";
+import { demoHistory, demoSoftwareInstallations } from "lib/demo/softwareDetailDemoData";
+import { mapSoftwareItemToForm } from "lib/mappers/mapSoftwareItemToForm";
+import { softwareInstallationColumns } from "lib/tables/softwareInstallationColumns";
 
-// (แบบเดียวกับ DeviceDetail) columns แบบสั้น: header + accessor
-type SimpleColumn<R> = {
-  header: string;
-  accessor: (r: R) => React.ReactNode;
-};
-
-// ฟังก์ชันแสดงค่าแบบมี fallback เครื่องหมาย "—"
-const show = (v: unknown) =>
-  v === undefined || v === null || v === "" ? "—" : String(v);
+interface SoftwareDetailProps {
+  item: SoftwareItem;
+  installations: InstallationRow[];
+  history: HistoryEvent[];
+  breadcrumb?: BreadcrumbItem[];
+}
 
 export default function SoftwareDetail({
   item,
   installations,
   history,
   breadcrumb,
-}: {
-  item: SoftwareItem;
-  installations: InstallationRow[];
-  history: HistoryEvent[];
-  breadcrumb?: BreadcrumbItem[];
-}) {
+}: SoftwareDetailProps) {
   const onBack = React.useCallback(() => window.history.back(), []);
+
   const onDelete = React.useCallback(() => {
-    // TODO: เรียก API/Server Action เพื่อลบ แล้ว redirect
     console.log("Delete", item.id);
   }, [item.id]);
 
-  // ✅ คอลัมน์แบบเดียวกับ DeviceDetail (header + accessor)
-  const columns = React.useMemo<SimpleColumn<InstallationRow>[]>(() => {
-    return [
-      { header: "Device",           accessor: (r) => show((r as any).device) },
-      { header: "User",             accessor: (r) => show((r as any).user) },
-      // ถ้ามีฟิลด์จริงใน InstallationRow ให้เปลี่ยนเครื่องหมาย "—"/"Active" เป็นค่าใน r เช่น r.licenseStatus, r.licenseKey, ...
-      { header: "License Status",   accessor: (_r) => "Active" },
-      { header: "License Key",      accessor: (_r) => "—" },
-      { header: "Scanned License",  accessor: (_r) => "—" },
-      { header: "Workstation",      accessor: (_r) => "—" },
-    ];
-  }, []);
-
-  // ✅ rows ใช้ installations ตรง ๆ
+  // Installations tab rows (fallback demo)
   const rows = React.useMemo<InstallationRow[]>(
-    () => installations,
+    () => (installations?.length ? installations : demoSoftwareInstallations),
     [installations],
+  );
+
+  // History tab data (fallback demo)
+  const historyData = React.useMemo<HistoryEvent[]>(
+    () => (history?.length ? history : demoHistory),
+    [history],
+  );
+
+  // Initial form values
+  const initialValues = React.useMemo(
+    () => mapSoftwareItemToForm(item),
+    [item],
+  );
+
+  // Toolbar path mapping
+  const toolbarTo: Partial<Record<ToolbarAction, ActionPathConfig>> = {
+    assign: `/software/software-management/${item.id}/assign`,
+  };
+
+  const toolbar = (
+    <ActionToolbar
+      selectedIds={[]}
+      to={toolbarTo}
+      onAction={(act) => console.log("toolbar:", act)}
+      openInNewTab={false}
+      enableDefaultMapping={false}
+    />
   );
 
   return (
     <DetailView
       title={item.softwareName}
       compliance={item.policyCompliance}
-      // 🔁 ให้ตรงกับที่ต้องการ: "Installations"
       installationTabLabel="Installations"
       info={{
         left: [
@@ -72,41 +90,30 @@ export default function SoftwareDetail({
           { label: "Client/Server", value: show(item.clientServer) },
         ],
       }}
-
       installationSection={
         <InstallationSection<InstallationRow>
           rows={rows}
-          columns={columns}
+          columns={softwareInstallationColumns}
           resetKey={`software-${item.id}`}
           initialPage={1}
           pageSize={10}
         />
       }
-      history={history}
+      history={historyData}
       onBack={onBack}
       onDelete={onDelete}
       editConfig={{
-        title: "Edit Software Detail",
-        fields: require("../../../config/forms/softwareEditFields")
-          .softwareEditFields,
-        initialValues: {
-          softwareName: item.softwareName ?? "",
-          manufacturer: item.manufacturer ?? "",
-          version: item.version ?? "",
-          category: (item.category ?? "free").toString().toLowerCase(),
-          licenseModel: (item.licenseModel ?? "free").toString().toLowerCase(),
-          policyCompliance: (item.policyCompliance ?? "allowed")
-            .toString()
-            .toLowerCase(),
-        },
+        title: "Edit Software",
+        fields: softwareEditFields,
+        initialValues,
         onSubmit: async (values) => {
-          // TODO: call API update software
           console.log("save software:", values);
         },
         submitLabel: "Confirm",
         cancelLabel: "Cancel",
       }}
       breadcrumbs={breadcrumb}
+      headerRightExtra={toolbar}
     />
   );
 }

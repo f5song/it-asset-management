@@ -1,12 +1,12 @@
 
 import BackButton from "components/ui/BackButton";
-import { PageHeader } from "components/ui/PageHeader";
-import { getAssignedTo, getAssignedToFilters } from "mock/assigned.mock";
-import { getHistoryBySoftware } from "mock/history.mock";
+
 import { notFound } from "next/navigation";
 
 import LicenseDetail from "./LicenseDetail";
 import { getLicenseById } from "services/licenses.service.mock";
+import { getAssignedTo, getAssignedToFilters } from "app/mock/assigned.mock";
+import { getHistoryBySoftware } from "app/mock";
 
 type PageProps = { params: { id: string } };
 

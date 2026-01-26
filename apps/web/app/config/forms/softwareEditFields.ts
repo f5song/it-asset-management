@@ -1,23 +1,18 @@
+import { FormField, SoftwareEditValues } from "types";
 
-// src/features/software/editFields.ts
-import { EditField } from "../../../types/modal";
-
-/**
- * แบบฟอร์ม "Edit Software Detail"
- * - ตั้งชื่อ name ให้เป็น camelCase, ไม่ซ้ำ, ไม่มีช่องว่าง/ตัวพิเศษ
- * - สอดคล้องกับเลย์เอาต์ในภาพ (2 คอลัมน์สำหรับแถวล่าง)
- */
-export const softwareEditFields: EditField[] = [
+export const softwareEditFields: FormField<keyof SoftwareEditValues & string>[] = [
   {
     name: "softwareName",
     label: "Software Name",
     required: true,
     placeholder: "e.g. Google Chrome",
+    type: "text",
   },
   {
     name: "manufacturer",
     label: "Manufacturer",
     placeholder: "e.g. Google",
+    type: "text",
   },
 
   // แถวล่างสองคอลัมน์: Version | Category
@@ -25,6 +20,7 @@ export const softwareEditFields: EditField[] = [
     name: "version",
     label: "Version",
     placeholder: "v120",
+    type: "text",
   },
   {
     name: "category",

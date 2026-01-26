@@ -25,7 +25,7 @@ export type DetailInfoProps = {
 /** ฟอร์มแก้ไขแบบ config ได้ (ใช้กับ License/Software/Device ได้หมด) */
 export type EditConfig<TValues extends Record<string, any>> = {
   title: string;
-  fields: ReadonlyArray<FormField<keyof TValues & string>>; // ✅ ใช้ FormField
+  fields: ReadonlyArray<FormField<keyof TValues & string>>;
   initialValues: TValues;
   onSubmit: (values: TValues) => void | Promise<void>;
   submitting?: boolean;

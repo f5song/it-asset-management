@@ -1,5 +1,7 @@
 "use client";
-import type { HistoryEvent } from "@/types";
+
+import { HistoryEvent } from "types";
+
 
 export function HistoryList({ history }: { history: HistoryEvent[] }) {
   return (
@@ -13,7 +15,7 @@ export function HistoryList({ history }: { history: HistoryEvent[] }) {
             <div>
               <div className="text-sm font-semibold text-slate-900">{h.title}</div>
               <div className="text-xs text-slate-500">
-                {h.actor} • {h.date}
+                {h.actor} • {h.timestamp}
               </div>
             </div>
           </li>

@@ -78,3 +78,4 @@ export function useDeviceBundledSoftware(
 
   return { rows, totalRows, isLoading, isError, errorMessage };
 }
+
