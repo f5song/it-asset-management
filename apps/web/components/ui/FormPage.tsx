@@ -19,7 +19,7 @@ import { FormActions } from "./FormActions";
 import { Container } from "./Container";
 
 // ✅ ใช้ชนิดจากไฟล์ types เท่านั้น (อย่าประกาศใหม่ซ้ำ)
-import type { FormPageProps as _FormPageProps, FieldDescriptor } from "types";
+import type { FormPageProps as _FormPageProps, FormField } from "types";
 
 // ทำ alias เพื่อเพิ่ม constraint กับ FieldValues ของ RHF
 export type FormPageProps<TValues extends FieldValues> = Omit<
@@ -61,7 +61,7 @@ export function FormPage<TValues extends FieldValues>({
     return (e as any)?.message as string | undefined;
   };
 
-  const renderField = (field: FieldDescriptor<keyof TValues & string>) => {
+  const renderField = (field: FormField<keyof TValues & string>) => {
     const id = String(field.name);
     const errorMsg = getErrorMessage(id);
     const col = field.colSpan === 2 ? "md:col-span-2" : "md:col-span-1";

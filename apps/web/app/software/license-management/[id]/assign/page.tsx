@@ -1,21 +1,27 @@
+import AssignFormCore from "@/components/assign/AssignFormCore";
+import { getAllDevices } from "@/services/devices.service.mock";
+import { getAllEmployees } from "@/services/employees.service.mock";
+import { getLicenseById } from "@/services/licenses.service.mock";
 
-"use client";
 
-import React from "react";
-import { useParams, useRouter } from "next/navigation";
-import { LicenseAssignWizard } from "components/license-assign/LicenseAssignWizard";
+export default async function Page({ params }: { params: { id: string } }) {
+  console.log("[assign employees] params.id =", params.id);
+  const license = await getLicenseById(params.id);
+  if (!license) return console.log("errorsdjflkjsdf");
 
-export default function AssignLicensePage() {
-  const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+  const [employees, devices] = await Promise.all([getAllEmployees(), getAllDevices()]);
 
   return (
-    <main className="px-4 py-6">
-      <LicenseAssignWizard
-        licenseId={id}
-        onCancel={() => router.back()}
-        onSuccess={() => router.push(`/software/license-management/${id}`)}
+    <div className="p-4 md:p-6">
+      <h1 className="text-xl font-semibold mb-3">Assign License → Employee</h1>
+      <AssignFormCore
+        mode="licenseToEmployee"
+        license={license}
+        employees={employees}
+        devices={devices}
+        licenses={[]}
       />
-    </main>
+    </div>
   );
 }
+``

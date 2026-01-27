@@ -1,20 +1,29 @@
-
 // components/installation/ActionToolbar.tsx
 "use client";
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ActionSelect } from "components/ui/ActionSelect";
-import { ActionPathConfig, ToolbarAction } from "types";
 
+import { ActionPathConfig, ToolbarAction } from "types";
+import { ActionOption, ActionSelect } from "components/ui/ActionSelect";
 
 export type ActionToolbarProps = {
   selectedIds: string[];
   to?: Partial<Record<ToolbarAction, ActionPathConfig>>;
   onAction?: (action: ToolbarAction) => void;
   openInNewTab?: boolean;
-  /** ถ้าอยากให้มี fallback ค่อยตั้งค่าเป็น true ตอนใช้งาน */
   enableDefaultMapping?: boolean;
+
+  /** ต้องเลือก ≥1 ไหม */
+  requireSelection?: boolean;
+  /** ต้องเลือก =1 ไหม (เช่น edit) */
+  singleSelectionOnly?: boolean;
+
+  /** จำกัดปุ่มที่แสดง (เช่น ["assign","edit","delete"]) */
+  visibleActions?: ToolbarAction[];
+
+  /** ปิดทั้งตัวเลือก (เช่น กำลังโหลด) */
+  disabled?: boolean;
 };
 
 export function ActionToolbar({
@@ -22,48 +31,94 @@ export function ActionToolbar({
   to,
   onAction,
   openInNewTab = false,
-  enableDefaultMapping = false, // ✅ เปลี่ยนค่าเริ่มต้นเป็น false
+  enableDefaultMapping = false,
+
+  requireSelection = false,
+  singleSelectionOnly = false,
+  visibleActions,
+
+  disabled = false,
 }: ActionToolbarProps) {
   const router = useRouter();
 
   const buildHref = React.useCallback(
     (action: ToolbarAction): string | undefined => {
-      // 1) ใช้ config ที่ส่งมาจากหน้าปัจจุบันก่อน
       const conf = to?.[action];
       if (conf) {
         if (typeof conf === "string") return conf;
         if (typeof conf === "function") return conf({ action, selectedIds });
       }
-
-      // 2) (ออปชัน) fallback — ปิดไว้เป็นค่าเริ่มต้น (ไม่มี /installations/)
       if (enableDefaultMapping) {
         const ids = encodeURIComponent(selectedIds.join(","));
-        // 👉 ถ้าจำเป็นจริง ๆ ค่อยเติม mapping ชั่วคราวของหน้าปัจจุบันเอง
-        // return `/your-default/reassign?ids=${ids}`;
         return undefined;
       }
-
-      // 3) ไม่กำหนด path
       return undefined;
     },
     [to, selectedIds, enableDefaultMapping]
   );
 
+  const selectionInvalidFor = React.useCallback(
+    (action: ToolbarAction) => {
+      // กติกาเบื้องต้น (ปรับได้): edit => single-only, delete/reassign => require selection
+      if (singleSelectionOnly && action === "edit") {
+        return selectedIds.length !== 1;
+      }
+      if (requireSelection && (action === "delete" || action === "reassign")) {
+        return selectedIds.length < 1;
+      }
+      return false;
+    },
+    [requireSelection, singleSelectionOnly, selectedIds.length]
+  );
+
+  const options = React.useMemo<ActionOption[]>(() => {
+    const acts = (visibleActions?.length
+      ? visibleActions
+      : (["delete", "add"] as ToolbarAction[])); // default set (ถ้าหน้าไม่ระบุ)
+
+    return acts.map((a) => ({
+      value: a,
+      label:
+        a === "assign"
+          ? "Assign"
+          : a === "reassign"
+          ? "Reassign"
+          : a === "edit"
+          ? "Edit"
+          : a === "delete"
+          ? "Delete"
+          : a === "add"
+          ? "Add"
+          : a === "export"
+          ? "Export"
+          : a,
+      disabled: selectionInvalidFor(a) || !buildHref(a), // disable ถ้าไม่ผ่านกติกา หรือไม่มี path
+    }));
+  }, [visibleActions, selectionInvalidFor, buildHref]);
+
   const handleAction = React.useCallback(
     (act: ToolbarAction) => {
+      // guard อีกครั้ง
+      if (options.find((o) => o.value === act)?.disabled) return;
+
       onAction?.(act);
 
       const href = buildHref(act);
       if (!href) return;
 
-      if (openInNewTab) {
-        window.open(href, "_blank", "noopener,noreferrer");
-      } else {
-        router.push(href);
-      }
+      if (openInNewTab) window.open(href, "_blank", "noopener,noreferrer");
+      else router.push(href);
     },
-    [buildHref, onAction, openInNewTab, router]
+    [buildHref, onAction, openInNewTab, router, options]
   );
 
-  return <ActionSelect onAction={handleAction} />;
+  return (
+    <ActionSelect
+      onAction={handleAction}
+      options={options}
+      placeholder="Action ▾"
+      disabled={disabled}
+      resetAfterSelect={true} // หรือ false ถ้าอยากโชว์รายการที่เลือกค้างไว้
+    />
+  );
 }

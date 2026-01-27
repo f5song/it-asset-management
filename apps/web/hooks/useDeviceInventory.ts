@@ -1,7 +1,3 @@
-
-// src/hooks/useDeviceInventory.ts
-"use client";
-
 import * as React from "react";
 import { getDevices } from "services/devices.service.mock";
 import type { DeviceItem, DeviceListQuery } from "types/device"; // ใช้ type กลาง

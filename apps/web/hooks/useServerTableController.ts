@@ -1,7 +1,3 @@
-
-// src/hooks/useServerTableController.ts
-"use client";
-
 import React from "react";
 import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { ServerSort, sortingToServer } from "lib/sortingToServer";

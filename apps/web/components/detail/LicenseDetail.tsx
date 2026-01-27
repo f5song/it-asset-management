@@ -1,23 +1,24 @@
-
+// app/.../LicenseDetail.tsx (ไฟล์เดียวกับที่ส่งมา)
 "use client";
 
 import * as React from "react";
-import { licenseEditFields } from "app/config/forms/licenseEditFields";
+
 import { DetailView } from "components/detail/DetailView";
 import { InstallationSection } from "components/tabbar/InstallationSection";
-import { ActionToolbar } from "components/toolbar/ActionToolbar";
+import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
+
+import { licenseEditFields } from "app/config/forms/licenseEditFields";
+import { installationColumns } from "lib/tables/licenseInstallationColumns";
+import { demoHistory, demoInstallations } from "lib/demo/licenseDetailDemoData";
+import { mapLicenseItemToForm } from "lib/mappers/mapLicenseItemToForm";
+import { show } from "lib/show";
+
 import type {
-  ActionPathConfig,
   BreadcrumbItem,
   HistoryEvent,
   LicenseInstallationRow,
   LicenseItem,
-  ToolbarAction,
 } from "types";
-import { mapLicenseItemToForm } from "lib/mappers/mapLicenseItemToForm";
-import { demoHistory, demoInstallations } from "lib/demo/licenseDetailDemoData";
-import { show } from "lib/show";
-import { installationColumns } from "lib/tables/licenseInstallationColumns";
 
 interface LicenseDetailProps {
   item: LicenseItem;
@@ -25,49 +26,50 @@ interface LicenseDetailProps {
   history: HistoryEvent[];
   breadcrumb: BreadcrumbItem[];
 }
+
 export default function LicenseDetail({
   item,
   installations,
   history,
   breadcrumb,
 }: LicenseDetailProps) {
-
   const onBack = React.useCallback(() => window.history.back(), []);
-
   const onDelete = React.useCallback(() => {
     console.log("Delete", item.id);
   }, [item.id]);
 
-  // Installations tab data
   const rows = React.useMemo<LicenseInstallationRow[]>(
     () => (installations?.length ? installations : demoInstallations),
     [installations],
   );
 
-  // History tab data
   const historyData = React.useMemo<HistoryEvent[]>(
     () => (history?.length ? history : demoHistory),
     [history],
   );
 
-  // Initial form values for Edit License Form
   const initialFormValues = React.useMemo(
     () => mapLicenseItemToForm(item),
     [item],
   );
 
-  // Toolbar: action → page mapping
-  const toolbarTo: Partial<Record<ToolbarAction, ActionPathConfig>> = {
-    assign: `/software/license-management/${item.id}/assign`,
-  };
-
-  const headerRightExtra = (
-    <ActionToolbar
-      selectedIds={[]}
-      to={toolbarTo}
-      onAction={(act) => console.log("toolbar action:", act)}
-      openInNewTab={false}
-      enableDefaultMapping={false}
+  // ✅ ให้ dropdown มีเฉพาะ "Assign" เท่านั้น
+  const toolbar = (
+    <InventoryActionToolbar
+      entity="licenses"
+      selectedIds={[item.id]}
+      basePath="/software/license-management"
+      enableDefaultMapping
+      visibleActions={["assign"]}
+      singleSelectionOnly
+      toOverride={{
+        assign: `/software/license-management/${item.id}/assign`,
+      }}
+      onAction={(act) => {
+        if (act === "assign") {
+          console.log("Assign license:", item.id);
+        }
+      }}
     />
   );
 
@@ -113,7 +115,7 @@ export default function LicenseDetail({
         cancelLabel: "Cancel",
       }}
       breadcrumbs={breadcrumb}
-      headerRightExtra={headerRightExtra}
+      headerRightExtra={toolbar}
     />
   );
 }

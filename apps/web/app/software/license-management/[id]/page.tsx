@@ -2,12 +2,10 @@
 import BackButton from "components/ui/BackButton";
 
 import { notFound } from "next/navigation";
-
-import LicenseDetail from "../../../../components/detail/LicenseDetail";
 import { getLicenseById } from "services/licenses.service.mock";
-import { getAssignedTo, getAssignedToFilters } from "app/mock/assigned.mock";
-import { getHistoryBySoftware } from "app/mock";
-
+import { getAssignedTo, getAssignedToFilters } from "services/assign.service.mock";
+import { getHistoryBySoftware } from "services/history.mock";
+import LicenseDetail from "components/detail/LicenseDetail";
 type PageProps = { params: { id: string } };
 
 // ถ้าต้องการไม่แคช:

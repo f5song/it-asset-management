@@ -1,6 +1,3 @@
-// app/software/inventory/page.tsx
-"use client";
-
 import * as React from "react";
 import { InventoryPageShell } from "components/inventory/InventoryPageShell";
 import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
@@ -23,7 +20,7 @@ export default function SoftwarePage() {
     SoftwareType,
     SoftwareFilters
   >({
-    pageSize: 10,
+    pageSize: 8,
     defaultSort: { id: "softwareName", desc: false },
     domainFilters,
     setDomainFilters,
@@ -57,7 +54,7 @@ export default function SoftwarePage() {
     <InventoryActionToolbar
       entity="software"
       selectedIds={selectedSoftwareIds}
-      basePath="/software/inventory"
+      basePath="/software"
       enableDefaultMapping
       onAction={(act) => {
         if (act === "delete") console.log("delete software:", selectedSoftwareIds);

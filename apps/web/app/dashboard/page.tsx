@@ -1,6 +1,3 @@
-
-"use client";
-
 import React from "react";
 import BarChart from "../../components/charts/BarChart";
 import DonutChart from "../../components/charts/DonutChart";
@@ -10,7 +7,7 @@ import { RecentLicenseActivityTable } from "../../components/ui/RecentLicenseAct
 import HorizontalBarChart from "../../components/charts/HorizontalBarChar";
 import { Panel } from "../../components/ui/Panel";
 import { PageHeader } from "../../components/ui/PageHeader";
-import { dataDashboardCard, LicenseActivityData } from "app/mock";
+import { dataDashboardCard, LicenseActivityData } from "mock";
 
 export default function DashboardPage() {
   return (

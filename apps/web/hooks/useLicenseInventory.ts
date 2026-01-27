@@ -1,6 +1,3 @@
-
-// src/hooks/useLicenseInventory.ts
-"use client";
 import * as React from "react";
 import { getLicenses } from "services/licenses.service.mock";
 

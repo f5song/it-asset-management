@@ -1,6 +1,3 @@
-
-// src/hooks/useSoftwareInventory.ts
-"use client";
 import * as React from "react";
 import { getItemsStock } from "services/software.service.mock";
 

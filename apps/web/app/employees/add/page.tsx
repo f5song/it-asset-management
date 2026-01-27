@@ -1,12 +1,9 @@
-
-// src/pages/AddEmployeePage.tsx
-"use client";
-
 import React from "react";
 import { z } from "zod";
 
 import { FormPage } from "../../../components/ui/FormPage";
 import BackButton from "../../../components/ui/BackButton";
+import { FormField } from "types/forms";
 
 // หากคุณมี enum อยู่แล้ว สามารถ import มาใช้แทน string literal ได้ เช่น:
 // import { EmployeeStatus } from "types/employees";
@@ -44,7 +41,7 @@ const defaultValues: EmployeeFormValues = {
   notes: "",
 };
 
-const fields: FieldDescriptor<keyof EmployeeFormValues & string>[] = [
+const fields: FormField<keyof EmployeeFormValues & string>[] = [
   {
     name: "name",
     label: "Employee Name",

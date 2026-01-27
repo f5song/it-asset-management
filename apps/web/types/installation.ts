@@ -63,3 +63,12 @@ export interface DeviceInstallationRow {
   // For flexibility & forward compatibility
   [key: string]: unknown;
 }
+export type EmployeeAssignmentRow = {
+  id: string;
+  deviceName: string;          // ชื่อเครื่อง เช่น "NB-201"
+  userName: string;            // ชื่อผู้ใช้ (โชว์ชื่อพนักงานหรือ user ที่ติดตั้ง)
+  licenseStatus?: "Active" | "Pending" | "Expired";
+  licenseKey?: string | null;
+  scannedLicenseKey?: string | null;
+  workStation?: string | null; // ถ้ามีฟิลด์สถานีทำงาน
+};

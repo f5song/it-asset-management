@@ -1,10 +1,7 @@
-// src/pages/AddLicensePage.tsx
-"use client";
-
 import BackButton from "components/ui/BackButton";
 import { FormPage } from "components/ui/FormPage";
 import React from "react";
-import { FieldDescriptor } from "types";
+import { FormField } from "types";
 import { z } from "zod";
 
 /**
@@ -163,7 +160,7 @@ const fields = [
     type: "textarea" as const,
     colSpan: 2,
   },
-] as const satisfies ReadonlyArray<FieldDescriptor<keyof LicenseFormValues>>;
+] as const satisfies ReadonlyArray<FormField<keyof LicenseFormValues>>;
 
 export default function AddLicensePage() {
   return (

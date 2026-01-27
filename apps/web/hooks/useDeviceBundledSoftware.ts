@@ -1,7 +1,3 @@
-
-// hooks/useDeviceBundledSoftware.ts
-"use client";
-
 import * as React from "react";
 import {
   fetchDeviceSoftware,

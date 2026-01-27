@@ -1,7 +1,3 @@
-
-// src/hooks/useEmployeesInventory.ts
-"use client";
-
 import * as React from "react";
 import { getEmployees } from "services/employees.service.mock";
 

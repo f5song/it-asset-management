@@ -1,6 +1,3 @@
-// app/employees/page.tsx   (ถ้าใช้ Pages Router ให้ใช้: src/pages/employees.tsx)
-"use client";
-
 import * as React from "react";
 
 import { InventoryPageShell } from "components/inventory/InventoryPageShell";
@@ -32,7 +29,7 @@ export default function EmployeesPage() {
     string,         // TType (department)
     EmployeesFilters
   >({
-    pageSize: 10,
+    pageSize: 8,
     defaultSort: { id: "id", desc: false },
     domainFilters,
     setDomainFilters,
@@ -127,7 +124,6 @@ export default function EmployeesPage() {
       isError={isError}
       errorMessage={errorMessage}
       // ✅ Selection (เหมือน devices)
-      selectable
       selectedIds={selectedEmployeeIds}
       onSelectedIdsChange={setSelectedEmployeeIds}
     />

@@ -4,7 +4,7 @@ import { PageHeader } from "components/ui/PageHeader";
 import { notFound } from "next/navigation";
 import { getItemById } from "services/software.service.mock";
 import SoftwareDetail from "../../../../components/detail/SoftwareDetail";
-import { getHistoryBySoftware, getInstallationsBySoftware } from "app/mock";
+import { getHistoryBySoftware, getInstallationsBySoftware } from "mock";
 
 interface PageProps {
   params: { id: string };

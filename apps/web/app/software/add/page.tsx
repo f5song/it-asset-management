@@ -1,5 +1,3 @@
-// src/pages/AddSoftwarePage.tsx
-"use client";
 import BackButton from "components/ui/BackButton";
 import { FormPage } from "components/ui/FormPage";
 import React from "react";

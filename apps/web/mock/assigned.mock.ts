@@ -1,7 +1,5 @@
 import { AssignedDisplayRow, LicenseStatus } from "types";
 
-
-
 export const ASSIGNED_TO: AssignedDisplayRow[] = [
   {
     employeeId: "1",

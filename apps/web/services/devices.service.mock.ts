@@ -10,13 +10,28 @@ import type {
 /** ----------------------------------------------------------------
  *  Mock dataset
  *  ---------------------------------------------------------------- */
+// สมมติว่าคุณมี union จาก types ที่นิยามไว้แบบนี้:
+// export type DeviceType = "Laptop" | "Desktop" | "VM" | "Mobile";
+// export type DeviceOS   = "Windows" | "macOS" | "Linux" | "iOS" | "Android";
+// export type Compliance = "Compliant" | "Non-Compliant" | "Exception" | "Unknown";
+
+const DEVICE_TYPES = ["Laptop", "Desktop", "VM", "Mobile"] as const;
+const DEVICE_OSES  = ["Windows", "macOS", "Linux", "iOS", "Android"] as const;
+const COMPLIANCE_SET = ["Compliant", "Non-Compliant", "Exception", "Pending"] as const;
+
+const pick = <T,>(arr: readonly T[], idx: number) => arr[idx % arr.length];
+
 const MOCK_DEVICES: DeviceItem[] = Array.from({ length: 57 }).map((_, i) => ({
   id: `D-${i + 1}`,
   name: `Device ${i + 1}`,
+  // ✅ ให้แน่ใจว่าตรงกับ union ของ DeviceType
   type: i % 2 === 0 ? "Laptop" : "Desktop",
-  assignedTo: i % 3 === 0 ? `user${i}` : "", // แนะนำให้เก็บเป็น employeeId จริง ๆ ในระบบคุณ
-  os: ["Windows", "macOS", "Linux"][i % 3],
-  compliance: i % 2 === 0 ? "Compliant" : "Non-Compliant",
+  // ✅ อย่าใช้ "" ให้ใช้ null เมื่อ "ไม่มีค่า"
+  assignedTo: i % 3 === 0 ? `user${i}` : null,
+  // ✅ ให้แน่ใจว่าตรงกับ union ของ DeviceOS
+  os: pick(DEVICE_OSES, i), // Windows / macOS / Linux / ...
+  // ✅ ใช้ค่าในชุดของ Compliance ที่ถูกต้อง
+  compliance: pick(COMPLIANCE_SET, i),
   lastScan: "2026-01-10",
 }));
 
@@ -186,4 +201,28 @@ export async function assignDeviceToEmployee(
   const next: DeviceItem = { ...MOCK_DEVICES[idx], assignedTo: employeeId };
   MOCK_DEVICES[idx] = next;
   return next;
+}
+
+
+// ✅ แบบเร็ว (พอใช้ใน mock/demo): ดึงทีเดียวด้วย pageSize ใหญ่
+export async function getAllDevicesQuick(signal?: AbortSignal): Promise<DeviceItem[]> {
+  const res = await getDevices({ page: 1, pageSize: 9999 }, signal);
+  return res.items;
+}
+
+// ✅ แบบ robust: loop ทีละหน้า เผื่ออนาคตเปลี่ยน pageSize/จำนวนข้อมูล
+export async function getAllDevices(signal?: AbortSignal): Promise<DeviceItem[]> {
+  const pageSize = 100;
+  let page = 1;
+  const out: DeviceItem[] = [];
+
+  // ดึงจนหมดทุกหน้า
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const res: DeviceListResponse = await getDevices({ page, pageSize }, signal);
+    out.push(...res.items);
+    if (!res.hasNext) break;
+    page += 1;
+  }
+  return out;
 }

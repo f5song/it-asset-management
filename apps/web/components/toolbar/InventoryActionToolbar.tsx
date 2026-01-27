@@ -1,25 +1,21 @@
-
 // src/components/toolbar/InventoryActionToolbar.tsx
 "use client";
 
 import * as React from "react";
 import { ActionToolbar } from "./ActionToolbar";
-import type { ToolbarAction } from "types";
-import type { ActionPathBuilder } from "types/actions";
+import type { ToolbarAction, ActionPathConfig } from "types";
 
-type Entity = "employees" | "licenses" | "devices" | "software" | "devices" | "software";
+type Entity = "employees" | "licenses" | "devices" | "software";
 
 export type InventoryActionToolbarProps = {
   entity: Entity;
-  /** id ที่เลือกจาก DataTable */
   selectedIds: string[];
-  /** base path ของโดเมนนี้ เช่น "/employees" หรือ "/software/license-management" */
   basePath: string;
-  /** เปิด/ปิด mapping กลาง (ถ้าอยาก override ทีหลังค่อยส่ง to เพิ่มเติม) */
+  visibleActions?: ToolbarAction[];
+  requireSelection?: boolean;
+  singleSelectionOnly?: boolean;
   enableDefaultMapping?: boolean;
-  /** mapping เพิ่มเติม/ทับค่าเดิม */
-  toOverride?: Partial<Record<ToolbarAction, string | ActionPathBuilder>>;
-  /** callback action */
+  toOverride?: Partial<Record<ToolbarAction, ActionPathConfig>>;
   onAction?: (act: ToolbarAction) => void;
 };
 
@@ -27,40 +23,125 @@ export function InventoryActionToolbar({
   entity,
   selectedIds,
   basePath,
+  visibleActions,
+  requireSelection = false,
+  singleSelectionOnly = false,
   enableDefaultMapping = false,
   toOverride,
   onAction,
 }: InventoryActionToolbarProps) {
-  // mapping กลางตาม entity
-  const defaultTo: Partial<Record<ToolbarAction, string | ActionPathBuilder>> =
+  const defaultTo: Partial<Record<ToolbarAction, ActionPathConfig>> =
     entity === "employees"
       ? {
           add: `${basePath}/add`,
-          reassign: ({ selectedIds }) =>
-            `${basePath}/reassign?ids=${encodeURIComponent(selectedIds.join(","))}`,
-          delete: ({ selectedIds }) =>
-            `${basePath}/delete?ids=${encodeURIComponent(selectedIds.join(","))}`,
+          edit: ({
+            selectedIds,
+          }: {
+            action: ToolbarAction;
+            selectedIds: string[];
+          }) =>
+            selectedIds.length === 1
+              ? `${basePath}/${selectedIds[0]}/edit`
+              : undefined,
+          delete: ({
+            selectedIds,
+          }: {
+            action: ToolbarAction;
+            selectedIds: string[];
+          }) =>
+            selectedIds.length > 0
+              ? `${basePath}/delete?ids=${encodeURIComponent(selectedIds.join(","))}`
+              : undefined,
+          assign: ({
+            selectedIds,
+          }: {
+            action: ToolbarAction;
+            selectedIds: string[];
+          }) =>
+            selectedIds.length === 1
+              ? `${basePath}/${selectedIds[0]}/assign`
+              : undefined,
         }
-      : {
-          // licenses
-          add: `${basePath}/add`,
-          reassign: ({ selectedIds }) =>
-            `${basePath}/reassign?ids=${encodeURIComponent(selectedIds.join(","))}`,
-          delete: ({ selectedIds }) =>
-            `${basePath}/delete?ids=${encodeURIComponent(selectedIds.join(","))}`,
-        };
+      : entity === "licenses"
+        ? {
+            // ✅ licenses: มี assign ได้เช่นกัน
+            add: `${basePath}/add`,
+            edit: ({
+              selectedIds,
+            }: {
+              action: ToolbarAction;
+              selectedIds: string[];
+            }) =>
+              selectedIds.length === 1
+                ? `${basePath}/${selectedIds[0]}/edit`
+                : undefined,
+            delete: ({
+              selectedIds,
+            }: {
+              action: ToolbarAction;
+              selectedIds: string[];
+            }) =>
+              selectedIds.length > 0
+                ? `${basePath}/delete?ids=${encodeURIComponent(selectedIds.join(","))}`
+                : undefined,
+            assign: ({
+              selectedIds,
+            }: {
+              action: ToolbarAction;
+              selectedIds: string[];
+            }) =>
+              selectedIds.length === 1
+                ? `${basePath}/${selectedIds[0]}/assign`
+                : undefined,
+          }
+        : {
+            add: `${basePath}/add`,
+            edit: ({
+              selectedIds,
+            }: {
+              action: ToolbarAction;
+              selectedIds: string[];
+            }) =>
+              selectedIds.length === 1
+                ? `${basePath}/${selectedIds[0]}/edit`
+                : undefined,
+            delete: ({
+              selectedIds,
+            }: {
+              action: ToolbarAction;
+              selectedIds: string[];
+            }) =>
+              selectedIds.length > 0
+                ? `${basePath}/delete?ids=${encodeURIComponent(selectedIds.join(","))}`
+                : undefined,
+          };
 
-  const to = React.useMemo(
-    () => ({ ...(enableDefaultMapping ? defaultTo : {}), ...(toOverride ?? {}) }),
+  const merged = React.useMemo(
+    () => ({
+      ...(enableDefaultMapping ? defaultTo : {}),
+      ...(toOverride ?? {}),
+    }),
     [enableDefaultMapping, defaultTo, toOverride],
   );
+
+  const to = React.useMemo(() => {
+    if (!visibleActions?.length) return merged;
+    const out: Partial<Record<ToolbarAction, ActionPathConfig>> = {};
+    visibleActions.forEach((a) => {
+      if (merged[a]) out[a] = merged[a]!;
+    });
+    return out;
+  }, [merged, visibleActions]);
 
   return (
     <ActionToolbar
       selectedIds={selectedIds}
-      enableDefaultMapping={false}  // เราคุม mapping เอง
       to={to}
       onAction={onAction}
+      enableDefaultMapping={false}
+      requireSelection={false}
+      singleSelectionOnly={true}
+      visibleActions={visibleActions} // ✅ ส่งต่อเพื่อไม่ fallback เป็น ["delete","add"]
     />
   );
 }

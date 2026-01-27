@@ -1,9 +1,10 @@
 
 // app/employees/[id]/page.tsx
+import EmployeeDetail from "components/detail/EmployeeDetail";
 import BackButton from "components/ui/BackButton";
 import { notFound } from "next/navigation";
 import { getEmployeeById } from "services/employees.service.mock";
-import EmployeeDetail from "../../../components/detail/EmployeeDetail";
+
 
 type PageProps = { params: { id: string } };
 

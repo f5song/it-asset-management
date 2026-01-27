@@ -3,7 +3,7 @@
 import type { LicenseModel } from "./license";
 
 export type SoftwareStatus = "Active" | "Expired" | "Expiring";
-export type Compliance = "Compliant" | "Non-Compliant" | "Pending";
+export type Compliance = "Compliant" | "Non-Compliant" | "Pending" | "Exception";
 export type SoftwareType = "Standard" | "Special" | "Exception";
 export type ClientServer = "Client" | "Server";
 
@@ -51,7 +51,4 @@ export interface InstallationRow {
   scannedLicenseKey?: string;
   workStation?: string;
 
-  // Software installation fields
-  device?: string;
-  user?: string;
 }

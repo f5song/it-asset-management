@@ -1,4 +1,5 @@
 
+
 // src/services/employees.service.mock.ts
 import { Employees, EmployeeStatus } from "types/employees";
 
@@ -28,6 +29,7 @@ const MOCK_EMPLOYEES: Employees[] = Array.from({ length: 73 }).map((_, i) => ({
   jobTitle: `Application Developer Specialist`,
   phone:`${(i + 1).toString().padStart(4, "0")}`,
   email:`puttaraporn.j@becworld.com`,
+  device: `LAPTOP-001`,
 
 }));
 
@@ -140,4 +142,28 @@ export async function getEmployees(
       totalPages,
     },
   };
+}
+
+
+// ✅ แบบเร็ว: ดึงทีเดียวด้วย limit ใหญ่
+export async function getAllEmployeesQuick(signal?: AbortSignal): Promise<Employees[]> {
+  const res = await getEmployees({ page: 1, limit: 9999 }, signal);
+  return res.data;
+}
+
+// ✅ แบบ robust: loop ทีละหน้า
+export async function getAllEmployees(signal?: AbortSignal): Promise<Employees[]> {
+  const limit = 100;
+  let page = 1;
+  const out: Employees[] = [];
+
+  // ดึงจนหมดทุกหน้า
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const res = await getEmployees({ page, limit }, signal);
+    out.push(...res.data);
+    if (page >= res.pagination.totalPages) break;
+    page += 1;
+  }
+  return out;
 }

@@ -5,9 +5,7 @@
     "jsx": "preserve",
     "lib": ["dom", "es2020"],
     "baseUrl": ".",       
-    "paths": {
-      "@/*": ["src/*"]
-    },
+"paths": { "@/*": ["*"] },
     "allowJs": false,
     "strict": true,
     "noEmit": true,

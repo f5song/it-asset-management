@@ -1,23 +1,23 @@
-
 "use client";
 
 import * as React from "react";
+
 import { DetailView } from "components/detail/DetailView";
 import { InstallationSection } from "components/tabbar/InstallationSection";
-import { ActionToolbar } from "components/toolbar/ActionToolbar";
+import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
+
 import type {
   BreadcrumbItem,
   HistoryEvent,
   InstallationRow,
   SoftwareItem,
-  ActionPathConfig,
-  ToolbarAction,
 } from "types";
-import { show } from "lib/show";
+
 import { softwareEditFields } from "app/config/forms/softwareEditFields";
 import { demoHistory, demoSoftwareInstallations } from "lib/demo/softwareDetailDemoData";
 import { mapSoftwareItemToForm } from "lib/mappers/mapSoftwareItemToForm";
 import { softwareInstallationColumns } from "lib/tables/softwareInstallationColumns";
+import { show } from "lib/show";
 
 interface SoftwareDetailProps {
   item: SoftwareItem;
@@ -33,41 +33,38 @@ export default function SoftwareDetail({
   breadcrumb,
 }: SoftwareDetailProps) {
   const onBack = React.useCallback(() => window.history.back(), []);
-
   const onDelete = React.useCallback(() => {
     console.log("Delete", item.id);
   }, [item.id]);
 
-  // Installations tab rows (fallback demo)
+  // Derive installations
   const rows = React.useMemo<InstallationRow[]>(
     () => (installations?.length ? installations : demoSoftwareInstallations),
     [installations],
   );
 
-  // History tab data (fallback demo)
+  // Derive history data
   const historyData = React.useMemo<HistoryEvent[]>(
     () => (history?.length ? history : demoHistory),
     [history],
   );
 
-  // Initial form values
   const initialValues = React.useMemo(
     () => mapSoftwareItemToForm(item),
     [item],
   );
 
-  // Toolbar path mapping
-  const toolbarTo: Partial<Record<ToolbarAction, ActionPathConfig>> = {
-    assign: `/software/software-management/${item.id}/assign`,
-  };
-
+  // Toolbar (ใช้ standardized inventory toolbar)
   const toolbar = (
-    <ActionToolbar
-      selectedIds={[]}
-      to={toolbarTo}
-      onAction={(act) => console.log("toolbar:", act)}
-      openInNewTab={false}
-      enableDefaultMapping={false}
+    <InventoryActionToolbar
+      entity="software"
+      selectedIds={[item.id]}
+      basePath="/software/inventory"
+      enableDefaultMapping
+      toOverride={{
+        delete: `/software/inventory/${item.id}/delete`,
+      }}
+      onAction={(act) => console.log("action:", act)}
     />
   );
 
@@ -96,7 +93,7 @@ export default function SoftwareDetail({
           columns={softwareInstallationColumns}
           resetKey={`software-${item.id}`}
           initialPage={1}
-          pageSize={10}
+          pageSize={8}
         />
       }
       history={historyData}

@@ -1,6 +1,3 @@
-// app/software/license-management/page.tsx   (หรือ src/pages/software/license-management.tsx)
-"use client";
-
 import * as React from "react";
 
 import { InventoryPageShell } from "components/inventory/InventoryPageShell";
@@ -37,7 +34,7 @@ export default function LicenseManagementPage() {
     LicenseModel,
     LicenseFilters
   >({
-    pageSize: 10,
+    pageSize: 8,
     defaultSort: { id: "softwareName", desc: false },
     domainFilters,
     setDomainFilters,
@@ -127,7 +124,6 @@ export default function LicenseManagementPage() {
       errorMessage={errorMessage}
 
       // ✅ Selection (เหมือน devices/employees/software)
-      selectable
       selectedIds={selectedLicenseIds}
       onSelectedIdsChange={setSelectedLicenseIds}
     />
