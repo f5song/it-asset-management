@@ -7,10 +7,10 @@ import DonutChart from "../../components/charts/DonutChart";
 import SemiRadialGauge from "../../components/charts/SemiRadialGauge";
 import { Card } from "../../components/ui/Card";
 import { RecentLicenseActivityTable } from "../../components/ui/RecentLicenseActivityTable";
-import { dataDashboardCard, LicenseActivityData } from "../../device.mock.ts";
 import HorizontalBarChart from "../../components/charts/HorizontalBarChar";
 import { Panel } from "../../components/ui/Panel";
 import { PageHeader } from "../../components/ui/PageHeader";
+import { dataDashboardCard, LicenseActivityData } from "app/mock";
 
 export default function DashboardPage() {
   return (

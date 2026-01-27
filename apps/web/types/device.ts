@@ -7,29 +7,32 @@ import type { Compliance } from "./software";
 /** ประเภท/กลุ่ม/OS */
 export type DeviceGroup = "Assigned" | "Unassigned";
 export type DeviceType = "Laptop" | "Desktop" | "VM" | "Mobile";
-export type DeviceOS =
-  | "Windows"
-  | "macOS"
-  | "Linux"
-  | "iOS"
-  | "Android"
-  | (string & {});
+export type DeviceOS = "Windows" | "macOS" | "Linux" | "iOS" | "Android";
+
+export type DeviceDomainFilters = {
+  deviceGroup?: DeviceGroup;
+  deviceType?: DeviceType;
+  os?: DeviceOS;
+  search?: string;
+};
+
 
 /** อุปกรณ์หนึ่งรายการ */
 export type DeviceItem = {
   id: string;
   name: string;
-  type: DeviceType | string;
+  type: DeviceType;     // ✅ ตรึง
   assignedTo?: string | null;
-  os: DeviceOS | string;
+  os: DeviceOS;         // ✅ ตรึง
   compliance?: Compliance;
   lastScan?: string | null;
 };
 
+
 /** Query มาตรฐานสำหรับรายการอุปกรณ์ (internal) */
 export type DeviceListQuery = OffsetPaginationParams & {
   search?: string;
-  deviceGroup?: "assigned" | "unassigned" | "";
+  deviceGroup?: string;
   deviceType?: string | "";
   os?: string | "";
 };
@@ -61,12 +64,7 @@ export type DeviceSoftwareQuery = OffsetPaginationParams & {
 export type DeviceSoftwareResponse = OffsetPage<DeviceBundledSoftware>;
 
 // ✅ ADDED: ฟิลเตอร์ฝั่งโดเมน (ใช้กับ hook/service)
-export type DeviceDomainFilters = {
-  deviceGroup?: DeviceGroup | undefined;
-  deviceType?: DeviceType | string | undefined;
-  os?: DeviceOS | string | undefined;
-  search?: string;
-};
+
 
 // ✅ ADDED: ฟิลเตอร์แบบ UI (ใช้กับ FilterBar/InventoryPageShell)
 export type DeviceFilterValues = FilterValues<DeviceGroup, DeviceType>;
@@ -80,3 +78,10 @@ export interface DeviceEditValues {
   compliance: string;
   lastScan?: string;  // ใช้ string เพราะ <input type="date"> ส่งค่า string (YYYY-MM-DD)
 }
+export type DeviceFilterState = {
+  // เก็บค่า "All …" เพื่อใช้กับ UI ปัจจุบัน
+  deviceGroup: DeviceGroup | "All Device";
+  deviceType: DeviceType | "All Type";
+  os: DeviceOS | "All OS";
+  search: string;
+};

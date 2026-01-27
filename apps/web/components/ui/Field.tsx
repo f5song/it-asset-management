@@ -1,7 +1,8 @@
 
 // src/components/ui/Field.tsx
 import React from "react";
-import { OptionItem } from "../../types/forms";
+import { OptionItem } from "types";
+
 
 type BaseProps = {
   id: string;

@@ -3,12 +3,12 @@
 import BackButton from "components/ui/BackButton";
 import { notFound } from "next/navigation";
 import { getDeviceById } from "services/devices.service.mock";
-import DeviceDetail from "./DeviceDetail";
+import DeviceDetail from "../../../components/detail/DeviceDetail";
 
 type PageProps = { params: { id: string } };
 
 export default async function DeviceDetailPage({ params }: PageProps) {
-  const { id } = await params; // ✅ params เป็น synchronous object
+  const { id } = await params;
 
   const device = await getDeviceById(id);
   if (!device) return notFound();

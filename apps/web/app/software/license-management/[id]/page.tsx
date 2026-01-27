@@ -3,7 +3,7 @@ import BackButton from "components/ui/BackButton";
 
 import { notFound } from "next/navigation";
 
-import LicenseDetail from "./LicenseDetail";
+import LicenseDetail from "../../../../components/detail/LicenseDetail";
 import { getLicenseById } from "services/licenses.service.mock";
 import { getAssignedTo, getAssignedToFilters } from "app/mock/assigned.mock";
 import { getHistoryBySoftware } from "app/mock";

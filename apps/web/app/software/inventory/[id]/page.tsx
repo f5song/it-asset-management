@@ -1,10 +1,10 @@
 import BackButton from "components/ui/BackButton";
 import { PageHeader } from "components/ui/PageHeader";
-import { getHistoryBySoftware } from "device.mock.ts/history.mock";
-import { getInstallationsBySoftware } from "device.mock.ts/installation.mock";
+
 import { notFound } from "next/navigation";
 import { getItemById } from "services/software.service.mock";
-import SoftwareDetail from "./SoftwareDetail";
+import SoftwareDetail from "../../../../components/detail/SoftwareDetail";
+import { getHistoryBySoftware, getInstallationsBySoftware } from "app/mock";
 
 interface PageProps {
   params: { id: string };

@@ -16,7 +16,7 @@ type Query = {
 
 // ฟิลเตอร์ที่ถูก normalize แล้ว (string ว่าง = ไม่กรอง)
 type Filters = {
-  deviceGroup?: "assigned" | "unassigned" | "" ;                // "assigned" | "unassigned" | "" (normalize แล้ว)
+  deviceGroup?: string;                // "assigned" | "unassigned" | "" (normalize แล้ว)
   deviceType?: string;                 // "laptop" | "desktop" | ... | ""
   os?: string;                         // "windows" | "macos" | ... | ""
   search?: string;                     // คำค้น

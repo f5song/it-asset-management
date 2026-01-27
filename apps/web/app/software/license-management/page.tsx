@@ -1,152 +1,36 @@
-
-// src/pages/software/license-management/page.tsx
+// app/software/license-management/page.tsx   (หรือ src/pages/software/license-management.tsx)
 "use client";
 
 import * as React from "react";
+
 import { InventoryPageShell } from "components/inventory/InventoryPageShell";
-import { StatusBadge } from "components/ui/StatusBadge";
+import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
+
 import { useServerTableController } from "hooks/useServerTableController";
 import { useLicenseInventory } from "hooks/useLicenseInventory";
-import { formatDate } from "lib/date";
-import { ActionToolbar } from "components/toolbar/ActionToolbar";
 
+import type { ExportFormat } from "types";
 import type {
   LicenseItem,
   LicenseFilters,
   LicenseStatus,
   LicenseModel,
-  AppColumnDef,
-  ExportFormat,
-  ToolbarAction,
-  FilterValues,
 } from "types";
 
-// helper: แปลง "" เป็น undefined
-const toUndef = <T extends string | undefined>(v: T | ""): T | undefined =>
-  v === "" ? undefined : v;
-
-// ✅ สร้าง normalizer: Label -> internal value ที่ service ต้องการ
-const normalizeStatus = (s?: string): string => {
-  if (!s) return "";
-  const map: Record<string, string> = {
-    Active: "Active",
-    Expired: "Expired",
-    Expiring: "Expiring",
-  };
-  return map[s] ?? s.toLowerCase();
-};
-
-const normalizeLicenseModel = (m?: string): string => {
-  if (!m) return "";
-  const map: Record<string, string> = {
-    "Per-User": "Per-User",
-    "Per-Device": "Per-Device",
-    Subscription: "Subscription",
-    Perpetual: "Perpetual",
-    Concurrent: "Concurrent",
-  };
-  return map[m] ?? m.toLowerCase();
-};
+import { licenseColumns } from "lib/tables/licenseColumns";
+import {
+  toDomainFilters,
+  toServiceFilters,
+  toSimpleFilters,
+} from "lib/mappers/licenseFilterMappers";
 
 export default function LicenseManagementPage() {
-  // ฟิลเตอร์เริ่มเป็น undefined (ชัดว่าคือ "ไม่กรอง")
-  const [filters, setFilters] = React.useState<LicenseFilters>({
-    status: undefined,
-    licenseModel: undefined,
-    manufacturer: undefined,
-    search: "",
-  });
-
-  // (ถ้าตารางคุณมี selection จริง ให้เชื่อมกับตารางแทน)
-  const [selectedLicenseIds, setSelectedLicenseIds] = React.useState<string[]>([]);
-
-  // columns memo
-  const columns = React.useMemo<AppColumnDef<LicenseItem>[]>(
-    () => [
-      {
-        id: "softwareName",
-        header: "Software Name",
-        accessorKey: "softwareName",
-        width: 220,
-        cell: (v, row) => (
-          <a
-            href={`/software/license-management/${row.id}`}
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              color: "inherit",
-              textDecoration: "none",
-              cursor: "pointer",
-            }}
-          >
-            {String(v ?? "-")}
-          </a>
-        ),
-      },
-      {
-        id: "manufacturer",
-        header: "Manufacturer",
-        accessorKey: "manufacturer",
-        width: 160,
-      },
-      {
-        id: "licenseModel",
-        header: "License Model",
-        accessorKey: "licenseModel",
-        width: 140,
-      },
-      {
-        id: "total",
-        header: "Total License",
-        accessorKey: "total",
-        width: 120,
-      },
-      { id: "inUse", header: "In Use", accessorKey: "inUse", width: 100 },
-      {
-        id: "available",
-        header: "Available",
-        accessorKey: "available",
-        width: 100,
-      },
-      {
-        id: "expiryDate",
-        header: "Expiry Date",
-        accessorKey: "expiryDate",
-        width: 140,
-        cell: (v) => formatDate(typeof v === "string" ? v : undefined),
-      },
-      {
-        id: "status",
-        header: "Status",
-        accessorKey: "status",
-        width: 120,
-        cell: (v, r) => <StatusBadge label={(r.status ?? v ?? "-") as string} />,
-      },
-    ],
-    [],
+  // ---- Domain Filters (undefined = ไม่กรอง) ----
+  const [domainFilters, setDomainFilters] = React.useState<LicenseFilters>(
+    toDomainFilters(), // empty filters
   );
 
-  // ✅ Bridge: Domain <-> FilterValues (แทน SimpleFilters)
-  const toSimple = React.useCallback(
-    (): FilterValues<LicenseStatus, LicenseModel> => ({
-      status: toUndef(filters.status as LicenseStatus | ""),
-      type: toUndef(filters.licenseModel as LicenseModel | ""),
-      manufacturer: toUndef(filters.manufacturer as string | ""),
-      searchText: filters.search ?? "",
-    }),
-    [filters],
-  );
-
-  const fromSimple = React.useCallback(
-    (sf: FilterValues<LicenseStatus, LicenseModel>): LicenseFilters => ({
-      status: toUndef(sf.status),
-      licenseModel: toUndef(sf.type),
-      manufacturer: toUndef(sf.manufacturer),
-      search: sf.searchText ?? "",
-    }),
-    [],
-  );
-
-  // Controller (server-side)
+  // ---- Controller (pagination/sorting + FilterValues bridge) ----
   const ctl = useServerTableController<
     LicenseItem,
     LicenseStatus,
@@ -155,28 +39,20 @@ export default function LicenseManagementPage() {
   >({
     pageSize: 10,
     defaultSort: { id: "softwareName", desc: false },
-    domainFilters: filters,
-    setDomainFilters: setFilters,
-    toSimple,
-    fromSimple,
-    resetDeps: [filters.status, filters.licenseModel, filters.manufacturer],
+    domainFilters,
+    setDomainFilters,
+    toSimple: () => toSimpleFilters(domainFilters),
+    fromSimple: (sf) => toDomainFilters(sf),
+    resetDeps: [domainFilters.status, domainFilters.licenseModel, domainFilters.manufacturer],
   });
 
-  // ✅ Normalized filters -> service
+  // ---- Simple -> Service params ----
   const serviceFilters = React.useMemo(
-    () => ({
-      status: normalizeStatus(ctl.simpleFilters.status as string | undefined),
-      licenseModel: normalizeLicenseModel(
-        ctl.simpleFilters.type as string | undefined,
-      ),
-      manufacturer:
-        (ctl.simpleFilters.manufacturer as string | undefined) ?? "",
-      search: ctl.simpleFilters.searchText ?? "",
-    }),
+    () => toServiceFilters(ctl.simpleFilters),
     [ctl.simpleFilters],
   );
 
-  // ✅ เรียก hook พร้อมส่ง filters เข้าไปด้วย
+  // ---- Fetch + options ----
   const {
     rows,
     totalRows,
@@ -188,46 +64,43 @@ export default function LicenseManagementPage() {
     manufacturerOptions,
   } = useLicenseInventory(ctl.serverQuery, serviceFilters);
 
+  // ---- Selection (ใช้กับ Toolbar) ----
+  const [selectedLicenseIds, setSelectedLicenseIds] = React.useState<string[]>([]);
+
+  // ---- Row link ----
   const getRowHref = React.useCallback(
     (row: LicenseItem) => `/software/license-management/${row.id}`,
     [],
   );
 
+  // ---- Export ----
   const handleExport = React.useCallback((fmt: ExportFormat) => {
     console.log("Export license format:", fmt);
     // TODO: exportLicenses(fmt, ctl.serverQuery, serviceFilters);
-  }, []);
+  }, [ctl.serverQuery, serviceFilters]);
 
-  // (ถ้าจะทำ bulk action จริงๆ ให้ใช้ selectedLicenseIds ที่ sync กับตาราง)
- 
-const rightExtra = (
-  <ActionToolbar
-    selectedIds={selectedLicenseIds}
-    enableDefaultMapping={false}
-    to={{
-      add: "/software/license-management/add",
-      reassign: ({  selectedIds }: { action: ToolbarAction; selectedIds: string[] }) =>
-        `/software/license-management/reassign?ids=${encodeURIComponent(selectedIds.join(","))}`,
-      delete: ({ selectedIds }: { action: ToolbarAction; selectedIds: string[] }) =>
-        `/software/license-management/delete?ids=${encodeURIComponent(selectedIds.join(","))}`,
-    }}
-    onAction={(act) => {
-      if (act === "delete") {
-        console.log("delete selected license ids:", selectedLicenseIds);
-      }
-    }}
-  />
-);
-
+  // ---- Toolbar ด้านขวา (ใช้ wrapper กลาง) ----
+  const rightExtra = (
+    <InventoryActionToolbar
+      entity="licenses"
+      selectedIds={selectedLicenseIds}
+      basePath="/software/license-management"
+      enableDefaultMapping
+      onAction={(act) => {
+        if (act === "delete") {
+          console.log("delete selected license ids:", selectedLicenseIds);
+        }
+      }}
+    />
+  );
 
   return (
     <InventoryPageShell<LicenseItem, LicenseStatus, LicenseModel>
       title="License Management"
-      breadcrumbs={[
-        { label: "License Management", href: "/software/license-management" },
-      ]}
+      breadcrumbs={[{ label: "License Management", href: "/software/license-management" }]}
+
       // FilterBar
-      filters={ctl.simpleFilters}          
+      filters={ctl.simpleFilters}
       onFiltersChange={ctl.onSimpleFiltersChange}
       statusOptions={statusOptions}
       typeOptions={licenseModelOptions}
@@ -236,10 +109,10 @@ const rightExtra = (
       allTypeLabel="All License Types"
       allManufacturerLabel="All Manufacturers"
       onExport={handleExport}
-      filterBarRightExtra={rightExtra}            // ✅ ใช้ Toolbar ทางขวา
+      filterBarRightExtra={rightExtra}
 
       // DataTable
-      columns={columns}
+      columns={licenseColumns}
       rows={rows}
       totalRows={totalRows}
       pagination={ctl.pagination}
@@ -252,6 +125,11 @@ const rightExtra = (
       isLoading={isLoading}
       isError={isError}
       errorMessage={errorMessage}
+
+      // ✅ Selection (เหมือน devices/employees/software)
+      selectable
+      selectedIds={selectedLicenseIds}
+      onSelectedIdsChange={setSelectedLicenseIds}
     />
   );
 }

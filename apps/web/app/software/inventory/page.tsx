@@ -1,105 +1,22 @@
-
-// src/pages/software/inventory/page.tsx
+// app/software/inventory/page.tsx
 "use client";
 
 import * as React from "react";
 import { InventoryPageShell } from "components/inventory/InventoryPageShell";
+import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
+
 import { useServerTableController } from "hooks/useServerTableController";
 import { useSoftwareInventory } from "hooks/useSoftwareInventory";
 
-import type {
-  AppColumnDef,
-  ExportFormat,
-  FilterValues,
-  SoftwareFilters,
-  SoftwareItem,
-  SoftwareStatus,
-  SoftwareType,
-} from "types";
-import { ActionToolbar } from "components/toolbar/ActionToolbar";
+import type { ExportFormat } from "types";
+import type { SoftwareFilters, SoftwareItem, SoftwareStatus, SoftwareType } from "types";
 
-// ❌ ไม่ใช้ next/router ใน App Router
-// import router from "next/router";
-
-// helper: "" -> undefined
-const toUndef = <T extends string | undefined>(v: T | ""): T | undefined =>
-  v === "" ? undefined : v;
-
-// 🔧 ปรับ label -> internal value ตามโดเมนจริง
-const normalizeStatus = (s?: string): string => {
-  if (!s) return "";
-  const map: Record<string, string> = {
-    Active: "Active",
-    Expired: "Expired",
-    Expiring: "Expiring",
-    active: "Active",
-    expired: "Expired",
-    expiring: "Expiring",
-  };
-  return map[s] ?? s.toString();
-};
-
-const normalizeType = (t?: string): string => {
-  if (!t) return "";
-  const map: Record<string, string> = {
-    Standard: "Standard",
-    Special: "Special",
-    Exception: "Exception",
-    standard: "Standard",
-    special: "Special",
-    exception: "Exception",
-  };
-  return map[t] ?? t.toString();
-};
+import { softwareColumns } from "lib/tables/softwareColumns";
+import { toDomainFilters, toServiceFilters, toSimpleFilters } from "lib/mappers/softwareFilterMappers";
 
 export default function SoftwarePage() {
-  // ฟิลเตอร์เริ่มเป็น undefined (หมายถึงไม่กรอง)
-  const [filters, setFilters] = React.useState<SoftwareFilters>({
-    status: undefined,
-    type: undefined,
-    manufacturer: undefined,
-    search: "",
-  });
+  const [domainFilters, setDomainFilters] = React.useState<SoftwareFilters>(toDomainFilters());
 
-  // (ถ้าคุณมี Selection ของตาราง ให้แทนที่ด้วย state จริง)
-  const [selectedSoftwareIds, setSelectedSoftwareIds] = React.useState<string[]>([]);
-
-  // columns
-  const columns = React.useMemo<AppColumnDef<SoftwareItem>[]>(() => [
-    { id: "softwareName",    header: "Software Name",     accessorKey: "softwareName",    width: 200 },
-    { id: "manufacturer",    header: "Manufacturer",      accessorKey: "manufacturer",    width: 160 },
-    { id: "version",         header: "Version",           accessorKey: "version",         width: 100 },
-    { id: "category",        header: "Category",          accessorKey: "category",        width: 140 },
-    { id: "policyCompliance",header: "Policy Compliance", accessorKey: "policyCompliance",width: 160 },
-    { id: "expiryDate",      header: "Expiry Date",       accessorKey: "expiryDate",      width: 140 },
-    { id: "status",          header: "Status",            accessorKey: "status",          width: 120 },
-    { id: "softwareType",    header: "Software Type",     accessorKey: "softwareType",    width: 140 },
-    { id: "licenseModel",    header: "License Model",     accessorKey: "licenseModel",    width: 140 },
-    { id: "clientServer",    header: "Client/Server",     accessorKey: "clientServer",    width: 140 },
-  ], []);
-
-  // Bridge: Domain <-> Simple
-  const toSimple = React.useCallback(
-    (): FilterValues<SoftwareStatus, SoftwareType> => ({
-      status: toUndef(filters.status as SoftwareStatus | ""),
-      type: toUndef(filters.type as SoftwareType | ""),
-      manufacturer: toUndef(filters.manufacturer as string | ""),
-      searchText: filters.search ?? "",
-    }),
-    [filters],
-  );
-
-  const fromSimple = React.useCallback(
-    (sf: FilterValues<SoftwareStatus, SoftwareType>): SoftwareFilters => ({
-      status: toUndef(sf.status),
-      type: toUndef(sf.type),
-      manufacturer: toUndef(sf.manufacturer),
-      search: sf.searchText ?? "",
-    }),
-    [],
-  );
-
-  // Controller
   const ctl = useServerTableController<
     SoftwareItem,
     SoftwareStatus,
@@ -108,25 +25,15 @@ export default function SoftwarePage() {
   >({
     pageSize: 10,
     defaultSort: { id: "softwareName", desc: false },
-    domainFilters: filters,
-    setDomainFilters: setFilters,
-    toSimple,
-    fromSimple,
-    resetDeps: [filters.status, filters.type, filters.manufacturer],
+    domainFilters,
+    setDomainFilters,
+    toSimple: () => toSimpleFilters(domainFilters),
+    fromSimple: (sf) => toDomainFilters(sf),
+    resetDeps: [domainFilters.status, domainFilters.type, domainFilters.manufacturer],
   });
 
-  // Normalize filters -> hook
-  const serviceFilters = React.useMemo(
-    () => ({
-      status: normalizeStatus(ctl.simpleFilters.status as string | undefined),
-      type: normalizeType(ctl.simpleFilters.type as string | undefined),
-      manufacturer: (ctl.simpleFilters.manufacturer as string | undefined) ?? "",
-      search: ctl.simpleFilters.searchText ?? "",
-    }),
-    [ctl.simpleFilters],
-  );
+  const serviceFilters = React.useMemo(() => toServiceFilters(ctl.simpleFilters), [ctl.simpleFilters]);
 
-  // ดึงข้อมูล
   const {
     rows,
     totalRows,
@@ -138,37 +45,22 @@ export default function SoftwarePage() {
     manufacturerOptions,
   } = useSoftwareInventory(ctl.serverQuery, serviceFilters);
 
-  // คลิกรายการ -> ไปหน้ารายละเอียด
-  const getRowHref = React.useCallback(
-    (row: SoftwareItem) => `/software/inventory/${row.id}`,
-    [],
-  );
+  const [selectedSoftwareIds, setSelectedSoftwareIds] = React.useState<string[]>([]);
 
-  // Export (คุณจะเชื่อม API จริงในภายหลังได้)
+  const getRowHref = React.useCallback((row: SoftwareItem) => `/software/inventory/${row.id}`, []);
   const handleExport = React.useCallback((fmt: ExportFormat) => {
     console.log("Export software format:", fmt);
-    // ตัวอย่าง client-side CSV (เร็ว) หรือเรียก /api/software/export?fmt=...
-    // ดูโค้ดตัวอย่าง export ที่ผมให้ในคำตอบก่อนหน้าได้เลย
-  }, []);
+    // TODO: exportSoftware(fmt, ctl.serverQuery, serviceFilters)
+  }, [ctl.serverQuery, serviceFilters]);
 
-  // ✅ Toolbar ทางขวาของ FilterBar: กำหนด path สำหรับโดเมน "software"
   const rightExtra = (
-    <ActionToolbar
+    <InventoryActionToolbar
+      entity="software"
       selectedIds={selectedSoftwareIds}
-      enableDefaultMapping={false} // ❌ ไม่ใช้ /installations/ กลาง
-      to={{
-        add: "/software/add",
-        // ถ้าคุณมีหน้าย้าย/ผูกซอฟต์แวร์กับอย่างอื่น
-        reassign: ({ selectedIds }) =>
-          `/software/reassign?ids=${encodeURIComponent(selectedIds.join(","))}`,
-        delete: ({ selectedIds }) =>
-          `/software/delete?ids=${encodeURIComponent(selectedIds.join(","))}`,
-      }}
+      basePath="/software/inventory"
+      enableDefaultMapping
       onAction={(act) => {
-        if (act === "delete") {
-          // คุณจะเปิด modal ยืนยันก็ได้
-          console.log("delete selected software ids:", selectedSoftwareIds);
-        }
+        if (act === "delete") console.log("delete software:", selectedSoftwareIds);
       }}
     />
   );
@@ -177,7 +69,6 @@ export default function SoftwarePage() {
     <InventoryPageShell<SoftwareItem, SoftwareStatus, SoftwareType>
       title="Software Inventory"
       breadcrumbs={[{ label: "Software Inventory", href: "/software/inventory" }]}
-
       // FilterBar
       filters={ctl.simpleFilters}
       onFiltersChange={ctl.onSimpleFiltersChange}
@@ -188,12 +79,9 @@ export default function SoftwarePage() {
       allTypeLabel="All Types"
       allManufacturerLabel="All Manufacturers"
       onExport={handleExport}
-      // ไม่ต้องส่ง onAction แล้ว เพราะเราใช้ ActionToolbar ด้านขวาแทน
-      // onAction={handleAction}
-      filterBarRightExtra={rightExtra}  // ✅ ใส่ Toolbar ทางขวา
-
+      filterBarRightExtra={rightExtra}
       // DataTable
-      columns={columns}
+      columns={softwareColumns}
       rows={rows}
       totalRows={totalRows}
       pagination={ctl.pagination}
@@ -201,11 +89,13 @@ export default function SoftwarePage() {
       sorting={ctl.sorting}
       onSortingChange={ctl.setSorting}
       rowHref={getRowHref}
-
       // States
       isLoading={isLoading}
       isError={isError}
       errorMessage={errorMessage}
+      // ✅ Selection (เหมือน devices/employees)
+      selectedIds={selectedSoftwareIds}
+      onSelectedIdsChange={setSelectedSoftwareIds}
     />
   );
 }

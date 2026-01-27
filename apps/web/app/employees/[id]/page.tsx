@@ -3,7 +3,7 @@
 import BackButton from "components/ui/BackButton";
 import { notFound } from "next/navigation";
 import { getEmployeeById } from "services/employees.service.mock";
-import EmployeeDetail from "./EmployeeDetail";
+import EmployeeDetail from "../../../components/detail/EmployeeDetail";
 
 type PageProps = { params: { id: string } };
 

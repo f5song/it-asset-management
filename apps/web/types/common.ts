@@ -48,5 +48,5 @@ export type FilterValues<TStatus extends string = string, TType extends string =
   status?: TStatus;
   type?: TType;
   manufacturer?: string;
-  searchText: string;
+  searchText?: string;
 };

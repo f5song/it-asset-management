@@ -1,6 +1,8 @@
 
 // src/types/employees.ts
 
+import { FilterValues } from "./common";
+
 export enum EmployeeStatus {
   Active = "Active",
   Inactive = "Inactive",
@@ -34,3 +36,5 @@ export interface EmployeesEditValues {
   jobTitle?: string;
   device?: string;
 }
+
+export type EmployeesFilterValues = FilterValues<EmployeeStatus, string>;

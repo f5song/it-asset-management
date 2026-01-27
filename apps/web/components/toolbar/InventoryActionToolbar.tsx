@@ -7,7 +7,7 @@ import { ActionToolbar } from "./ActionToolbar";
 import type { ToolbarAction } from "types";
 import type { ActionPathBuilder } from "types/actions";
 
-type Entity = "employees" | "licenses"; // ขยายเพิ่มได้ เช่น "devices" | "software" ฯลฯ
+type Entity = "employees" | "licenses" | "devices" | "software" | "devices" | "software";
 
 export type InventoryActionToolbarProps = {
   entity: Entity;
