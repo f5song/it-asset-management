@@ -15,7 +15,7 @@ import type {
   LicenseModel,
 } from "types";
 
-import { licenseColumns } from "lib/tables/licenseColumns";
+import { licenseColumns } from "@/lib/tables/licenseInventoryColumns";
 import {
   toDomainFilters,
   toServiceFilters,

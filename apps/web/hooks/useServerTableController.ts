@@ -1,7 +1,8 @@
 import React from "react";
 import type { PaginationState, SortingState } from "@tanstack/react-table";
-import { ServerSort, sortingToServer } from "lib/sortingToServer";
 import { FilterValues } from "types/common";
+import { ServerSort } from "@/types/server-query";
+import { sortingToServer } from "@/lib/sortingToServer";
 
 
 type UseServerTableControllerOptions<T, FK extends string, FT extends string, DF> = {

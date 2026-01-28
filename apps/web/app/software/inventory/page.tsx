@@ -9,7 +9,7 @@ import { useSoftwareInventory } from "hooks/useSoftwareInventory";
 import type { ExportFormat } from "types";
 import type { SoftwareFilters, SoftwareItem, SoftwareStatus, SoftwareType } from "types";
 
-import { softwareColumns } from "lib/tables/softwareColumns";
+import { softwareColumns } from "@/lib/tables/softwareInventoryColumns";
 import { toDomainFilters, toServiceFilters, toSimpleFilters } from "lib/mappers/softwareFilterMappers";
 
 export default function SoftwarePage() {

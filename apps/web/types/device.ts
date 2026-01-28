@@ -1,14 +1,17 @@
-
 // src/types/device.ts
 
-import { FilterValues, OffsetPage, OffsetPaginationParams } from "./common";
+import type { FilterValues, OffsetPage, OffsetPaginationParams } from "./common";
 import type { Compliance } from "./software";
 
-/** ประเภท/กลุ่ม/OS */
+/** กลุ่ม/ประเภท/OS ของอุปกรณ์ (โดเมน) */
 export type DeviceGroup = "Assigned" | "Unassigned";
 export type DeviceType = "Laptop" | "Desktop" | "VM" | "Mobile";
 export type DeviceOS = "Windows" | "macOS" | "Linux" | "iOS" | "Android";
 
+/**
+ * ฟิลเตอร์ฝั่งโดเมน (ใช้ในตัว hook/service/mappers)
+ * - ไม่มีค่าพิเศษ "All …" (ให้ UI จัดการเอง)
+ */
 export type DeviceDomainFilters = {
   deviceGroup?: DeviceGroup;
   deviceType?: DeviceType;
@@ -16,31 +19,33 @@ export type DeviceDomainFilters = {
   search?: string;
 };
 
-
-/** อุปกรณ์หนึ่งรายการ */
+/** อุปกรณ์หนึ่งรายการ (โดเมนหลักของหน้า Devices) */
 export type DeviceItem = {
   id: string;
   name: string;
-  type: DeviceType;     // ✅ ตรึง
+  type: DeviceType;
   assignedTo?: string | null;
-  os: DeviceOS;         // ✅ ตรึง
+  os: DeviceOS;
   compliance?: Compliance;
-  lastScan?: string | null;
+  lastScan?: string | null; // ISO string
 };
 
-
-/** Query มาตรฐานสำหรับรายการอุปกรณ์ (internal) */
+/**
+ * Query มาตรฐานสำหรับ service รายการอุปกรณ์ (API ภายในของคุณ)
+ * - ใช้ OffsetPaginationParams เป็นฐาน
+ * - ฟิลด์ filter ใช้ชนิดเดียวกับโดเมน
+ */
 export type DeviceListQuery = OffsetPaginationParams & {
   search?: string;
-  deviceGroup?: string;
-  deviceType?: string | "";
-  os?: string | "";
+  deviceGroup?: DeviceGroup;
+  deviceType?: DeviceType;
+  os?: DeviceOS;
 };
 
-/** Response สำหรับรายการอุปกรณ์ */
+/** Response ของ service รายการอุปกรณ์ */
 export type DeviceListResponse = OffsetPage<DeviceItem>;
 
-/** Bundled Software ต่ออุปกรณ์ */
+/** ซอฟต์แวร์ที่ bundle อยู่ในอุปกรณ์ (สำหรับแท็บ/หน้ารายละเอียด) */
 export type DeviceBundledSoftware = {
   id: string; // software id
   softwareName: string;
@@ -49,9 +54,10 @@ export type DeviceBundledSoftware = {
   category: string;
   policyCompliance?: "Compliant" | "Non-Compliant" | "Exception" | "Unknown";
   licenseStatus?: "Licensed" | "Unlicensed" | "Expired" | "Trial" | "Unknown";
-  lastScan?: string | null;
+  lastScan?: string | null; // ISO string
 };
 
+/** Query รายการซอฟต์แวร์ของอุปกรณ์ */
 export type DeviceSoftwareQuery = OffsetPaginationParams & {
   sortBy?: "softwareName" | "manufacturer" | "version" | "category" | "lastScan";
   sortOrder?: "asc" | "desc";
@@ -61,27 +67,27 @@ export type DeviceSoftwareQuery = OffsetPaginationParams & {
   compliance?: string;
 };
 
+/** Response รายการซอฟต์แวร์ของอุปกรณ์ */
 export type DeviceSoftwareResponse = OffsetPage<DeviceBundledSoftware>;
 
-// ✅ ADDED: ฟิลเตอร์ฝั่งโดเมน (ใช้กับ hook/service)
-
-
-// ✅ ADDED: ฟิลเตอร์แบบ UI (ใช้กับ FilterBar/InventoryPageShell)
+/**
+ * ฟิลเตอร์แบบ UI (ใช้กับ FilterBar/InventoryPageShell)
+ * - ใช้มาตรฐาน FilterValues<TStatus, TType> ร่วมกับระบบตาราง
+ * - status = DeviceGroup, type = DeviceType
+ * - manufacturer ช่องนี้ปล่อยว่างไว้สำหรับบางหน้าที่ต้องใช้ (หน้า Device ไม่จำเป็น)
+ */
 export type DeviceFilterValues = FilterValues<DeviceGroup, DeviceType>;
 
-
+/**
+ * ค่าที่ใช้ตอนแก้ไข/สร้าง Device (สำหรับฟอร์ม)
+ * - ใช้ string ตรงกับ input control (เช่น <input type="date"> ให้ string YYYY-MM-DD)
+ * - map/validate ไปเป็นโดเมนจริงในชั้น service/action
+ */
 export interface DeviceEditValues {
   name: string;
   type: string;
   assignedTo?: string;
   os: string;
   compliance: string;
-  lastScan?: string;  // ใช้ string เพราะ <input type="date"> ส่งค่า string (YYYY-MM-DD)
+  lastScan?: string;
 }
-export type DeviceFilterState = {
-  // เก็บค่า "All …" เพื่อใช้กับ UI ปัจจุบัน
-  deviceGroup: DeviceGroup | "All Device";
-  deviceType: DeviceType | "All Type";
-  os: DeviceOS | "All OS";
-  search: string;
-};

@@ -5,7 +5,7 @@ import * as React from "react";
 import { ActionToolbar } from "./ActionToolbar";
 import type { ToolbarAction, ActionPathConfig } from "types";
 
-type Entity = "employees" | "licenses" | "devices" | "software";
+type Entity = "employees" | "licenses" | "devices" | "software" | "exceptions";
 
 export type InventoryActionToolbarProps = {
   entity: Entity;

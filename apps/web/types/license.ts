@@ -14,7 +14,6 @@ export enum LicenseModel {
 /** สถานะของ License */
 export enum LicenseStatus {
   Active = "Active",
-  Pending = "Pending",
   Expired = "Expired",
 }
 

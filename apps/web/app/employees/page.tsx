@@ -10,7 +10,7 @@ import { useEmployeesInventory } from "hooks/useEmployeeInventory"; // ให้
 import type { ExportFormat } from "types";
 import { Employees, EmployeesFilters, EmployeeStatus } from "types/employees";
 
-import { employeeColumns } from "lib/tables/employeeColumns";
+import { employeeColumns } from "@/lib/tables/employeeInventoryColumns";
 import {
   toDomainFilters,
   toServiceFilters,
@@ -47,7 +47,7 @@ export default function EmployeesPage() {
 
   // ---- Fetch rows ----
   const { rows, totalRows, isLoading, isError, errorMessage } =
-    useEmployeesInventory(ctl.serverQuery, serviceFilters);
+    useEmployeesInventory(ctl.serverQuery, domainFilters);
 
   // ---- Options ----
   const statusOptions: readonly EmployeeStatus[] = [

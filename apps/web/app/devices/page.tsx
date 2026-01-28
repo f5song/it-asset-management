@@ -56,7 +56,7 @@ export default function DevicesPage() {
   );
 
   const { rows, totalRows, isLoading, isError, errorMessage } =
-    useDeviceInventory(ctl.serverQuery, serviceFilters);
+    useDeviceInventory(ctl.serverQuery, domainFilters);
 
   /* -------------------------------------------------------
    *  OPTIONS

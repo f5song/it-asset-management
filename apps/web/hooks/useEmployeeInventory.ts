@@ -1,72 +1,100 @@
+'use client';
+
 import * as React from "react";
 import { getEmployees } from "services/employees.service.mock";
+import type { Employees, EmployeesFilters } from "types/employees";
+import type { ServerQuery } from "types/server-query";
+import { toUndefTrim } from "@/lib/filters";
 
-import type { Employees } from "types/employees";
-
-type Query = {
-  pageIndex: number; // 0-based (เหมือน useDeviceInventory)
-  pageSize: number;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
-};
-
-type Filters = {
-  status: string;       // EmployeeStatus หรือ "" (normalized แล้ว)
-  department: string;   // department หรือ ""
-  search: string;       // คำค้นหา
-};
-
-export function useEmployeesInventory(query: Query, filters?: Filters) {
+export function useEmployeesInventory(
+  serverQuery: ServerQuery,
+  filters: EmployeesFilters = {}
+) {
   const [rows, setRows] = React.useState<Employees[]>([]);
   const [totalRows, setTotalRows] = React.useState(0);
   const [isLoading, setLoading] = React.useState(false);
   const [isError, setError] = React.useState(false);
-  const [errorMessage, setErrorMessage] = React.useState<string | undefined>(undefined);
+  const [errorMessage, setErrorMessage] = React.useState<string | undefined>();
+
+  /**
+   * ประกอบ query สำหรับ service (object เสถียร)
+   * - pageIndex (0-based) -> page (1-based)
+   * - แปลง filters undefined/"" ให้เป็นค่าที่ service รองรับ
+   *   เช่น statusFilter, departmentFilter, searchText
+   */
+  const serviceQuery = React.useMemo(() => {
+    const { pageIndex = 0, pageSize = 10, sortBy, sortOrder } = serverQuery;
+
+    // normalize filters: ถ้า UI ส่งค่าว่างมา ให้แปลงเป็น undefined ก่อน แล้ว map เป็น "" เฉพาะ key ที่ service ต้องการ
+    const status = toUndefTrim(filters.status);
+    const department = toUndefTrim(filters.department);
+    const search = filters.search ?? "";
+
+    return {
+      page: pageIndex + 1,               // service ของคุณใช้ 1-based
+      limit: pageSize,                   // ถ้า service ใช้ pageSize ให้แก้เป็น pageSize
+      sortBy,
+      sortOrder,
+      searchText: search,
+      statusFilter: status ?? "",        // ตาม signature ปัจจุบันของ getEmployees
+      departmentFilter: department ?? "",
+    };
+  }, [
+    serverQuery.pageIndex,
+    serverQuery.pageSize,
+    serverQuery.sortBy,
+    serverQuery.sortOrder,
+    filters.status,
+    filters.department,
+    filters.search,
+  ]);
 
   React.useEffect(() => {
     const ac = new AbortController();
+    let alive = true;
 
-    const run = async () => {
+    (async () => {
       try {
         setLoading(true);
         setError(false);
         setErrorMessage(undefined);
 
-        const res = await getEmployees(
-          {
-            page: query.pageIndex + 1,       // ✅ map pageIndex -> page (1-based)
-            limit: query.pageSize,
-            sortBy: query.sortBy,
-            sortOrder: query.sortOrder,
-            searchText: filters?.search || "",
-            statusFilter: filters?.status || "",           // ✅ ใช้ชื่อคีย์แบบ service
-            departmentFilter: filters?.department || "",
-          },
-          ac.signal
-        );
+        const res = await getEmployees(serviceQuery, ac.signal);
 
-        setRows(res.data ?? []);
-        setTotalRows(res.pagination?.total ?? 0);
+        if (!alive) return;
+
+        // รองรับได้หลายโครง response (กันไว้):
+        // - { data, pagination: { total } }
+        // - { items, total }
+        // - { items, totalCount }
+        const items =
+          (res as any).data ??
+          (res as any).items ??
+          [];
+
+        const total =
+          (res as any).pagination?.total ??
+          (res as any).totalCount ??
+          (res as any).total ??
+          0;
+
+        setRows(Array.isArray(items) ? items : []);
+        setTotalRows(Number.isFinite(total) ? total : 0);
       } catch (e: any) {
         if (e?.name === "AbortError") return;
+        if (!alive) return;
         setError(true);
-        setErrorMessage(e?.message ?? "Unknown error");
+        setErrorMessage(e?.message ?? "โหลดข้อมูลพนักงานไม่สำเร็จ");
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
-    };
+    })();
 
-    run();
-    return () => ac.abort();
-  }, [
-    query.pageIndex,
-    query.pageSize,
-    query.sortBy,
-    query.sortOrder,
-    filters?.search,
-    filters?.status,
-    filters?.department,
-  ]);
+    return () => {
+      alive = false;
+      ac.abort();
+    };
+  }, [serviceQuery]);
 
   return { rows, totalRows, isLoading, isError, errorMessage };
 }

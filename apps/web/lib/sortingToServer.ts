@@ -1,8 +1,7 @@
 
 // src/lib/table/sortingToServer.ts
-import type { SortingState } from "@tanstack/react-table";
-
-export type ServerSort = { sortBy?: string; sortOrder?: "asc" | "desc" };
+import { SortingState } from "@/types";
+import { ServerSort } from "@/types/server-query";
 
 export function sortingToServer(sorting: SortingState | undefined): ServerSort {
   if (!Array.isArray(sorting) || sorting.length === 0) return {};

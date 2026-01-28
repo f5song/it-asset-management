@@ -1,6 +1,5 @@
-
 import { StatusBadge } from "components/ui/StatusBadge";
-import type { DeviceItem, AppColumnDef } from "types";
+import { type DeviceItem, type AppColumnDef } from "types";
 
 export const deviceInventoryColumns: AppColumnDef<DeviceItem>[] = [
   { id: "id", header: "Device ID", accessorKey: "id", width: 140 },
@@ -13,7 +12,10 @@ export const deviceInventoryColumns: AppColumnDef<DeviceItem>[] = [
     header: "Compliance",
     accessorKey: "compliance",
     width: 160,
-    cell: (v) => <StatusBadge label={String(v ?? "-")} />,
+    // ใช้ signature (value, row) ตาม AppColumnDef ของคุณ
+    cell: (value /* unknown */, _row /* DeviceItem */) => (
+      <StatusBadge label={String(value ?? "-")} variant="compliance" />
+    ),
   },
   { id: "lastScan", header: "Last Scan", accessorKey: "lastScan", width: 140 },
 ];

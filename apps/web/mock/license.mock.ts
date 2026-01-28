@@ -35,12 +35,11 @@ const termFromModel = (m: LicenseModel): "subscription" | "perpetual" | "unknown
 
 /** map compliance แบบง่าย: ใช้เฉพาะค่าที่มักจะอยู่ใน Compliance จริงของระบบ */
 const asCompliance = (c: string): Compliance => {
-  // ปรับ “Pending” ออก เพราะไม่ใช่ compliance (มันเป็น status)
+  // ปรับ “Active” ออก เพราะไม่ใช่ compliance (มันเป็น status)
   const map: Record<string, Compliance> = {
     Compliant: "Compliant",
     "Non-Compliant": "Non-Compliant",
     Exception: "Exception",
-    "Pending": "Pending",
   };
   return (map[c] ?? "Compliant") as Compliance;
 };
@@ -148,7 +147,7 @@ export const MOCK_LICENSES: LicenseItem[] = [
     total: 50,
     inUse: 46,
     expiry: "05-02-2025",
-    status: LicenseStatus.Pending,
+    status: LicenseStatus.Active,
     compliance: "Compliant",
   }),
   mk({
@@ -203,7 +202,7 @@ export const MOCK_LICENSES: LicenseItem[] = [
     total: 100,
     inUse: 84,
     expiry: "15-03-2025",
-    status: LicenseStatus.Pending,
+    status: LicenseStatus.Active,
     compliance: "Non-Compliant",
   }),
   mk({
@@ -226,7 +225,7 @@ export const MOCK_LICENSES: LicenseItem[] = [
     inUse: 480,
     expiry: "01-01-2025",
     status: LicenseStatus.Active,
-    // เดิม mock มี 'Pending' (ไม่ใช่ Compliance) → ใช้ 'Compliant'
+    // เดิม mock มี 'Active' (ไม่ใช่ Compliance) → ใช้ 'Compliant'
     compliance: "Compliant",
   }),
   mk({
