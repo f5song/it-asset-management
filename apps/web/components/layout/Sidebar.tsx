@@ -36,7 +36,7 @@ const MENU: MenuItem[] = [
   },
   { key: "devices", name: "Devices", icon: RectangleGroupIcon, path: "/devices" },
   { key: "employees", name: "Employees", icon: UsersIcon, path: "/employees" },
-  { key: "requests", name: "Requests", icon: IdentificationIcon, path: "/requests" },
+  { key: "exceptions", name: "Exceptions", icon: IdentificationIcon, path: "/exceptions" },
   { key: "audit-logs", name: "Audit Logs", icon: BellAlertIcon, path: "/audit-logs" },
   { key: "reports", name: "Reports", icon: ChartBarSquareIcon, path: "/reports" },
   { key: "settings", name: "Settings", icon: Cog6ToothIcon, path: "/settings" },
