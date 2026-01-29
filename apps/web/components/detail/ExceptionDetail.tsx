@@ -9,7 +9,11 @@ import { InstallationSection } from "components/tabbar/InstallationSection";
 import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
 
 import type { BreadcrumbItem, HistoryEvent } from "types";
-import type { ExceptionDefinition, ExceptionAssignmentRow, ExceptionEditValues } from "types/exception";
+import type {
+  ExceptionDefinition,
+  ExceptionAssignmentRow,
+  ExceptionEditValues,
+} from "types/exception";
 
 import { show } from "lib/show";
 import { exceptionAssignmentColumns } from "lib/tables/exceptionAssignmentColumns";
@@ -26,7 +30,6 @@ type ExceptionsDetailProps = {
   assignments?: ExceptionAssignmentRow[];
   breadcrumbs?: BreadcrumbItem[];
 };
-
 
 function formatDateSafe(v?: string | null) {
   return formatDateDeterministic(v); // ✅ แทนที่ toLocaleString()
@@ -55,13 +58,17 @@ export default function ExceptionsDetail({
   const router = useRouter();
 
   const historyData = React.useMemo<HistoryEvent[]>(
-    () => (Array.isArray(history) && history.length ? history : demoExceptionHistory),
-    [history]
+    () =>
+      Array.isArray(history) && history.length ? history : demoExceptionHistory,
+    [history],
   );
 
   const rows = React.useMemo<ExceptionAssignmentRow[]>(
-    () => (Array.isArray(assignments) && assignments.length ? assignments : demoExceptionAssignments),
-    [assignments]
+    () =>
+      Array.isArray(assignments) && assignments.length
+        ? assignments
+        : demoExceptionAssignments,
+    [assignments],
   );
 
   const handleBack = React.useCallback(() => {
@@ -79,18 +86,17 @@ export default function ExceptionsDetail({
         selectedIds={[item.id]}
         basePath="/exceptions"
         enableDefaultMapping
-        visibleActions={["delete"]}
+        visibleActions={["assign"]}
         singleSelectionOnly
         toOverride={{
-          edit: `/exceptions/${item.id}/edit`,
-          delete: `/exceptions/${item.id}`,
+          assign: `/exceptions/${item.id}/assign`,
         }}
         onAction={(act) => {
           if (act === "delete") handleDelete();
         }}
       />
     ),
-    [item.id, handleDelete]
+    [item.id, handleDelete],
   );
 
   // Info panels (Definition-level)
@@ -102,7 +108,7 @@ export default function ExceptionsDetail({
       { label: "Risk", value: show(item.risk) },
       { label: "Owner", value: show(item.owner) },
     ],
-    [item.id, item.name, item.category, item.risk, item.owner]
+    [item.id, item.name, item.category, item.risk, item.owner],
   );
 
   const infoRight = React.useMemo(
@@ -112,7 +118,7 @@ export default function ExceptionsDetail({
       { label: "Last Updated", value: formatDateSafe(item.lastUpdated) },
       { label: "Review At", value: formatDateSafe(item.reviewAt) },
     ],
-    [item.status, item.createdAt, item.lastUpdated, item.reviewAt]
+    [item.status, item.createdAt, item.lastUpdated, item.reviewAt],
   );
 
   const editConfig = React.useMemo<EditConfig<ExceptionEditValues>>(
@@ -153,7 +159,7 @@ export default function ExceptionsDetail({
       item.lastUpdated,
       item.reviewAt,
       item.notes,
-    ]
+    ],
   );
 
   return (

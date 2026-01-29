@@ -24,8 +24,6 @@ export function InventoryActionToolbar({
   selectedIds,
   basePath,
   visibleActions,
-  requireSelection = false,
-  singleSelectionOnly = false,
   enableDefaultMapping = false,
   toOverride,
   onAction,
