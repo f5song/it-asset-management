@@ -74,4 +74,11 @@ export const exceptionInventoryColumns: AppColumnDef<ExceptionDefinition>[] = [
     getSortValue: (row) => row.reviewAt ?? "",
     cell: (value) => formatDate(value as string | null | undefined),
   },
+  {
+    id: "notes",
+    header: "Notes",
+    accessorKey: "notes",
+    getSortValue: (row) => row.notes ?? "",
+    cell: (value) => show(value as string),
+  },
 ];

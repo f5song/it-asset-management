@@ -1,4 +1,3 @@
-// app/(whatever)/InventoryPageShell.tsx
 "use client";
 
 import React from "react";
@@ -6,12 +5,21 @@ import React from "react";
 import { DataTable } from "components/table";
 import { FilterBar } from "components/ui/FilterBar";
 import { PageHeader } from "components/ui/PageHeader";
+import { Card } from "components/ui/Card"; // ✅ ใช้ Card เดียวกับโปรเจ็กต์ของพี่
 
 import type { AppColumnDef } from "types/ui-table";
 import type { ExportFormat, FilterValues, ToolbarAction } from "types";
 
 // แถวพื้นฐาน
 type RowBase = { id?: string | number };
+
+// ✅ โครงข้อมูลการ์ดแบบเบาๆ
+export type SummaryCardItem = {
+  id?: string;
+  title: string;
+  count: number | string;
+  className?: string;
+};
 
 /**
  * ✅ ใช้ FilterValues<TStatus, TType> สำหรับ FilterBar
@@ -25,6 +33,12 @@ type ShellProps<
 > = {
   title: string;
   breadcrumbs: { label: string; href: string }[];
+
+  // ===== ✅ NEW: Summary cards =====
+  /** ส่ง array การ์ดแบบเบา ๆ เพื่อให้ Shell แสดงเป็น grid ใต้ PageHeader */
+  summaryCards?: SummaryCardItem[];
+  /** ส่ง JSX เองเพื่อควบคุมการแสดงผล summary (ถ้าส่งมา จะถูกใช้แทน summaryCards) */
+  summaryRender?: React.ReactNode;
 
   // FilterBar props (ใช้ FilterValues แทน SimpleFilters)
   filters: FilterValues<TStatus, TType>;
@@ -60,16 +74,17 @@ type ShellProps<
   onExport?: (fmt: ExportFormat) => void;
   onAction?: (act: ToolbarAction) => void;
 
-  // ===== ✅ NEW: Selection (ทั้งหมด optional / backward-compatible) =====
+  // ===== Selection (optional / backward-compatible) =====
   /** เปิด/ปิด checkbox selection ที่ตาราง */
   selectable?: boolean;
-  /** ids ที่ถูกเลือก (controlled) */
 
+  /** ids ที่ถูกเลือก (controlled) */
   selectedIds?: string[]; // <- ปรับให้เป็น string[] ชัดเจน
   onSelectedIdsChange?: (ids: string[]) => void;
 
   /** ถ้า id ไม่ได้อยู่ใน field 'id' ให้ส่งฟังก์ชันอ่านค่า id ของแถว */
   getRowId?: (row: TRow) => string | number;
+
   /** 'page' = เลือกเฉพาะในหน้านี้ | 'all' = ทั้ง dataset (ถ้า backend รองรับ) */
   selectionScope?: "page" | "all";
 };
@@ -82,6 +97,11 @@ export function InventoryPageShell<
   const {
     title,
     breadcrumbs,
+
+    // NEW: Summary
+    summaryCards,
+    summaryRender,
+
     filters,
     onFiltersChange,
     statusOptions,
@@ -135,9 +155,34 @@ export function InventoryPageShell<
     [onSelectedIdsChange],
   );
 
+  // ✅ สร้าง UI ของ summary (ถ้ามี)
+  const summaryArea = React.useMemo(() => {
+    if (summaryRender) return summaryRender; // ใช้ JSX จากภายนอก
+    if (!summaryCards || summaryCards.length === 0) return null;
+
+    return (
+      <div className="mb-4">
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {summaryCards.map((item) => (
+            <Card
+              key={item.id ?? item.title}
+              title={item.title}
+              count={item.count}
+              compact
+              className={item.className ?? "h-[88px]"}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }, [summaryCards, summaryRender]);
+
   return (
     <div style={{ padding: 6 }}>
       <PageHeader title={title} breadcrumbs={breadcrumbs} />
+
+      {/* ✅ Summary Cards (วางใต้ PageHeader) */}
+      {summaryArea}
 
       <FilterBar
         filters={filters}

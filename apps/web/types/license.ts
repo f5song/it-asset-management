@@ -28,7 +28,7 @@ export type LicenseFilters = {
   manufacturer?: string;
   status?: LicenseStatus;
   licenseModel?: LicenseModel;
-  search?: string;
+  searchText?: string;
 };
 
 /** รายการ License (ข้อมูลหลัก) */

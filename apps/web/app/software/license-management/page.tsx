@@ -3,38 +3,22 @@ import * as React from "react";
 
 import { InventoryPageShell } from "components/inventory/InventoryPageShell";
 import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
-
 import { useServerTableController } from "hooks/useServerTableController";
 import { useLicenseInventory } from "hooks/useLicenseInventory";
 
 import type { ExportFormat } from "types";
-import type {
-  LicenseItem,
-  LicenseFilters,
-  LicenseStatus,
-  LicenseModel,
-} from "types";
+import type { LicenseItem, LicenseFilters, LicenseStatus, LicenseModel } from "types/license";
 
 import { licenseColumns } from "@/lib/tables/licenseInventoryColumns";
-import {
-  toDomainFilters,
-  toServiceFilters,
-  toSimpleFilters,
-} from "lib/mappers/licenseFilterMappers";
+import { toDomainFilters, toServiceFilters, toSimpleFilters } from "lib/mappers/licenseFilterMappers";
+import type { SummaryCardItem } from "components/inventory/InventoryPageShell";
+import { buildLicenseSummaryCards, buildLicenseSummarySkeleton } from "@/lib/summary";
+import { useLicenseSummary } from "@/hooks/useLicenseSummary";
 
 export default function LicenseManagementPage() {
-  // ---- Domain Filters (undefined = ไม่กรอง) ----
-  const [domainFilters, setDomainFilters] = React.useState<LicenseFilters>(
-    toDomainFilters(), // empty filters
-  );
+  const [domainFilters, setDomainFilters] = React.useState<LicenseFilters>(toDomainFilters());
 
-  // ---- Controller (pagination/sorting + FilterValues bridge) ----
-  const ctl = useServerTableController<
-    LicenseItem,
-    LicenseStatus,
-    LicenseModel,
-    LicenseFilters
-  >({
+  const ctl = useServerTableController<LicenseItem, LicenseStatus, LicenseModel, LicenseFilters>({
     pageSize: 8,
     defaultSort: { id: "softwareName", desc: false },
     domainFilters,
@@ -44,40 +28,37 @@ export default function LicenseManagementPage() {
     resetDeps: [domainFilters.status, domainFilters.licenseModel, domainFilters.manufacturer],
   });
 
-  // ---- Simple -> Service params ----
   const serviceFilters = React.useMemo(
     () => toServiceFilters(ctl.simpleFilters),
     [ctl.simpleFilters],
   );
 
-  // ---- Fetch + options ----
   const {
-    rows,
-    totalRows,
-    isLoading,
-    isError,
-    errorMessage,
-    statusOptions,
-    licenseModelOptions,
-    manufacturerOptions,
+    rows, totalRows, isLoading, isError, errorMessage,
+    statusOptions, licenseModelOptions, manufacturerOptions,
   } = useLicenseInventory(ctl.serverQuery, serviceFilters);
 
-  // ---- Selection (ใช้กับ Toolbar) ----
-  const [selectedLicenseIds, setSelectedLicenseIds] = React.useState<string[]>([]);
+  // 🔹 Summary ทั้งระบบ (ไม่ผูก paging) รองรับฟิลเตอร์
+  const { summary, isLoading: isLoadingSummary } = useLicenseSummary({
+    status: domainFilters.status,
+    licenseModel: domainFilters.licenseModel,
+    manufacturer: domainFilters.manufacturer,
+    searchText: domainFilters.searchText,
+  });
 
-  // ---- Row link ----
-  const getRowHref = React.useCallback(
-    (row: LicenseItem) => `/software/license-management/${row.id}`,
-    [],
+  // 🔹 แปลง summary → การ์ด
+  const summaryCards: SummaryCardItem[] = React.useMemo(
+    () => (isLoadingSummary ? buildLicenseSummarySkeleton() : buildLicenseSummaryCards(summary)),
+    [isLoadingSummary, summary]
   );
 
-  // ---- Export ----
+  const [selectedLicenseIds, setSelectedLicenseIds] = React.useState<string[]>([]);
+
+  const getRowHref = React.useCallback((row: LicenseItem) => `/software/license-management/${row.id}`, []);
   const handleExport = React.useCallback((fmt: ExportFormat) => {
     console.log("Export license format:", fmt);
-    // TODO: exportLicenses(fmt, ctl.serverQuery, serviceFilters);
   }, [ctl.serverQuery, serviceFilters]);
 
-  // ---- Toolbar ด้านขวา (ใช้ wrapper กลาง) ----
   const rightExtra = (
     <InventoryActionToolbar
       entity="licenses"
@@ -85,9 +66,7 @@ export default function LicenseManagementPage() {
       basePath="/software/license-management"
       enableDefaultMapping
       onAction={(act) => {
-        if (act === "delete") {
-          console.log("delete selected license ids:", selectedLicenseIds);
-        }
+        if (act === "delete") console.log("delete selected license ids:", selectedLicenseIds);
       }}
     />
   );
@@ -96,6 +75,9 @@ export default function LicenseManagementPage() {
     <InventoryPageShell<LicenseItem, LicenseStatus, LicenseModel>
       title="License Management"
       breadcrumbs={[{ label: "License Management", href: "/software/license-management" }]}
+
+      // ✅ สรุปใต้งาน PageHeader (ไม่ผูก paging)
+      summaryCards={summaryCards}
 
       // FilterBar
       filters={ctl.simpleFilters}
@@ -124,7 +106,7 @@ export default function LicenseManagementPage() {
       isError={isError}
       errorMessage={errorMessage}
 
-      // ✅ Selection (เหมือน devices/employees/software)
+      // Selection
       selectedIds={selectedLicenseIds}
       onSelectedIdsChange={setSelectedLicenseIds}
     />
