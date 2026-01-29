@@ -1,93 +1,93 @@
-// src/services/exceptions.service.mock.ts
-import type {
-  ExceptionItem,
-  ExceptionCategory,
-  ExceptionGroup,
-  ExceptionScope,
-} from "types/exception";
+import { ExceptionAssignmentRow, ExceptionCategory, ExceptionDefinition, PolicyStatus } from "@/types/exception";
 
 // ---------- Mock dataset ----------
-const CATEGORIES: readonly ExceptionCategory[] = [
-  "AI",
-  "USBDrive",
-  "MessagingApp",
-  "ADPasswordPolicy",
-] as const;
-
-const GROUPS: readonly ExceptionGroup[] = [
-  "Approved",
-  "Pending",
-  "Expired",
-  "Revoked",
-] as const;
-
-const SCOPES: readonly ExceptionScope[] = [
-  "User",
-  "Device",
-  "Group",
-  "Tenant",
-] as const;
-
+const CATEGORIES: readonly ExceptionCategory[] = ["AI", "USBDrive", "MessagingApp", "ADPasswordPolicy"] as const;
+const STATUSES: readonly PolicyStatus[] = ["Active", "Inactive", "Deprecated", "Archived"] as const;
 const OWNERS = ["SecOps", "IT", "Infra", "HR", "Compliance"] as const;
-const TARGET_PREFIX = ["jirawee", "qa", "dev", "ops", "hr", "fin"] as const;
+const USER_PREFIX = ["jirawee", "qa", "dev", "ops", "hr", "fin"] as const;
 
-function pad(n: number, len = 3) {
-  return n.toString().padStart(len, "0");
-}
-function iso(date: Date) {
-  return date.toISOString();
-}
+function pad(n: number, len = 3) { return n.toString().padStart(len, "0"); }
+function iso(date: Date) { return date.toISOString(); }
+function addDays(d: Date, days: number) { return new Date(d.getTime() + days * 24 * 60 * 60 * 1000); }
+
 function makeDates(idx: number) {
-  const base = new Date("2025-11-01T08:00:00Z").getTime();
-  const created = new Date(base + idx * 24 * 60 * 60 * 1000);
-  const expireStep = ((idx % 3) + 1) * 15; // 15/30/45 days
-  const expires = new Date(created.getTime() + expireStep * 24 * 60 * 60 * 1000);
-  return { createdAt: iso(created), expiresAt: iso(expires) };
+  const created = addDays(new Date("2025-11-01T08:00:00Z"), idx);
+  const lastUpdated = addDays(created, idx % 5);
+  const reviewAt = addDays(created, ((idx % 3) + 1) * 30);
+  return { createdAt: iso(created), lastUpdated: iso(lastUpdated), reviewAt: iso(reviewAt) };
 }
-function resolveExpires(group: ExceptionGroup, _createdAtISO: string, expiresAtISO: string) {
-  if (group === "Pending" || group === "Approved") return expiresAtISO;
-  if (group === "Expired") return expiresAtISO;
-  if (group === "Revoked") return null;
-  return null;
-}
-function makeName(category: ExceptionCategory, scope: ExceptionScope, target: string) {
+function makeName(category: ExceptionCategory) {
   switch (category) {
-    case "AI":
-      return `Allow AI tools for ${scope.toLowerCase()}: ${target}`;
-    case "USBDrive":
-      return `Allow USB storage for ${scope.toLowerCase()}: ${target}`;
-    case "MessagingApp":
-      return `Allow LINE for ${scope.toLowerCase()}: ${target}`;
-    case "ADPasswordPolicy":
-      return `Relax AD password policy for ${scope.toLowerCase()}: ${target}`;
-    default:
-      return `Exception for ${scope.toLowerCase()}: ${target}`;
+    case "AI": return `Allow AI tools`;
+    case "USBDrive": return `Allow USB storage`;
+    case "MessagingApp": return `Allow LINE on PC`;
+    case "ADPasswordPolicy": return `Relax AD password policy`;
+    default: return `Security exception`;
   }
 }
+function toDisplayName(employeeId: string): string {
+  // mock: "dev.012" -> "Dev 012" (จะ sophisticated กว่านี้ก็ได้)
+  const [p1, p2] = employeeId.split(".");
+  return `${p1?.charAt(0).toUpperCase()}${p1?.slice(1)} ${p2}`;
+}
 
-const MOCK_EXCEPTIONS: ExceptionItem[] = Array.from({ length: 84 }).map((_, i) => {
+// ---------- Definitions (Catalog) ----------
+const MOCK_DEFINITIONS: ExceptionDefinition[] = Array.from({ length: 24 }).map((_, i) => {
   const idNum = i + 1;
   const category = CATEGORIES[i % CATEGORIES.length];
-  const group = GROUPS[(i * 3) % GROUPS.length];
-  const scope = SCOPES[(i * 5) % SCOPES.length];
-  const targetSeed = `${TARGET_PREFIX[i % TARGET_PREFIX.length]}.${pad((i % 20) + 1)}`;
+  const status = STATUSES[(i * 3) % STATUSES.length];
   const owner = OWNERS[(i * 7) % OWNERS.length];
+  const { createdAt, lastUpdated, reviewAt } = makeDates(i);
 
-  const { createdAt, expiresAt } = makeDates(i);
-  const finalExpires = resolveExpires(group, createdAt, expiresAt);
+  const total = (i % 7) + 3;
+  const active = status === "Active" ? Math.max(1, total - (i % 3)) : 0;
 
   return {
     id: `EXC-${pad(idNum)}`,
-    name: makeName(category, scope, targetSeed),
+    name: makeName(category),
     category,
-    group,
-    scope,
-    target: scope === "Tenant" ? "Tenant" : targetSeed,
+    status,
+    risk: (["Low", "Medium", "High"] as const)[i % 3],
     owner,
     createdAt,
-    expiresAt: finalExpires,
+    lastUpdated,
+    reviewAt,
+    notes: "",
+    activeAssignments: active,
+    totalAssignments: total,
   };
 });
+
+// ---------- Assignments (Per definition) ----------
+const MOCK_ASSIGNMENTS: Record<string, ExceptionAssignmentRow[]> = {};
+for (const def of MOCK_DEFINITIONS) {
+  const total = def.totalAssignments ?? 0;
+  const rows: ExceptionAssignmentRow[] = [];
+  for (let i = 0; i < total; i++) {
+    const employeeId = `${USER_PREFIX[i % USER_PREFIX.length]}.${pad((i % 20) + 1)}`;
+    const employeeName = toDisplayName(employeeId);
+    const assignedAt = addDays(new Date(def.createdAt), i).toISOString();
+    const statusIdx = (i + 1) % 4;
+    const status: NonNullable<ExceptionAssignmentRow["status"]> =
+      statusIdx === 1 ? "Active" :
+      statusIdx === 2 ? "Pending" :
+      statusIdx === 3 ? "Expired" : "Revoked";
+
+    rows.push({
+      id: `${def.id}-U-${pad(i + 1)}`,
+      definitionId: def.id,
+      employeeId,
+      employeeName,
+      department: ["IT","HR","FIN","OPS"][i % 4],
+      assignedBy: def.owner ?? "IT",
+      assignedAt,
+      expiresAt: def.reviewAt ?? null, // mock: ผูกกับ reviewAt ของ policy
+      status,
+      notes: i % 2 === 0 ? "Demo assignment note" : null,
+    });
+  }
+  MOCK_ASSIGNMENTS[def.id] = rows;
+}
 
 // ---------- Utils ----------
 function sleep(ms: number, signal?: AbortSignal) {
@@ -104,47 +104,40 @@ function sleep(ms: number, signal?: AbortSignal) {
 const ci = (s?: string) => (s ?? "").toLowerCase();
 const includesCI = (text: string, q: string) => ci(text).includes(ci(q));
 
-// ---------- Types (สำหรับ service นี้) ----------
-export type ExceptionItemsQuery = {
+// ---------- Types (service query) ----------
+export type ExceptionDefinitionsQuery = {
   page?: number;             // 1-based
   limit?: number;
-  sortBy?: keyof ExceptionItem | string;
+  sortBy?: keyof ExceptionDefinition | string;
   sortOrder?: "asc" | "desc";
   // filters
   searchText?: string;
-  groupFilter?: ExceptionGroup | string;
+  statusFilter?: PolicyStatus | string;
   categoryFilter?: ExceptionCategory | string;
-  scopeFilter?: ExceptionScope | string;
   ownerFilter?: string;
-  targetFilter?: string;
 };
 
-export type ExceptionItemsResponse = {
-  data: ExceptionItem[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+export type ExceptionDefinitionsResponse = {
+  data: ExceptionDefinition[];
+  pagination: { page: number; limit: number; total: number; totalPages: number; };
 };
 
-// ---------- Service API ----------
-export async function getExceptionById(
+// ---------- Service API (Definitions) ----------
+export async function getExceptionDefinitionById(
   id: string | number,
   signal?: AbortSignal
-): Promise<ExceptionItem | null> {
+): Promise<ExceptionDefinition | null> {
   await sleep(80, signal);
-  return MOCK_EXCEPTIONS.find((x) => String(x.id) === String(id)) ?? null;
+  return MOCK_DEFINITIONS.find((x) => String(x.id) === String(id)) ?? null;
 }
 
-export async function getExceptions(
-  q: ExceptionItemsQuery,
+export async function getExceptionDefinitions(
+  q: ExceptionDefinitionsQuery,
   signal?: AbortSignal
-): Promise<ExceptionItemsResponse> {
+): Promise<ExceptionDefinitionsResponse> {
   await sleep(150, signal);
 
-  let filtered = [...MOCK_EXCEPTIONS];
+  let filtered = [...MOCK_DEFINITIONS];
 
   // search
   const searchText = (q.searchText ?? "").trim();
@@ -153,40 +146,30 @@ export async function getExceptions(
       (e) =>
         includesCI(e.id, searchText) ||
         includesCI(e.name, searchText) ||
-        includesCI(e.target, searchText) ||
         includesCI(e.owner ?? "", searchText) ||
-        includesCI(e.category, searchText) ||
-        includesCI(e.group, searchText) ||
-        includesCI(e.scope, searchText)
+        includesCI(String(e.category), searchText) ||
+        includesCI(String(e.status), searchText)
     );
   }
 
   // filters
-  if (q.groupFilter) {
-    const s = ci(q.groupFilter);
-    filtered = filtered.filter((e) => ci(e.group) === s);
+  if (q.statusFilter) {
+    const s = ci(q.statusFilter);
+    filtered = filtered.filter((e) => ci(e.status) === s);
   }
   if (q.categoryFilter) {
     const s = ci(q.categoryFilter);
     filtered = filtered.filter((e) => ci(e.category) === s);
   }
-  if (q.scopeFilter) {
-    const s = ci(q.scopeFilter);
-    filtered = filtered.filter((e) => ci(e.scope) === s);
-  }
   if (q.ownerFilter) {
     const s = ci(q.ownerFilter);
     filtered = filtered.filter((e) => includesCI(e.owner ?? "", s));
-  }
-  if (q.targetFilter) {
-    const s = ci(q.targetFilter);
-    filtered = filtered.filter((e) => includesCI(e.target, s));
   }
 
   // sort
   if (q.sortBy) {
     const dir = q.sortOrder === "desc" ? -1 : 1;
-    const key = q.sortBy as keyof ExceptionItem;
+    const key = q.sortBy as keyof ExceptionDefinition;
     filtered.sort((a, b) => {
       const A = (a[key] as any) ?? "";
       const B = (b[key] as any) ?? "";
@@ -202,34 +185,14 @@ export async function getExceptions(
   const data = filtered.slice(start, start + limit);
   const totalPages = Math.max(1, Math.ceil(total / Math.max(1, limit)));
 
-  return {
-    data,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages,
-    },
-  };
+  return { data, pagination: { page, limit, total, totalPages } };
 }
 
-// ดึงทั้งหมด (เร็ว)
-export async function getAllExceptionsQuick(signal?: AbortSignal): Promise<ExceptionItem[]> {
-  const res = await getExceptions({ page: 1, limit: 9999 }, signal);
-  return res.data;
-}
-
-// ดึงทั้งหมด (ทีละหน้า)
-export async function getAllExceptions(signal?: AbortSignal): Promise<ExceptionItem[]> {
-  const limit = 100;
-  let page = 1;
-  const out: ExceptionItem[] = [];
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const res = await getExceptions({ page, limit }, signal);
-    out.push(...res.data);
-    if (page >= res.pagination.totalPages) break;
-    page += 1;
-  }
-  return out;
+// ---------- Service API (Assignments per definition) ----------
+export async function getExceptionAssignmentsByDefinitionId(
+  id: string,
+  signal?: AbortSignal
+): Promise<ExceptionAssignmentRow[]> {
+  await sleep(120, signal);
+  return [...(MOCK_ASSIGNMENTS[id] ?? [])];
 }

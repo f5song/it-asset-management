@@ -29,12 +29,12 @@ type ShellProps<
   // FilterBar props (ใช้ FilterValues แทน SimpleFilters)
   filters: FilterValues<TStatus, TType>;
   onFiltersChange: (next: FilterValues<TStatus, TType>) => void;
-  statusOptions: readonly string[];
-  typeOptions: readonly string[];
-  manufacturerOptions: readonly string[];
-  allStatusLabel: string;
-  allTypeLabel: string;
-  allManufacturerLabel: string;
+  statusOptions?: readonly string[];
+  typeOptions?: readonly string[];
+  manufacturerOptions?: readonly string[];
+  allStatusLabel?: string;
+  allTypeLabel?: string;
+  allManufacturerLabel?: string;
 
   // ✅ ช่องพิเศษทางขวาของ FilterBar (เช่นปุ่ม Bulk, ปุ่ม Assign)
   filterBarRightExtra?: React.ReactNode;
@@ -147,9 +147,11 @@ export function InventoryPageShell<
         manufacturerOptions={manufacturerOptions}
         onExport={onExport}
         onAction={onAction}
-        allStatusLabel={allStatusLabel}
-        allTypeLabel={allTypeLabel}
-        allManufacturerLabel={allManufacturerLabel}
+        labels={{
+          allStatus: allStatusLabel,
+          allType: allTypeLabel,
+          allManufacturer: allManufacturerLabel,
+        }}
         rightExtra={filterBarRightExtra}
       />
 

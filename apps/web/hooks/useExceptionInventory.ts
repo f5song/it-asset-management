@@ -1,55 +1,44 @@
-'use client';
+// hooks/useExceptionInventory.ts
+"use client";
 
 import * as React from "react";
+import { getExceptionDefinitions } from "services/exceptions.service.mock";
 import type {
-  ExceptionItem,
-  ExceptionGroup,
+  ExceptionDefinition,
+  PolicyStatus,
   ExceptionCategory,
-  ExceptionScope,
-  ExceptionDomainFilters,
+  ExceptionDomainFilters
 } from "types/exception";
 import type { ServerQuery } from "types/server-query";
-import { toUndefTrim } from "@/lib/filters";
-import { getExceptions } from "@/services/exceptions.service.mock";
+import { toUndefTrim } from "lib/filters";
 
-/**
- * Hook ดึงรายการ Exceptions (มาตรฐานเดียวกับ useEmployeesInventory / useDeviceInventory)
- * - รับ domain filters โดยตรง (undefined = ไม่กรอง, string ว่าง = UI สะดวก)
- * - แปลงเป็น service params ที่ mock รองรับ: searchText, groupFilter, categoryFilter, scopeFilter, ownerFilter, targetFilter
- */
 export function useExceptionInventory(
   serverQuery: ServerQuery,
   filters: ExceptionDomainFilters = {}
 ) {
-  const [rows, setRows] = React.useState<ExceptionItem[]>([]);
+  const [rows, setRows] = React.useState<ExceptionDefinition[]>([]);
   const [totalRows, setTotalRows] = React.useState(0);
   const [isLoading, setLoading] = React.useState(false);
   const [isError, setError] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | undefined>();
 
-  // ประกอบ query ให้ service mock (object เสถียร)
   const serviceQuery = React.useMemo(() => {
     const { pageIndex = 0, pageSize = 10, sortBy, sortOrder } = serverQuery;
 
-    // normalize domain filters
-    const searchText = filters.searchText ?? ""; // keyword/search
-    const group = toUndefTrim(filters.group) as ExceptionGroup | undefined;
+    const searchText = filters.searchText ?? "";
+    const status = toUndefTrim(filters.status) as PolicyStatus | undefined;
     const category = toUndefTrim(filters.category) as ExceptionCategory | undefined;
-    const scope = toUndefTrim(filters.scope) as ExceptionScope | undefined;
     const owner = toUndefTrim(filters.owner);
-    const target = toUndefTrim(filters.target);
 
     return {
-      page: pageIndex + 1,  // service mock ใช้ 1-based
+      page: pageIndex + 1,   // service mock: 1-based
       limit: pageSize,
       sortBy,
       sortOrder,
-      searchText: searchText,
-      groupFilter: group ?? "",
+      searchText,
+      statusFilter: status ?? "",
       categoryFilter: category ?? "",
-      scopeFilter: scope ?? "",
       ownerFilter: owner ?? "",
-      targetFilter: target ?? "",
     };
   }, [
     serverQuery.pageIndex,
@@ -57,11 +46,9 @@ export function useExceptionInventory(
     serverQuery.sortBy,
     serverQuery.sortOrder,
     filters.searchText,
-    filters.group,
+    filters.status,
     filters.category,
-    filters.scope,
     filters.owner,
-    filters.target,
   ]);
 
   React.useEffect(() => {
@@ -74,10 +61,9 @@ export function useExceptionInventory(
         setError(false);
         setErrorMessage(undefined);
 
-        const res = await getExceptions(serviceQuery, ac.signal);
+        const res = await getExceptionDefinitions(serviceQuery as any, ac.signal);
         if (!alive) return;
 
-        // รองรับได้หลายโครง response
         const items =
           (res as any).data ??
           (res as any).items ??
@@ -94,7 +80,7 @@ export function useExceptionInventory(
         if (e?.name === "AbortError") return;
         if (!alive) return;
         setError(true);
-        setErrorMessage(e?.message ?? "โหลดข้อมูลข้อยกเว้น (exceptions) ไม่สำเร็จ");
+        setErrorMessage(e?.message ?? "โหลดรายการข้อยกเว้นไม่สำเร็จ");
       } finally {
         if (alive) setLoading(false);
       }

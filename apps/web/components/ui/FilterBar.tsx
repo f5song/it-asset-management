@@ -1,14 +1,11 @@
-
 "use client";
 
 import React from "react";
 import { ExportSelect } from "./ExportSelect";
 import { ActionSelect } from "./ActionSelect";
 import { SelectField } from "./SelectField";
-
 import { SearchInput } from "./SearchInput";
 import { ExportFormat, FilterValues, ToolbarAction } from "types";
-
 
 export type FilterBarProps<TStatus extends string, TType extends string> = {
   /** state เดียว รวมทุกฟิลด์ */
@@ -21,17 +18,26 @@ export type FilterBarProps<TStatus extends string, TType extends string> = {
   typeOptions?: readonly string[];
   manufacturerOptions?: readonly string[];
 
+  /** ปรับข้อความ label รายฟิลด์ */
+  labels?: {
+    status?: string;
+    type?: string;
+    manufacturer?: string;
+    searchPlaceholder?: string;
+    allStatus?: string;
+    allType?: string;
+    allManufacturer?: string;
+  };
+
   /** action เสริม */
   onExport?: (fmt: ExportFormat) => void;
   onAction?: (act: ToolbarAction) => void;
 
-  /** ปรับข้อความ “All …” ได้เองถ้าต้องการ */
-  allStatusLabel?: string;
-  allTypeLabel?: string;
-  allManufacturerLabel?: string;
-
   /** ✅ ช่องทางขวาพิเศษ (เช่น ActionToolbar) */
   rightExtra?: React.ReactNode;
+
+  /** ✅ พื้นที่ไว้เสียบฟิลเตอร์เพิ่มเติมแบบ custom */
+  extraFilters?: React.ReactNode;
 };
 
 export function FilterBar<TStatus extends string, TType extends string>({
@@ -40,36 +46,60 @@ export function FilterBar<TStatus extends string, TType extends string>({
   statusOptions = [] as readonly string[],
   typeOptions = [] as readonly string[],
   manufacturerOptions = [] as readonly string[],
+
+  labels,
   onExport,
   onAction,
-  allStatusLabel = "All Status",
-  allTypeLabel = "All Types",
-  allManufacturerLabel = "All Manufacturers",
-  rightExtra, // ✅ รับเข้ามา
+  rightExtra,
+  extraFilters,
 }: FilterBarProps<TStatus, TType>) {
-  // เตรียม options ให้ SelectField
+  const {
+    status: statusLabel = "Status",
+    type: typeLabel = "Type",
+    manufacturer: manufacturerLabel = "Manufacturer",
+    searchPlaceholder = "Search",
+    allStatus = "All Statuses",
+    allType = "All Types",
+    allManufacturer = "All Manufacturers",
+  } = labels ?? {};
+
+  const hasStatus = Array.isArray(statusOptions) && statusOptions.length > 0;
+  const hasType = Array.isArray(typeOptions) && typeOptions.length > 0;
+  const hasManufacturer =
+    Array.isArray(manufacturerOptions) && manufacturerOptions.length > 0;
+
+  // เตรียม options ให้ SelectField เฉพาะฟิลด์ที่มีข้อมูล
   const statusSelectOptions = React.useMemo(
-    () => [
-      { label: allStatusLabel, value: "ALL" },
-      ...statusOptions.map((s) => ({ label: s, value: s })),
-    ],
-    [statusOptions, allStatusLabel]
+    () =>
+      hasStatus
+        ? [
+            { label: allStatus, value: "ALL" },
+            ...statusOptions.map((s) => ({ label: s, value: s })),
+          ]
+        : [],
+    [hasStatus, statusOptions, allStatus],
   );
 
   const typeSelectOptions = React.useMemo(
-    () => [
-      { label: allTypeLabel, value: "ALL" },
-      ...typeOptions.map((t) => ({ label: t, value: t })),
-    ],
-    [typeOptions, allTypeLabel]
+    () =>
+      hasType
+        ? [
+            { label: allType, value: "ALL" },
+            ...typeOptions.map((t) => ({ label: t, value: t })),
+          ]
+        : [],
+    [hasType, typeOptions, allType],
   );
 
   const manufacturerSelectOptions = React.useMemo(
-    () => [
-      { label: allManufacturerLabel, value: "ALL" },
-      ...manufacturerOptions.map((m) => ({ label: m, value: m })),
-    ],
-    [manufacturerOptions, allManufacturerLabel]
+    () =>
+      hasManufacturer
+        ? [
+            { label: allManufacturer, value: "ALL" },
+            ...manufacturerOptions.map((m) => ({ label: m, value: m })),
+          ]
+        : [],
+    [hasManufacturer, manufacturerOptions, allManufacturer],
   );
 
   // map undefined ↔ "ALL"
@@ -78,49 +108,60 @@ export function FilterBar<TStatus extends string, TType extends string>({
   const manufacturerValue = (filters.manufacturer ?? "ALL") as string;
 
   // updater สั้น ๆ
+
   const patch = <K extends keyof FilterValues<TStatus, TType>>(
-    key: K,
-    value: FilterValues<TStatus, TType>[K]
-  ) => onFiltersChange({ ...filters, [key]: value });
+    k: K,
+    value: FilterValues<TStatus, TType>[K],
+  ) => onFiltersChange({ ...filters, [k]: value });
 
   return (
     <div className="space-y-3">
       {/* แถวบน: Filters + Export + Action */}
-      <div className="flex gap-3 items-center">
-        <SelectField
-          label="Status"
-          srOnlyLabel
-          value={statusValue}
-          options={statusSelectOptions}
-          onChange={(v) =>
-            patch("status", !v || v === "ALL" ? undefined : (v as TStatus))
-          }
-        />
+      <div className="flex gap-3 items-center flex-wrap">
+        {hasStatus && (
+          <SelectField
+            label={statusLabel}
+            srOnlyLabel
+            value={statusValue}
+            options={statusSelectOptions}
+            onChange={(v) =>
+              patch("status", !v || v === "ALL" ? undefined : (v as TStatus))
+            }
+          />
+        )}
 
-        <SelectField
-          label="Type"
-          srOnlyLabel
-          value={typeValue}
-          options={typeSelectOptions}
-          onChange={(v) =>
-            patch("type", !v || v === "ALL" ? undefined : (v as TType))
-          }
-        />
+        {hasType && (
+          <SelectField
+            label={typeLabel}
+            srOnlyLabel
+            value={typeValue}
+            options={typeSelectOptions}
+            onChange={(v) =>
+              patch("type", !v || v === "ALL" ? undefined : (v as TType))
+            }
+          />
+        )}
 
-        <SelectField
-          label="Manufacturer"
-          srOnlyLabel
-          value={manufacturerValue}
-          options={manufacturerSelectOptions}
-          onChange={(v) =>
-            patch("manufacturer", !v || v === "ALL" ? undefined : (v as string))
-          }
-        />
+        {hasManufacturer && (
+          <SelectField
+            label={manufacturerLabel}
+            srOnlyLabel
+            value={manufacturerValue}
+            options={manufacturerSelectOptions}
+            onChange={(v) =>
+              patch(
+                "manufacturer",
+                !v || v === "ALL" ? undefined : (v as string),
+              )
+            }
+          />
+        )}
+
+        {/* ✅ เสียบฟิลเตอร์พิเศษตามหน้าได้ เช่น <UserSelect /> */}
+        {extraFilters}
 
         <div className="ml-auto flex items-center gap-2">
           {onExport && <ExportSelect onExport={onExport} />}
-          {onAction && <ActionSelect onAction={onAction} />}
-
           {/* ✅ วางปุ่ม/คอมโพเนนต์พิเศษฝั่งขวา */}
           {rightExtra}
         </div>
@@ -130,7 +171,7 @@ export function FilterBar<TStatus extends string, TType extends string>({
       <SearchInput
         value={filters.searchText ?? ""}
         onChange={(q) => onFiltersChange({ ...filters, searchText: q })}
-        placeholder="Search"
+        placeholder={searchPlaceholder}
       />
     </div>
   );

@@ -2,56 +2,51 @@
 import type {
   ExceptionDomainFilters,
   ExceptionFilterValues,
-  ExceptionGroup,
+  PolicyStatus,
   ExceptionCategory,
-  ExceptionScope,
-} from 'types/exception';
+} from "types/exception";
 
 /**
  * Simple -> Domain
- * - simple.status -> group
+ * - simple.status -> status
  * - simple.type -> category
- * - simple.manufacturer -> scope
- * - simple.searchText -> searchText
+ * - simple.q/searchText -> searchText
  */
 export function toDomainFilters(
-  simple?: Partial<ExceptionFilterValues>,
+  simple?: Partial<ExceptionFilterValues & { q?: string; searchText?: string }>
 ): ExceptionDomainFilters {
   const s = simple ?? {};
   return {
-    group: s.status as ExceptionGroup | undefined,
+    status: s.status as PolicyStatus | undefined,
     category: s.type as ExceptionCategory | undefined,
-    scope: s.manufacturer as ExceptionScope | undefined,
-    searchText: s.searchText ?? '', // เก็บเป็น string ว่างได้ (UI ชอบใช้)
+    searchText: s.searchText ?? s.q ?? "",
   };
 }
 
 /**
  * Domain -> Simple
- * - group -> simple.status
- * - category -> simple.type
- * - scope -> simple.manufacturer
- * - searchText -> simple.searchText
  */
-export function toSimpleFilters(domain: ExceptionDomainFilters): ExceptionFilterValues {
+export function toSimpleFilters(
+  domain: ExceptionDomainFilters
+): ExceptionFilterValues & { q?: string; searchText?: string } {
+  const q = domain.searchText && domain.searchText.trim() ? domain.searchText.trim() : undefined;
   return {
-    status: domain.group as ExceptionGroup | undefined,
+    status: domain.status as PolicyStatus | undefined,
     type: domain.category as ExceptionCategory | undefined,
-    manufacturer: domain.scope as ExceptionScope | undefined,
-    searchText: domain.searchText && domain.searchText.trim() ? domain.searchText.trim() : undefined,
+    q,
+    searchText: q,
   };
 }
 
 /**
- * Simple -> Service-ready *canonical* filters
- * - คืนคีย์กลาง: { group, category, scope, searchText }
- * - ให้ Hook/Service เป็นคนแปลงชื่อคีย์ต่อ (เช่น group -> groupFilter, searchText -> searchText)
+ * Simple -> Service-ready canonical filters
+ * - ใช้คีย์กลาง: { status, category, searchText }
  */
-export function toServiceFilters(simple: ExceptionFilterValues) {
+export function toServiceFilters(simple: ExceptionFilterValues & { q?: string; searchText?: string }) {
   const out: Record<string, string> = {};
-  if (simple.status) out.group = String(simple.status);
+  if (simple.status) out.status = String(simple.status);
   if (simple.type) out.category = String(simple.type);
-  if (simple.manufacturer) out.scope = String(simple.manufacturer);
-  if (simple.searchText) out.searchText = simple.searchText;
+  const k = simple.searchText ?? simple.q;
+  if (k) out.searchText = k;
   return out;
 }

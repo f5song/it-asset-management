@@ -1,61 +1,77 @@
+// components/detail/ExceptionsDetail.tsx
 "use client";
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { DetailView } from "components/detail/DetailView";
+import { DetailView, EditConfig } from "components/detail/DetailView";
+import { InstallationSection } from "components/tabbar/InstallationSection";
 import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
 
 import type { BreadcrumbItem, HistoryEvent } from "types";
-import type { ExceptionItem } from "types/exception";
+import type { ExceptionDefinition, ExceptionAssignmentRow, ExceptionEditValues } from "types/exception";
 
 import { show } from "lib/show";
+import { exceptionAssignmentColumns } from "lib/tables/exceptionAssignmentColumns";
+import {
+  demoExceptionAssignments,
+  demoExceptionHistory,
+} from "lib/demo/exceptionDetailDemoData";
+import { exceptionEditFields } from "app/config/forms/exceptionEditFields";
+import { formatDateDeterministic } from "@/lib/date";
 
-/* -------------------------------------------------------
- *  TYPES
- * ------------------------------------------------------- */
 type ExceptionsDetailProps = {
-  item: ExceptionItem;
+  item: ExceptionDefinition;
   history?: HistoryEvent[];
+  assignments?: ExceptionAssignmentRow[];
   breadcrumbs?: BreadcrumbItem[];
 };
 
-/* -------------------------------------------------------
- *  HELPERS
- * ------------------------------------------------------- */
+
 function formatDateSafe(v?: string | null) {
-  if (!v) return "—";
-  const d = new Date(v);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleString();
+  return formatDateDeterministic(v); // ✅ แทนที่ toLocaleString()
 }
 
-/* -------------------------------------------------------
- *  COMPONENT
- * ------------------------------------------------------- */
+/** ISO -> YYYY-MM-DDTHH:mm (สำหรับ input type="datetime-local") */
+function toLocalInput(dt?: string | null): string {
+  if (!dt) return "";
+  const d = new Date(dt);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const mm = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
+
 export default function ExceptionsDetail({
   item,
   history,
+  assignments,
   breadcrumbs,
 }: ExceptionsDetailProps) {
   const router = useRouter();
 
-  // History (ถ้าไม่มีส่งมา → เป็นอาเรย์ว่าง)
   const historyData = React.useMemo<HistoryEvent[]>(
-    () => (Array.isArray(history) ? history : []),
+    () => (Array.isArray(history) && history.length ? history : demoExceptionHistory),
     [history]
   );
 
-  // Back/Delete handlers
+  const rows = React.useMemo<ExceptionAssignmentRow[]>(
+    () => (Array.isArray(assignments) && assignments.length ? assignments : demoExceptionAssignments),
+    [assignments]
+  );
+
   const handleBack = React.useCallback(() => {
     router.back();
   }, [router]);
 
   const handleDelete = React.useCallback(() => {
     console.log("Delete exception:", item.id);
-    // TODO: call delete service and navigate/show toast
   }, [item.id]);
 
-  // Toolbar
   const toolbar = React.useMemo(
     () => (
       <InventoryActionToolbar
@@ -63,11 +79,9 @@ export default function ExceptionsDetail({
         selectedIds={[item.id]}
         basePath="/exceptions"
         enableDefaultMapping
-        // ใส่เฉพาะ action ที่ต้องการให้แสดง เช่น delete/edit
-        visibleActions={["delete"]} // ตัวอย่าง: แสดงปุ่มลบ
+        visibleActions={["delete"]}
         singleSelectionOnly
         toOverride={{
-          // ถ้ามีหน้า edit:
           edit: `/exceptions/${item.id}/edit`,
           delete: `/exceptions/${item.id}`,
         }}
@@ -79,57 +93,88 @@ export default function ExceptionsDetail({
     [item.id, handleDelete]
   );
 
-  // Panels (ซ้าย/ขวา)
+  // Info panels (Definition-level)
   const infoLeft = React.useMemo(
     () => [
       { label: "Exception ID", value: show(item.id) },
       { label: "Name", value: show(item.name) },
-      { label: "Category", value: show(item.category) }, // AI | USBDrive | MessagingApp | ADPasswordPolicy
-      { label: "Scope", value: show(item.scope) },       // User | Device | Group | Tenant
-      { label: "Target", value: show(item.target) },     // username/device/group/Tenant
+      { label: "Category", value: show(item.category) },
+      { label: "Risk", value: show(item.risk) },
+      { label: "Owner", value: show(item.owner) },
     ],
-    [item.id, item.name, item.category, item.scope, item.target]
+    [item.id, item.name, item.category, item.risk, item.owner]
   );
 
   const infoRight = React.useMemo(
     () => [
-      { label: "Status", value: show(item.group) },               // Approved | Pending | Expired | Revoked
-      { label: "Owner", value: show(item.owner) },
+      { label: "Status", value: show(item.status) },
       { label: "Created At", value: formatDateSafe(item.createdAt) },
-      { label: "Expires At", value: formatDateSafe(item.expiresAt) },
+      { label: "Last Updated", value: formatDateSafe(item.lastUpdated) },
+      { label: "Review At", value: formatDateSafe(item.reviewAt) },
     ],
-    [item.group, item.owner, item.createdAt, item.expiresAt]
+    [item.status, item.createdAt, item.lastUpdated, item.reviewAt]
   );
 
-  /**
-   * REQUIRED: installationSection
-   * - ถ้ายังไม่มีตาราง/ข้อมูลสัมพันธ์ของ Exception: ใส่ placeholder ReactNode ชั่วคราว
-   * - ภายหลังคุณสามารถเปลี่ยนเป็น <InstallationSection rows={...} columns={...} ... />
-   */
-  const installationSection = React.useMemo(
-    () => (
-      <div className="rounded-md border p-4 text-sm text-muted-foreground">
-        <div className="font-medium text-foreground mb-1">Related Items</div>
-        <p>No related items for this exception.</p>
-        {/* TODO: แทนที่ด้วยตารางจริง เช่น Exception-related targets/approvals */}
-      </div>
-    ),
-    []
+  const editConfig = React.useMemo<EditConfig<ExceptionEditValues>>(
+    () => ({
+      title: "Edit Exception",
+      fields: exceptionEditFields,
+      initialValues: {
+        name: item.name ?? "",
+        category: item.category,
+        status: item.status,
+        owner: item.owner ?? "",
+        risk: item.risk ?? "Low",
+        createdAt: toLocalInput(item.createdAt),
+        lastUpdated: toLocalInput(item.lastUpdated ?? ""),
+        reviewAt: toLocalInput(item.reviewAt ?? ""),
+        notes: item.notes ?? "",
+      },
+      onSubmit: async (values) => {
+        // const toISO = (local?: string | null) => (local ? new Date(local).toISOString() : null);
+        // const payload = {
+        //   ...values,
+        //   createdAt: toISO(values.createdAt)!,
+        //   lastUpdated: toISO(values.lastUpdated ?? undefined),
+        //   reviewAt: toISO(values.reviewAt ?? undefined),
+        // };
+        console.log("save exception:", values);
+      },
+      submitLabel: "Confirm",
+      cancelLabel: "Cancel",
+    }),
+    [
+      item.name,
+      item.category,
+      item.status,
+      item.owner,
+      item.risk,
+      item.createdAt,
+      item.lastUpdated,
+      item.reviewAt,
+      item.notes,
+    ]
   );
 
   return (
     <DetailView
       title={show(item.name)}
       compliance={undefined}
-      // คุณจะเปลี่ยน label นี้ให้เข้ากับคอนเทนต์จริงได้ เช่น "Related"
-      installationTabLabel="Related"
+      installationTabLabel="Assignments"
       info={{ left: infoLeft, right: infoRight }}
-      installationSection={installationSection}
+      installationSection={
+        <InstallationSection<ExceptionAssignmentRow>
+          rows={rows}
+          columns={exceptionAssignmentColumns}
+          resetKey={`exception-${item.id}`}
+          initialPage={1}
+          pageSize={8}
+        />
+      }
       history={historyData}
       onBack={handleBack}
       onDelete={handleDelete}
-      // ถ้ามีฟอร์มแก้ไขค่อยเพิ่ม editConfig ที่นี่
-      // editConfig={...}
+      editConfig={editConfig}
       breadcrumbs={breadcrumbs}
       headerRightExtra={toolbar}
     />

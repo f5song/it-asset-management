@@ -1,35 +1,79 @@
-import { FilterValues } from "./common";
+// types/exception.ts
 
-export type ExceptionGroup = 'Approved' | 'Pending' | 'Expired' | 'Revoked';
-export type ExceptionCategory = 'AI' | 'USBDrive' | 'MessagingApp' | 'ADPasswordPolicy';
-export type ExceptionScope = 'User' | 'Device' | 'Group' | 'Tenant';
+/** สถานะของ "นโยบายข้อยกเว้น" (Policy-level) */
+export type PolicyStatus = 'Active' | 'Inactive' | 'Deprecated' | 'Archived';
+
+export type ExceptionCategory =
+  | 'AI'
+  | 'USBDrive'
+  | 'MessagingApp'
+  | 'ADPasswordPolicy';
 
 export type RiskLevel = 'Low' | 'Medium' | 'High';
 
-export interface ExceptionItem {
-  id: string;
-  name: string;                 // ชื่อข้อยกเว้น เช่น "Allow ChatGPT for Dev Team"
-  category: ExceptionCategory;  // ประเภท เช่น AI, USBDrive, MessagingApp, ADPasswordPolicy
-  group: ExceptionGroup;        // สถานะ/กลุ่ม เช่น Approved, Pending, Expired, Revoked
-  scope: ExceptionScope;        // ขอบเขตผลบังคับ: User/Device/Group/Tenant
-  target: string;               // เป้าหมาย เช่น username, deviceId, groupName, "Tenant"
-  owner?: string;               // เจ้าของระบบ/ผู้รับผิดชอบ
-  requestedBy?: string;         // ผู้ร้องขอข้อยกเว้น
-  approvedBy?: string;          // ผู้อนุมัติ
+/**
+ * ExceptionDefinition: รายการ "นโยบายยกเว้น" ในระบบ (ระดับ Catalog)
+ */
+export interface ExceptionDefinition {
+  id: string;                    // EXC-001
+  name: string;                  // เช่น "Allow LINE on PC" / "Allow USB storage"
+  category: ExceptionCategory;   // AI | USBDrive | MessagingApp | ADPasswordPolicy
+  status: PolicyStatus;          // Active | Inactive | Deprecated | Archived
   risk?: RiskLevel;
-  createdAt: string;            // ISO string
-  expiresAt?: string | null;    // ISO string (ถ้ามีวันหมดอายุ)
+  owner?: string;
+
+  // เวลา/รอบทบทวนของนโยบาย
+  createdAt: string;             // ISO
+  lastUpdated?: string | null;   // ISO
+  reviewAt?: string | null;      // ISO
   notes?: string;
+
+  // สถิติการมอบหมาย (สำหรับ UI)
+  activeAssignments?: number;    // จำนวนที่ Active
+  totalAssignments?: number;     // รวมทั้งหมด
 }
 
-// ฟิลเตอร์ฝั่งโดเมน/หน้า
-export type ExceptionDomainFilters = {
-  searchText?: string;                                   // keyword search
-  group?: ExceptionGroup;                       // Approved | Pending | Expired | Revoked
-  category?: ExceptionCategory;                 // AI | USBDrive | MessagingApp | ADPasswordPolicy
-  scope?: ExceptionScope;                       // User | Device | Group | Tenant
-  owner?: string;
-  target?: string;
+/**
+ * Assignment (User-only): ใครได้รับ exception definition นี้บ้าง
+ */
+export type ExceptionAssignmentRow = {
+  id: string;                      // mapping id หรือ userId
+  definitionId: string;            // FK -> ExceptionDefinition.id
+  employeeId: string;                // ผู้ใช้ที่ได้รับสิทธิ์
+  employeeName?: string | null;
+  department?: string | null;
+  assignedBy?: string | null;
+  assignedAt?: string | null;      // ISO
+  expiresAt?: string | null;       // ISO
+  status?: 'Active' | 'Pending' | 'Expired' | 'Revoked' | 'Unknown';
+  notes?: string | null;
 };
 
-export type ExceptionFilterValues = FilterValues<ExceptionGroup, ExceptionCategory>;
+/** ฟิลเตอร์หน้า Inventory (Definition-level) */
+export type ExceptionDomainFilters = {
+  searchText?: string;
+  status?: PolicyStatus;
+  category?: ExceptionCategory;
+  owner?: string;
+};
+
+/** ฟิลเตอร์แบบ simple (ใช้ใน FilterBar) */
+export type ExceptionFilterValues = {
+  status?: PolicyStatus;          // map -> status
+  type?: ExceptionCategory;       // map -> category
+  searchText?: string;            // keyword
+  q?: string;                     // alias ของ searchText
+};
+
+/** สำหรับแบบฟอร์ม Edit ของ Definition (ไม่ใช่คำขอ) */
+export type ExceptionEditValues = {
+  name: string;
+  category: ExceptionCategory;
+  status: PolicyStatus;
+  owner: string;
+  risk: RiskLevel;
+  createdAt: string;              // datetime-local หรือ ISO
+  lastUpdated?: string | null;    // datetime-local หรือ ISO
+  reviewAt?: string | null;       // datetime-local หรือ ISO
+  notes: string;
+};

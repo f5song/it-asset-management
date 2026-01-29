@@ -1,16 +1,7 @@
 // src/lib/tables/employeeAssignmentColumns.ts
 import type { ReactNode } from "react";
 import { show } from "lib/show";
-
-export type EmployeeAssignmentRow = {
-  id: string;
-  deviceName?: string;
-  userName?: string;
-  licenseStatus?: string;
-  licenseKey?: string;
-  scannedLicenseKey?: string;
-  workStation?: string;
-};
+import { EmployeeAssignmentRow } from "@/types";
 
 export const employeeAssignmentColumns = [
   { header: "Device", accessor: (r: EmployeeAssignmentRow): ReactNode => show(r.deviceName) },

@@ -1,4 +1,3 @@
-
 // src/types/forms.ts
 import type { z } from "zod";
 import type { BreadcrumbItem } from "./common";
@@ -14,6 +13,7 @@ export type FieldType =
   | "number"
   | "checkbox"
   | "date"
+  | "datetime"  // ✅ เพิ่มรองรับ datetime
   | "email"
   | "url";
 
@@ -50,6 +50,10 @@ export type NumberField<TName extends string = string> = BaseField<TName> & {
 export type DateField<TName extends string = string> = BaseField<TName> & {
   type: "date";
 };
+/** ✅ ฟิลด์วันที่+เวลา (HTML input: datetime-local) */
+export type DateTimeField<TName extends string = string> = BaseField<TName> & {
+  type: "datetime";
+};
 export type CheckboxField<TName extends string = string> = BaseField<TName> & {
   type: "checkbox";
 };
@@ -64,6 +68,7 @@ export type FormField<TName extends string = string> =
   | TextareaField<TName>
   | NumberField<TName>
   | DateField<TName>
+  | DateTimeField<TName>   // ✅ รวมเข้า union
   | CheckboxField<TName>
   | SelectField<TName>;
 

@@ -8,19 +8,12 @@ import { InstallationSection } from "components/tabbar/InstallationSection";
 import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
 
 import type { Employees } from "types/employees";
-import type { BreadcrumbItem, HistoryEvent } from "types";
+import type { BreadcrumbItem, EmployeeAssignmentRow, HistoryEvent } from "types";
 
 import { show } from "lib/show";
 import { employeesEditFields } from "app/config/forms/employeeEditFields";
-
-import {
-  employeeAssignmentColumns,
-  type EmployeeAssignmentRow,
-} from "lib/tables/employeeAssignmentColumns";
-import {
-  demoAssignments,
-  demoHistory,
-} from "lib/demo/employeeDetailDemoData";
+import { demoAssignments, demoHistory } from "@/lib/demo/employeeDetailDemoData";
+import { employeeAssignmentColumns } from "@/lib/tables/employeeAssignmentColumns";
 
 /* -------------------------------------------------------
  *  TYPES

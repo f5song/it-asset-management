@@ -1,7 +1,7 @@
 import { SoftwareItem } from "../types";
 
 // src/utils/date.ts
-export const formatDate = (iso?: string) => {
+export const formatDate = (iso?: string | null) => {
   if (!iso) return 'N/A';
   const d = new Date(iso);
   return d.toLocaleDateString('th-TH', {
@@ -10,7 +10,6 @@ export const formatDate = (iso?: string) => {
     year: 'numeric',
   });
 };
-
 
 export const exportToCSV = (rows: SoftwareItem[], filename = 'software_inventory.csv') => {
   const headers = [
@@ -43,3 +42,25 @@ export const exportToCSV = (rows: SoftwareItem[], filename = 'software_inventory
   a.click();
   URL.revokeObjectURL(url);
 };
+
+// lib/dateDeterministic.ts
+export function formatDateDeterministic(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return "—";
+  // ล็อก locale + timeZone ให้เหมือนกันทุกสภาพแวดล้อม
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(d);
+}
+
+export function formatDateOnlyDeterministic(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-GB", {
+    year: "numeric", month: "2-digit", day: "2-digit", timeZone: "UTC",
+  }).format(d);
+}
