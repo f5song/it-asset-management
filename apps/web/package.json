@@ -1,38 +1,33 @@
 {
   "name": "@it-asset/web",
-  "private": true,
   "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "clean": "rm -rf .next"
+    "start": "next start -p 3000"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.2",
-    "@it-asset/schema": "file:../../packages/schema",
-    "@it-asset/utils": "file:../../packages/utils",
-    "@tailwindcss/postcss": "^4.1.18",
-    "apexcharts": "^5.3.6",
+    "@tanstack/react-query": "^5.90.20",
+    "@tanstack/react-query-devtools": "^5.91.2",
+    "axios": "^1.13.4",
+    "chart.js": "^4.5.1",
     "geist": "^1.5.1",
-    "next": "^16.1.1",
-    "postcss": "^8.4.31",
-    "react": "^18.3.1",
-    "react-apexcharts": "^1.9.0",
-    "react-dom": "^18.3.1",
-    "react-hook-form": "^7.70.0",
-    "tailwindcss": "^4.1.18",
-    "zod": "^3.25.76"
+    "next": "16.1.1",
+    "react": "18.2.0",
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "18.2.0",
+    "react-hook-form": "^7.71.1",
+    "react-icons": "^5.5.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@tanstack/react-table": "^8.21.3",
-    "@types/node": "25.0.3",
-    "@types/react": "^18.3.27",
-    "@types/react-dom": "^19.2.3",
-    "eslint": "^9.0.0",
-    "react-icons": "^5.5.0",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/node": "^20.19.30",
+    "@types/react": "18.3.27",
+    "@types/react-dom": "18.3.0",
     "typescript": "^5.9.3"
   }
 }

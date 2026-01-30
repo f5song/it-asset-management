@@ -2,9 +2,16 @@
 // src/components/toolbar/Toolbar.tsx
 'use client';
 
+import { ToolbarControl } from '@/types/toolbar';
 import { cn } from '../ui';
-import { ToolbarProps } from './Toolbar.types';
 
+/** props หลักของ Toolbar */
+export type ToolbarProps = {
+  /** รายการคอนโทรลที่จะเรนเดอร์ทางซ้าย และปุ่มทางขวา (เฉพาะ kind === 'button') */
+  controls: ToolbarControl[];
+  /** className เพิ่มเติมของ wrapper */
+  className?: string;
+};
 
 export function Toolbar({ controls, className }: ToolbarProps) {
   return (

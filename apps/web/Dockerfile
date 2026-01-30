@@ -1,25 +1,29 @@
-# -------- Build stage --------
+# -------- Build --------
 FROM node:20-alpine AS builder
-WORKDIR /usr/src/app
+WORKDIR /repo
 
-# คัดลอกไฟล์ lock ถ้ามี (package.json ต้องมีแน่)
-COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
-RUN npm install
-
-# คัดลอกซอร์สทั้งหมดแล้ว build
+# คัดลอกไฟล์สำคัญก่อน (ให้ cache ทำงานดี)
+COPY package.json package-lock.json turbo.json ./
 COPY . .
-RUN npm run build
 
-# -------- Runtime (SSR) --------
+# ติดตั้งตาม lockfile ทั้ง workspaces
+RUN npm ci --workspaces
+
+ENV NEXT_TELEMETRY_DISABLED=1 TURBO_TELEMETRY_DISABLED=1
+
+# build เฉพาะ frontend
+RUN npm run build -w apps/web
+
+# -------- Runtime --------
 FROM node:20-alpine AS runner
-WORKDIR /usr/src/app
-ENV NODE_ENV=production
+WORKDIR /repo
 
-# คัดลอกเฉพาะสิ่งที่ต้องใช้ตอนรัน
-COPY --from=builder /usr/src/app/.next ./.next
-COPY --from=builder /usr/src/app/public ./public
-COPY --from=builder /usr/src/app/package.json ./package.json
-COPY --from=builder /usr/src/app/node_modules ./node_modules
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# คัดลอกทั้ง repo จาก builder (ชัวร์สุด)
+COPY --from=builder /repo /repo
 
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["npm", "run", "start", "-w", "apps/web"]

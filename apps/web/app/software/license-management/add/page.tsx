@@ -5,47 +5,91 @@ import React from "react";
 import { FormField } from "types";
 import { z } from "zod";
 
-/**
- * Schema ฟอร์มเพิ่ม License ใหม่
- * - productName / vendor / licenseModel / status / expiryDate: บังคับ
- * - total / inUse: number แบบไม่ติดลบ
- * - licenseCost / maintenanceCost: number ≥ 0 (optional)
- * - notes: optional
- */
+/** =========================================================
+ * 1) Enum values เป็น const tuple (จำเป็นสำหรับ z.enum)
+ *    และมี helper nonEmptyEnum รองรับค่า "" จาก select
+ * ========================================================= */
+const licenseModels = [
+  "Per-User",
+  "Per-Device",
+  "Perpetual",
+  "Subscription",
+  "Concurrent",
+] as const;
+
+const statusValues = ["Active", "Inactive", "Expired"] as const;
+
+/** แปลง "" (placeholder) -> undefined แล้วตรวจด้วย enum + message */
+const nonEmptyEnum = <T extends readonly [string, ...string[]]>(
+  values: T,
+  message: string
+) =>
+  z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.enum(values, { message })
+  );
+
+/** =========================================================
+ * 2) ตัวช่วยสำหรับ number จากฟอร์ม:
+ *    - ฟอร์มส่งค่ามาเป็น string/"" เสมอ -> ใช้ preprocess/coerce
+ *    - ใส่ข้อความ error ด้วย { message } แทน invalid_type_error/required_error
+ * ========================================================= */
+
+/** number integer ≥ 0 */
+const nonNegativeInt = (messageInvalidNumber: string, messageInt: string, messageMin0: string) =>
+  z.preprocess(
+    // แปลง "" -> undefined, string ที่เป็นตัวเลข -> number
+    (v) => (v === "" ? undefined : typeof v === "string" ? Number(v) : v),
+    z
+      .number({ message: messageInvalidNumber })
+      .int({ message: messageInt })
+      .min(0, { message: messageMin0 })
+  );
+
+/** number ≥ 0 (optional) */
+const nonNegativeNumberOptional = (messageInvalidNumber: string, messageMin0: string) =>
+  z.preprocess(
+    (v) => (v === "" ? undefined : typeof v === "string" ? Number(v) : v),
+    z.number({ message: messageInvalidNumber }).min(0, { message: messageMin0 }).optional()
+  );
+
+/** =========================================================
+ * 3) Schema
+ *    - ใช้ nonEmptyEnum สำหรับ select
+ *    - ใช้ helper number สำหรับตัวเลขจากฟอร์ม
+ * ========================================================= */
 const schema = z
   .object({
     productName: z.string().min(1, "กรุณากรอกชื่อโปรดักต์/ซอฟต์แวร์"),
     vendor: z.string().min(1, "กรุณาเลือก/กรอกผู้ผลิต"),
-    licenseModel: z.enum(
-      ["Per-User", "Per-Device", "Perpetual", "Subscription", "Concurrent"],
-      { required_error: "กรุณาเลือกประเภทไลเซนส์" },
+
+    licenseModel: nonEmptyEnum(licenseModels, "กรุณาเลือกประเภทไลเซนส์"),
+
+    total: nonNegativeInt(
+      "กรุณากรอกจำนวนเป็นตัวเลข",
+      "ต้องเป็นจำนวนเต็ม",
+      "ต้องมากกว่าหรือเท่ากับ 0"
     ),
-    total: z
-      .number({ invalid_type_error: "กรุณากรอกจำนวนเป็นตัวเลข" })
-      .int("ต้องเป็นจำนวนเต็ม")
-      .min(0, "ต้องมากกว่าหรือเท่ากับ 0"),
-    inUse: z
-      .number({ invalid_type_error: "กรุณากรอกจำนวนเป็นตัวเลข" })
-      .int("ต้องเป็นจำนวนเต็ม")
-      .min(0, "ต้องมากกว่าหรือเท่ากับ 0"),
+
+    inUse: nonNegativeInt(
+      "กรุณากรอกจำนวนเป็นตัวเลข",
+      "ต้องเป็นจำนวนเต็ม",
+      "ต้องมากกว่าหรือเท่ากับ 0"
+    ),
+
     expiryDate: z
       .string()
       .min(1, "กรุณาระบุวันหมดอายุ (YYYY-MM-DD)")
-      .refine(
-        (v) => /^\d{4}-\d{2}-\d{2}$/.test(v),
-        "รูปแบบวันที่ไม่ถูกต้อง (YYYY-MM-DD)",
-      ),
-    status: z.enum(["Active", "Inactive", "Expired"], {
-      required_error: "กรุณาเลือกสถานะ",
-    }),
-    licenseCost: z
-      .number({ invalid_type_error: "กรุณากรอกจำนวนเป็นตัวเลข" })
-      .min(0, "ต้องมากกว่าหรือเท่ากับ 0")
-      .optional(),
-    maintenanceCost: z
-      .number({ invalid_type_error: "กรุณากรอกจำนวนเป็นตัวเลข" })
-      .min(0, "ต้องมากกว่าหรือเท่ากับ 0")
-      .optional(),
+      .refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v), "รูปแบบวันที่ไม่ถูกต้อง (YYYY-MM-DD)"),
+
+    status: nonEmptyEnum(statusValues, "กรุณาเลือกสถานะ"),
+
+    licenseCost: nonNegativeNumberOptional("กรุณากรอกจำนวนเป็นตัวเลข", "ต้องมากกว่าหรือเท่ากับ 0"),
+    maintenanceCost: nonNegativeNumberOptional(
+      "กรุณากรอกจำนวนเป็นตัวเลข",
+      "ต้องมากกว่าหรือเท่ากับ 0"
+    ),
+
     notes: z.string().optional(),
   })
   .refine((val) => val.inUse <= val.total, {
@@ -55,19 +99,28 @@ const schema = z
 
 type LicenseFormValues = z.infer<typeof schema>;
 
+/** =========================================================
+ * 4) ค่าเริ่มต้นของฟอร์ม
+ *    - สำหรับ select ให้มี placeholder "" แล้ว schema จะบังคับตอน submit
+ *    - number ใช้ 0 หรือ "" ก็ได้ (เรา preprocess ให้แล้ว)
+ * ========================================================= */
 const defaultValues: LicenseFormValues = {
   productName: "",
   vendor: "",
-  licenseModel: "Per-User",
+  licenseModel: "" as unknown as (typeof licenseModels)[number], // placeholder
   total: 0,
   inUse: 0,
   expiryDate: "",
-  status: "Active",
+  status: "" as unknown as (typeof statusValues)[number], // placeholder
   licenseCost: undefined,
   maintenanceCost: undefined,
   notes: "",
 };
 
+/** =========================================================
+ * 5) นิยามฟิลด์
+ *    - ใส่ option placeholder (value: "") สำหรับ select ทุกตัว
+ * ========================================================= */
 const fields = [
   {
     name: "productName",
@@ -84,6 +137,7 @@ const fields = [
     required: true,
     colSpan: 1,
     options: [
+      { label: "เลือกผู้ผลิต", value: "" }, // placeholder
       { label: "Adobe", value: "Adobe" },
       { label: "Microsoft", value: "Microsoft" },
       { label: "Google", value: "Google" },
@@ -98,6 +152,7 @@ const fields = [
     required: true,
     colSpan: 1,
     options: [
+      { label: "เลือกประเภทไลเซนส์", value: "" }, // placeholder
       { label: "Per User", value: "Per-User" },
       { label: "Per Device", value: "Per-Device" },
       { label: "Perpetual", value: "Perpetual" },
@@ -112,6 +167,7 @@ const fields = [
     required: true,
     colSpan: 1,
     options: [
+      { label: "เลือกสถานะ", value: "" }, // placeholder
       { label: "Active", value: "Active" },
       { label: "Inactive", value: "Inactive" },
       { label: "Expired", value: "Expired" },
@@ -163,6 +219,9 @@ const fields = [
   },
 ] as const satisfies ReadonlyArray<FormField<keyof LicenseFormValues>>;
 
+/** =========================================================
+ * 6) หน้า Add License
+ * ========================================================= */
 export default function AddLicensePage() {
   return (
     <div style={{ padding: 6 }}>
@@ -181,12 +240,12 @@ export default function AddLicensePage() {
         submitLabel="Create License"
         cancelLabel="Cancel"
         onSubmit={async (data) => {
-          // TODO: เรียก API สร้าง license ใหม่ เช่น licensesService.create(data)
+          // TODO: เรียก API สร้าง license ใหม่
           console.log("submit license:", data);
           alert("License created");
         }}
         onCancel={() => {
-          // TODO: นำทางกลับหน้า License list (เช่น /software/license-management)
+          // TODO: นำทางกลับหน้า License list
           alert("Canceled");
         }}
       />

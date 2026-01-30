@@ -1,17 +1,27 @@
-FROM node:20-alpine AS deps
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --omit=dev
-
+# ========== Build ==========
 FROM node:20-alpine AS builder
-WORKDIR /app
-COPY . .
-RUN npm ci && npm run build    # ถ้าใช้ ts → build ออก /dist
+WORKDIR /repo
 
+COPY package.json package-lock.json ./
+COPY apps/api/package.json apps/api/package.json
+RUN npm ci --workspaces
+
+COPY . .
+RUN npm run build -w apps/api
+
+# ========== Runtime ==========
 FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=builder /app/dist ./dist
-COPY --from=deps /app/node_modules ./node_modules
+WORKDIR /repo
+
+# ติดตั้งเฉพาะ production deps (api)
+COPY package.json package-lock.json ./
+COPY apps/api/package.json apps/api/package.json
+RUN npm ci --omit=dev --workspaces --include-workspace-root=false
+
+# คัดลอกไฟล์ build ออกมาเฉพาะของ api
+COPY --from=builder /repo/apps/api/dist ./apps/api/dist
+COPY --from=builder /repo/apps/api/package.json ./apps/api/package.json
+
+WORKDIR /repo/apps/api
 EXPOSE 8000
-CMD ["node", "dist/main.js"]   # ปรับให้ตรง entrypoint ของคุณ
+CMD ["npm", "run", "start"]

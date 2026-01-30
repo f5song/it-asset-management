@@ -1,27 +1,38 @@
 "use client";
+
+import React from "react";
 import BackButton from "components/ui/BackButton";
 import { FormPage } from "components/ui/FormPage";
-import React from "react";
-import { FormField } from "types/forms";
 import { z } from "zod";
+import { FormField } from "types/forms";
 
-/**
- * Schema สำหรับเพิ่มอุปกรณ์
- * - เก็บค่าภายในของ type/os เป็น lowercase (เช่น laptop, windows)
- * - ฟิลด์ที่ไม่บังคับ เช่น assignedTo/department/notes -> optional
- */
+/** ----------------------------------------------------------------
+ * 1) กำหนดชุดค่า enum เป็น const tuple (จำเป็นสำหรับ z.enum)
+ * ----------------------------------------------------------------*/
+const deviceTypes = ["laptop", "desktop", "server", "mobile", "tablet"] as const;
+const osTypes = ["windows", "macos", "linux", "ios", "android"] as const;
+
+/** ----------------------------------------------------------------
+ * 2) helper: รองรับค่า "" จาก <select> (placeholder) ให้เป็น undefined
+ *    แล้ว validate ด้วย enum พร้อมข้อความ error ที่ต้องการ
+ *    - z.enum(...) รองรับ { message } (ไม่รองรับ required_error)
+ * ----------------------------------------------------------------*/
+const nonEmptyEnum = <T extends readonly [string, ...string[]]>(
+  values: T,
+  message: string
+) =>
+  z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.enum(values, { message })
+  );
+
+/** ----------------------------------------------------------------
+ * 3) Schema ของฟอร์ม
+ * ----------------------------------------------------------------*/
 const schema = z.object({
   deviceName: z.string().min(1, "กรุณากรอกชื่ออุปกรณ์"),
-  type: z
-    .enum(["laptop", "desktop", "server", "mobile", "tablet"], {
-      required_error: "กรุณาเลือกประเภทอุปกรณ์",
-    })
-    .or(z.string().min(1, "กรุณาเลือกประเภทอุปกรณ์")),
-  os: z
-    .enum(["windows", "macos", "linux", "ios", "android"], {
-      required_error: "กรุณาเลือกระบบปฏิบัติการ",
-    })
-    .or(z.string().min(1, "กรุณาเลือกระบบปฏิบัติการ")),
+  type: nonEmptyEnum(deviceTypes, "กรุณาเลือกประเภทอุปกรณ์"),
+  os: nonEmptyEnum(osTypes, "กรุณาเลือกระบบปฏิบัติการ"),
   assignedTo: z.string().optional(),
   department: z.string().optional(),
   notes: z.string().optional(),
@@ -29,15 +40,24 @@ const schema = z.object({
 
 type DeviceFormValues = z.infer<typeof schema>;
 
+/** ----------------------------------------------------------------
+ * 4) ค่าเริ่มต้นของฟอร์ม
+ *    - สำหรับ select ที่ยังไม่เลือก ให้ใส่ "" แล้ว cast ให้ TS ผ่าน
+ *      (schema จะบังคับให้เลือกตอน submit)
+ * ----------------------------------------------------------------*/
 const defaultValues: DeviceFormValues = {
   deviceName: "",
-  type: "" as any,
-  os: "" as any,
+  type: "" as unknown as (typeof deviceTypes)[number],
+  os: "" as unknown as (typeof osTypes)[number],
   assignedTo: "",
   department: "",
   notes: "",
 };
 
+/** ----------------------------------------------------------------
+ * 5) นิยามฟิลด์ของฟอร์ม
+ *    - ใส่ placeholder option (value: "") สำหรับ select
+ * ----------------------------------------------------------------*/
 const fields: FormField<keyof DeviceFormValues & string>[] = [
   {
     name: "deviceName",
@@ -61,6 +81,7 @@ const fields: FormField<keyof DeviceFormValues & string>[] = [
     required: true,
     colSpan: 1,
     options: [
+      { label: "เลือกประเภทอุปกรณ์", value: "" }, // placeholder
       { label: "Laptop", value: "laptop" },
       { label: "Desktop", value: "desktop" },
       { label: "Server", value: "server" },
@@ -75,6 +96,7 @@ const fields: FormField<keyof DeviceFormValues & string>[] = [
     required: true,
     colSpan: 1,
     options: [
+      { label: "เลือกระบบปฏิบัติการ", value: "" }, // placeholder
       { label: "Windows", value: "windows" },
       { label: "macOS", value: "macos" },
       { label: "Linux", value: "linux" },
@@ -106,6 +128,9 @@ const fields: FormField<keyof DeviceFormValues & string>[] = [
   },
 ];
 
+/** ----------------------------------------------------------------
+ * 6) หน้าฟอร์ม
+ * ----------------------------------------------------------------*/
 export default function AddDevicePage() {
   return (
     <div style={{ padding: 6 }}>
@@ -123,7 +148,7 @@ export default function AddDevicePage() {
         submitLabel="Add Device"
         cancelLabel="Cancel"
         onSubmit={async (data) => {
-          // TODO: เรียก API บันทึกอุปกรณ์ใหม่
+          // TODO: เรียก API บันทึกอุปกรณ์ใหม่ (เช่นผ่าน axios หรือ fetch)
           console.log("submit device:", data);
           alert("Device created");
         }}

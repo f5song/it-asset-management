@@ -1,8 +1,16 @@
+// apps/web/next.config.mjs
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@it-asset/schema", "@it-asset/utils", "geist"], // ถ้าใช้ geist
-  reactStrictMode: true
+  output: 'standalone',
+  turbopack: {
+    root: path.resolve(__dirname, '../../'),
+  },
 };
 
 export default nextConfig;

@@ -2,10 +2,10 @@
 'use client';
 
 import React from 'react';
-import type { SortingState } from '@tanstack/react-table';
 // ปรับ path ให้ตรงกับโปรเจกต์ของคุณ ถ้าคุณย้าย type ไปไว้ที่ 'types/table'
-import type { AppColumnDef } from '../../types';
+
 import { cn } from '../ui';
+import { AppColumnDef, SortingState } from '@/types';
 
 type Props<T extends { id?: string | number }> = {
   /** คอลัมน์ของตาราง */
