@@ -16,8 +16,8 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: ./apps/api/Dockerfile
+      context: ./apps/api
+      dockerfile: Dockerfile
     container_name: it_backend
     environment:
       PORT: 8000
@@ -33,8 +33,8 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: ./apps/web/Dockerfile
+      context: ./apps/web
+      dockerfile: Dockerfile
     container_name: it_frontend
     environment:
       NEXT_PUBLIC_API_BASE: http://backend:8000
