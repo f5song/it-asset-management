@@ -9,39 +9,43 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: it_software_mgmt
     ports:
-      - "5432:5432"
+      - "5432:5432"  
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./apps/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d it_software_mgmt"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
     container_name: it_backend
-    environment:
-      PORT: 8000
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: it_software_mgmt
+    env_file:
+      - ./apps/api/.env        
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "8000:8000"
-    depends_on:
-      - db
+    restart: unless-stopped
 
   frontend:
     build:
       context: ./apps/web
       dockerfile: Dockerfile
     container_name: it_frontend
-    environment:
-      NEXT_PUBLIC_API_BASE: http://backend:8000
-    ports:
-      - "3000:3000"
+
+    env_file:
+      - ./apps/web/.env        
     depends_on:
       - backend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
 
 volumes:
   db_data:

@@ -45,3 +45,13 @@ npm-debug.log*
 .env
 apps/web/.env
 apps/api/.env
+.git
+.gitignore
+**/node_modules
+**/.env
+**/.env.local
+**/.DS_Store
+**/dist
+**/build
+**/coverage
+**/.turbo
