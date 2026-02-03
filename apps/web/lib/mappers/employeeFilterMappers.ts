@@ -24,7 +24,7 @@ export function toSimpleFilters(
     status: toUndef(df.status as EmployeeStatus | ""),
     type: toUndef(df.department as string | ""),
     manufacturer: undefined, // ไม่ใช้ในหน้านี้
-    searchText: df.search ?? "",
+    search: df.search ?? "",
   };
 }
 
@@ -36,7 +36,7 @@ export function toDomainFilters(
   return {
     status: toUndef(sf.status as EmployeeStatus),
     department: toUndef(sf.type as string),
-    search: sf.searchText ?? "",
+    search: sf.search ?? "",
   };
 }
 
@@ -47,6 +47,6 @@ export function toServiceFilters(
   return {
     status: normStatus(sf.status as string | undefined),
     department: normalizeDepartment(sf.type as string | undefined),
-    search: sf.searchText ?? "",
+    search: sf.search ?? "",
   };
 }

@@ -1,7 +1,6 @@
 // src/lib/demo/employeeDetailDemoData.ts
 
-import type { HistoryEvent } from "types";
-import type { EmployeeAssignmentRow } from "lib/tables/employeeAssignmentColumns";
+import type { EmployeeAssignmentRow, HistoryEvent } from "types";
 
 /**
  * ชุดข้อมูล Assignments แบบสาธิต

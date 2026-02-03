@@ -20,7 +20,7 @@ export function useEmployeesInventory(
    * ประกอบ query สำหรับ service (object เสถียร)
    * - pageIndex (0-based) -> page (1-based)
    * - แปลง filters undefined/"" ให้เป็นค่าที่ service รองรับ
-   *   เช่น statusFilter, departmentFilter, searchText
+   *   เช่น statusFilter, departmentFilter, search
    */
   const serviceQuery = React.useMemo(() => {
     const { pageIndex = 0, pageSize = 10, sortBy, sortOrder } = serverQuery;
@@ -35,7 +35,7 @@ export function useEmployeesInventory(
       limit: pageSize,                   // ถ้า service ใช้ pageSize ให้แก้เป็น pageSize
       sortBy,
       sortOrder,
-      searchText: search,
+      search: search,
       statusFilter: status ?? "",        // ตาม signature ปัจจุบันของ getEmployees
       departmentFilter: department ?? "",
     };

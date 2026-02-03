@@ -30,7 +30,7 @@ export default function ExceptionPage() {
     resetDeps: [
       domainFilters.status,
       domainFilters.category,
-      domainFilters.searchText,
+      domainFilters.search,
     ],
   });
 

@@ -1,59 +1,50 @@
 import type { FilterValues } from "types";
 import type { SoftwareFilters, SoftwareStatus, SoftwareType } from "types";
-import { toUndef, normalizeByMap } from "lib/filters";
+import { toUndef } from "lib/filters";
 
-// canonical mapping (เผื่อรับค่าพิมพ์เล็กจาก UI/บริการอื่น)
-const normStatus = normalizeByMap({
-  Active: "Active",
-  Expired: "Expired",
-  Expiring: "Expiring",
-  active: "Active",
-  expired: "Expired",
-  expiring: "Expiring",
-});
+// ❌ ไม่ต้องมี normalizeByMap ถ้า UI ให้ค่าถูกต้องอยู่แล้ว
+// ❌ ไม่ต้องแคสต์เป็น string
+// ❌ ไม่ต้อง map lowercase
 
-const normType = normalizeByMap({
-  Standard: "Standard",
-  Special: "Special",
-  Exception: "Exception",
-  standard: "Standard",
-  special: "Special",
-  exception: "Exception",
-});
-
+// ---------------------------------------------
 // Domain -> Simple
+// ---------------------------------------------
 export function toSimpleFilters(
   df: SoftwareFilters
 ): FilterValues<SoftwareStatus, SoftwareType> {
   return {
-    status: toUndef(df.status as SoftwareStatus | ""),
-    type: toUndef(df.type as SoftwareType | ""),
-    manufacturer: toUndef(df.manufacturer as string | ""),
-    searchText: df.search ?? "",
+    status: toUndef(df.status),
+    type: toUndef(df.type),
+    manufacturer: toUndef(df.manufacturer),
+    search: df.search ?? "",
   };
 }
 
+// ---------------------------------------------
 // Simple -> Domain
+// ---------------------------------------------
 export function toDomainFilters(
   sf?: FilterValues<SoftwareStatus, SoftwareType>
 ): SoftwareFilters {
   if (!sf) return {};
   return {
-    status: toUndef(sf.status as SoftwareStatus),
-    type: toUndef(sf.type as SoftwareType),
-    manufacturer: toUndef(sf.manufacturer as string | ""),
-    search: sf.searchText ?? "",
+    status: toUndef(sf.status),
+    type: toUndef(sf.type),
+    manufacturer: toUndef(sf.manufacturer),
+    search: sf.search ?? "",
   };
 }
 
-// Simple -> Service (normalize string ล้วน)
+// ---------------------------------------------
+// Simple -> Service  (แบบง่ายสุด ถูกต้องสุด)
+// ---------------------------------------------
 export function toServiceFilters(
   sf: FilterValues<SoftwareStatus, SoftwareType>
-) {
+): Pick<SoftwareFilters, "status" | "type" | "manufacturer" | "search"> {
   return {
-    status: normStatus(sf.status as string | undefined),
-    type: normType(sf.type as string | undefined),
-    manufacturer: (sf.manufacturer as string | undefined) ?? "",
-    search: sf.searchText ?? "",
+    status: toUndef(sf.status),           // SoftwareStatus | undefined
+    type: toUndef(sf.type),               // SoftwareType | undefined
+    manufacturer: toUndef(sf.manufacturer),
+    search: sf.search ?? "",
   };
 }

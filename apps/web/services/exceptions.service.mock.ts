@@ -1,8 +1,18 @@
-import { ExceptionAssignmentRow, ExceptionCategory, ExceptionDefinition, PolicyStatus } from "@/types/exception";
+// src/mocks/data/exception.mock.ts
+
+import {
+  ExceptionAssignmentRow,
+  ExceptionCategory,
+  ExceptionDefinition,
+  PolicyStatus,
+  // ✅ ใช้ type กลางที่นิยามไว้ใน "@/types/exception"
+  ExceptionDefinitionListQuery,
+  ExceptionDefinitionListResponse,
+} from "@/types/exception";
 
 // ---------- Mock dataset ----------
-const CATEGORIES: readonly ExceptionCategory[] = ["AI", "USBDrive", "MessagingApp", "ADPasswordPolicy"] as const;
-const STATUSES: readonly PolicyStatus[] = ["Active", "Inactive", "Deprecated", "Archived"] as const;
+const CATEGORIES = ["AI", "USBDrive", "MessagingApp", "ADPasswordPolicy"] as const satisfies readonly ExceptionCategory[];
+const STATUSES = ["Active", "Inactive", "Deprecated", "Archived"] as const satisfies readonly PolicyStatus[];
 const OWNERS = ["SecOps", "IT", "Infra", "HR", "Compliance"] as const;
 const USER_PREFIX = ["jirawee", "qa", "dev", "ops", "hr", "fin"] as const;
 
@@ -16,17 +26,19 @@ function makeDates(idx: number) {
   const reviewAt = addDays(created, ((idx % 3) + 1) * 30);
   return { createdAt: iso(created), lastUpdated: iso(lastUpdated), reviewAt: iso(reviewAt) };
 }
+
 function makeName(category: ExceptionCategory) {
   switch (category) {
-    case "AI": return `Allow AI tools`;
-    case "USBDrive": return `Allow USB storage`;
-    case "MessagingApp": return `Allow LINE on PC`;
-    case "ADPasswordPolicy": return `Relax AD password policy`;
-    default: return `Security exception`;
+    case "AI": return "Allow AI tools";
+    case "USBDrive": return "Allow USB storage";
+    case "MessagingApp": return "Allow LINE on PC";
+    case "ADPasswordPolicy": return "Relax AD password policy";
+    default: return "Security exception";
   }
 }
+
 function toDisplayName(employeeId: string): string {
-  // mock: "dev.012" -> "Dev 012" (จะ sophisticated กว่านี้ก็ได้)
+  // mock: "dev.012" -> "Dev 012"
   const [p1, p2] = employeeId.split(".");
   return `${p1?.charAt(0).toUpperCase()}${p1?.slice(1)} ${p2}`;
 }
@@ -81,7 +93,8 @@ for (const def of MOCK_DEFINITIONS) {
       department: ["IT","HR","FIN","OPS"][i % 4],
       assignedBy: def.owner ?? "IT",
       assignedAt,
-      expiresAt: def.reviewAt ?? null, // mock: ผูกกับ reviewAt ของ policy
+      // mock: ผูกกับ reviewAt ของ policy
+      expiresAt: def.reviewAt ?? null,
       status,
       notes: i % 2 === 0 ? "Demo assignment note" : null,
     });
@@ -104,25 +117,8 @@ function sleep(ms: number, signal?: AbortSignal) {
 const ci = (s?: string) => (s ?? "").toLowerCase();
 const includesCI = (text: string, q: string) => ci(text).includes(ci(q));
 
-// ---------- Types (service query) ----------
-export type ExceptionDefinitionsQuery = {
-  page?: number;             // 1-based
-  limit?: number;
-  sortBy?: keyof ExceptionDefinition | string;
-  sortOrder?: "asc" | "desc";
-  // filters
-  searchText?: string;
-  statusFilter?: PolicyStatus | string;
-  categoryFilter?: ExceptionCategory | string;
-  ownerFilter?: string;
-};
-
-export type ExceptionDefinitionsResponse = {
-  data: ExceptionDefinition[];
-  pagination: { page: number; limit: number; total: number; totalPages: number; };
-};
-
 // ---------- Service API (Definitions) ----------
+// ✅ ใช้ type กลาง: ExceptionDefinitionListQuery / ExceptionDefinitionListResponse
 export async function getExceptionDefinitionById(
   id: string | number,
   signal?: AbortSignal
@@ -132,37 +128,37 @@ export async function getExceptionDefinitionById(
 }
 
 export async function getExceptionDefinitions(
-  q: ExceptionDefinitionsQuery,
+  q: ExceptionDefinitionListQuery,
   signal?: AbortSignal
-): Promise<ExceptionDefinitionsResponse> {
+): Promise<ExceptionDefinitionListResponse> {
   await sleep(150, signal);
 
   let filtered = [...MOCK_DEFINITIONS];
 
-  // search
-  const searchText = (q.searchText ?? "").trim();
-  if (searchText) {
+  // ✅ search (แก้ชื่อแปรให้ถูก และใช้ key มาตรฐาน)
+  const search = (q.search ?? "").trim();
+  if (search) {
     filtered = filtered.filter(
       (e) =>
-        includesCI(e.id, searchText) ||
-        includesCI(e.name, searchText) ||
-        includesCI(e.owner ?? "", searchText) ||
-        includesCI(String(e.category), searchText) ||
-        includesCI(String(e.status), searchText)
+        includesCI(e.id, search) ||
+        includesCI(e.name, search) ||
+        includesCI(e.owner ?? "", search) ||
+        includesCI(String(e.category), search) ||
+        includesCI(String(e.status), search)
     );
   }
 
-  // filters
-  if (q.statusFilter) {
-    const s = ci(q.statusFilter);
+  // ✅ filters (ใช้ชื่อ key มาตรฐาน: status, category, owner)
+  if (q.status) {
+    const s = ci(q.status);
     filtered = filtered.filter((e) => ci(e.status) === s);
   }
-  if (q.categoryFilter) {
-    const s = ci(q.categoryFilter);
+  if (q.category) {
+    const s = ci(q.category);
     filtered = filtered.filter((e) => ci(e.category) === s);
   }
-  if (q.ownerFilter) {
-    const s = ci(q.ownerFilter);
+  if (q.owner) {
+    const s = ci(q.owner);
     filtered = filtered.filter((e) => includesCI(e.owner ?? "", s));
   }
 
@@ -177,15 +173,23 @@ export async function getExceptionDefinitions(
     });
   }
 
-  // page
-  const total = filtered.length;
+  // ✅ pagination (OffsetPage<T> รูปแบบเดียวกับทั้งระบบ)
+  const totalCount = filtered.length;
   const page = Math.max(1, Number(q.page ?? 1));
-  const limit = Math.max(1, Number(q.limit ?? 10));
-  const start = (page - 1) * limit;
-  const data = filtered.slice(start, start + limit);
-  const totalPages = Math.max(1, Math.ceil(total / Math.max(1, limit)));
+  const pageSize = Math.max(1, Number(q.pageSize ?? 10));
+  const start = (page - 1) * pageSize;
+  const items = filtered.slice(start, start + pageSize);
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-  return { data, pagination: { page, limit, total, totalPages } };
+  return {
+    items,
+    totalCount,
+    page,
+    pageSize,
+    hasNext: page < totalPages,
+    hasPrev: page > 1,
+    totalPages,
+  };
 }
 
 // ---------- Service API (Assignments per definition) ----------
@@ -196,4 +200,3 @@ export async function getExceptionAssignmentsByDefinitionId(
   await sleep(120, signal);
   return [...(MOCK_ASSIGNMENTS[id] ?? [])];
 }
-

@@ -3,8 +3,8 @@
 'use client';
 
 import React from 'react';
-import { PaginationState } from '../../types';
 import { Pagination } from '../pagination/Pagination';
+import { PaginationState } from '@tanstack/react-table';
 
 export function DataTablePaginationBar({
   pagination,

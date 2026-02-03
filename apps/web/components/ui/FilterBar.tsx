@@ -169,8 +169,8 @@ export function FilterBar<TStatus extends string, TType extends string>({
 
       {/* Search */}
       <SearchInput
-        value={filters.searchText ?? ""}
-        onChange={(q) => onFiltersChange({ ...filters, searchText: q })}
+        value={filters.search ?? ""}
+        onChange={(q) => onFiltersChange({ ...filters, search: q })}
         placeholder={searchPlaceholder}
       />
     </div>

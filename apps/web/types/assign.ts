@@ -2,7 +2,6 @@
 import type { ISODateString } from "./common";
 import type { Employees } from "./employees";
 import type { LicenseItem } from "./license";
-import type { DeviceItem } from "./device";
 
 // โหมดการทำงาน
 export type AssignMode = "licenseToEmployee" | "employeeToLicense";

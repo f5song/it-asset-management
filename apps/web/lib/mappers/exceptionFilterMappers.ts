@@ -10,16 +10,16 @@ import type {
  * Simple -> Domain
  * - simple.status -> status
  * - simple.type -> category
- * - simple.q/searchText -> searchText
+ * - simple.q/search -> search
  */
 export function toDomainFilters(
-  simple?: Partial<ExceptionFilterValues & { q?: string; searchText?: string }>
+  simple?: Partial<ExceptionFilterValues & { q?: string; search?: string }>
 ): ExceptionDomainFilters {
   const s = simple ?? {};
   return {
     status: s.status as PolicyStatus | undefined,
     category: s.type as ExceptionCategory | undefined,
-    searchText: s.searchText ?? s.q ?? "",
+    search: s.search ?? s.q ?? "",
   };
 }
 
@@ -28,25 +28,25 @@ export function toDomainFilters(
  */
 export function toSimpleFilters(
   domain: ExceptionDomainFilters
-): ExceptionFilterValues & { q?: string; searchText?: string } {
-  const q = domain.searchText && domain.searchText.trim() ? domain.searchText.trim() : undefined;
+): ExceptionFilterValues & { q?: string; search?: string } {
+  const q = domain.search && domain.search.trim() ? domain.search.trim() : undefined;
   return {
     status: domain.status as PolicyStatus | undefined,
     type: domain.category as ExceptionCategory | undefined,
     q,
-    searchText: q,
+    search: q,
   };
 }
 
 /**
  * Simple -> Service-ready canonical filters
- * - ใช้คีย์กลาง: { status, category, searchText }
+ * - ใช้คีย์กลาง: { status, category, search }
  */
-export function toServiceFilters(simple: ExceptionFilterValues & { q?: string; searchText?: string }) {
+export function toServiceFilters(simple: ExceptionFilterValues & { q?: string; search?: string }) {
   const out: Record<string, string> = {};
   if (simple.status) out.status = String(simple.status);
   if (simple.type) out.category = String(simple.type);
-  const k = simple.searchText ?? simple.q;
-  if (k) out.searchText = k;
+  const k = simple.search ?? simple.q;
+  if (k) out.search = k;
   return out;
 }

@@ -295,7 +295,7 @@ export const ASSIGNED_TO: AssignedDisplayRow[] = [
     softwareId: "SW-3DSMAX",
     softwareName: "3ds Max",
     department: "Information Technology",
-    status: LicenseStatus.Active,
+    status: "Active",
   },
   // ... อื่น ๆ
 ];

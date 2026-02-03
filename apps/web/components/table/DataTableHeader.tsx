@@ -5,7 +5,8 @@ import React from 'react';
 // ปรับ path ให้ตรงกับโปรเจกต์ของคุณ ถ้าคุณย้าย type ไปไว้ที่ 'types/table'
 
 import { cn } from '../ui';
-import { AppColumnDef, SortingState } from '@/types';
+import { AppColumnDef } from '@/types';
+import { SortingState } from '@tanstack/react-table';
 
 type Props<T extends { id?: string | number }> = {
   /** คอลัมน์ของตาราง */

@@ -56,7 +56,7 @@ export type EmployeeItemsQuery = {
   sortBy?: keyof Employees | string;
   sortOrder?: "asc" | "desc";
   // ฟิลเตอร์
-  searchText?: string;
+  search?: string;
   statusFilter?: EmployeeStatus | string;
   departmentFilter?: string;
 };
@@ -92,14 +92,14 @@ export async function getEmployees(
   let filtered = [...MOCK_EMPLOYEES];
 
   // 1) Search (id/name/department/status)
-  const searchText = (q.searchText ?? "").trim();
-  if (searchText) {
+  const search = (q.search ?? "").trim();
+  if (search) {
     filtered = filtered.filter(
       (e) =>
-        includesCI(e.id, searchText) ||
-        includesCI(e.name, searchText) ||
-        includesCI(e.department, searchText) ||
-        includesCI(e.status, searchText)
+        includesCI(e.id, search) ||
+        includesCI(e.name, search) ||
+        includesCI(e.department, search) ||
+        includesCI(e.status, search)
     );
   }
 

@@ -40,7 +40,7 @@
 //         status: q.statusFilter,
 //         type: q.typeFilter,
 //         manufacturer: q.manufacturerFilter,
-//         search: q.searchText,
+//         search: q.search,
 //       },
 //     }
 //   );

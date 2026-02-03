@@ -1,13 +1,25 @@
-
 // services/software.service.mock.ts
-import { ItemsQuery, ItemsResponse } from "types";
-import type { SoftwareItem } from "types/software";
+import type {
+  SoftwareItem,
+  SoftwareListQuery,
+  SoftwareListResponse,
+} from "types/software";
+
+import { LicenseModel } from "types/license"; // ถ้า licenseModel เป็น enum
+// (ถ้าเป็น string union อยู่แล้ว ก็ไม่ต้อง import enum)
 
 const COMPLIANCE = ["Compliant", "Non-Compliant"] as const;
 const STATUS = ["Active", "Expired", "Expiring"] as const;
 const TYPE = ["Standard", "Special", "Exception"] as const;
 const CLIENT_SERVER = ["Client", "Server"] as const;
-const MODEL = ["Per-User", "Per-Device", "Perpetual", "Subscription"] as const;
+// แนะนำให้ใช้ enum เพื่อชนิดแน่น:
+const MODEL = [
+  "Per-User",
+  "Per-Device",
+  "Perpetual",
+  "Subscription",
+] as const satisfies readonly LicenseModel[];
+// ถ้าไม่ได้ใช้ enum: ใช้ string union ของ SoftwareItem["licenseModel"] ก็ได้
 
 const ALL: SoftwareItem[] = Array.from({ length: 57 }).map((_, i) => ({
   id: `soft-${i + 1}`,
@@ -35,28 +47,28 @@ function sleep(ms: number, signal?: AbortSignal) {
   });
 }
 
-export async function getItemById(id: string): Promise<SoftwareItem | null> {
-  await sleep(80);
+export async function getItemById(id: string, signal?: AbortSignal): Promise<SoftwareItem | null> {
+  await sleep(80, signal);
   return ALL.find(x => x.id === id) ?? null;
 }
 
-export async function getItemsStock(q: ItemsQuery): Promise<ItemsResponse> {
-  await sleep(150);
+export async function getItemsStock(q: SoftwareListQuery, signal?: AbortSignal): Promise<SoftwareListResponse> {
+  await sleep(150, signal);
 
   let filtered = [...ALL];
 
-  const searchText = (q.searchText ?? "").toLowerCase();
-  if (searchText) {
+  const search = (q.search ?? "").toLowerCase();
+  if (search) {
     filtered = filtered.filter(
       (r) =>
-        r.softwareName.toLowerCase().includes(searchText) ||
-        r.manufacturer.toLowerCase().includes(searchText)
+        r.softwareName.toLowerCase().includes(search) ||
+        r.manufacturer.toLowerCase().includes(search)
     );
   }
-  if (q.statusFilter) filtered = filtered.filter((r) => r.status === q.statusFilter);
-  if (q.typeFilter) filtered = filtered.filter((r) => r.softwareType === q.typeFilter);
-  if (q.manufacturerFilter)
-    filtered = filtered.filter((r) => r.manufacturer === q.manufacturerFilter);
+  if (q.status) filtered = filtered.filter((r) => r.status === q.status);
+  if (q.type) filtered = filtered.filter((r) => r.softwareType === q.type);
+  if (q.manufacturer)
+    filtered = filtered.filter((r) => r.manufacturer === q.manufacturer);
 
   if (q.sortBy) {
     const dir = q.sortOrder === "desc" ? -1 : 1;
@@ -68,20 +80,22 @@ export async function getItemsStock(q: ItemsQuery): Promise<ItemsResponse> {
     });
   }
 
-  const total = filtered.length;
-  const page = q.page;
-  const limit = q.limit;
-  const start = (page - 1) * limit;
-  const data = filtered.slice(start, start + limit);
-  const totalPages = Math.max(1, Math.ceil(total / Math.max(1, limit)));
+  const totalCount = filtered.length;
+  const page = Math.max(1, Number(q.page ?? 1));
+  const pageSize = Math.max(1, Number(q.pageSize ?? 10));
+  const start = (page - 1) * pageSize;
+  const items = filtered.slice(start, start + pageSize);
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const hasNext = page < totalPages;
+  const hasPrev = page > 1;
 
   return {
-    data,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages,
-    },
+    items,
+    totalCount,
+    page,
+    pageSize,
+    totalPages,
+    hasNext,
+    hasPrev,
   };
 }

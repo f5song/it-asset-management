@@ -1,8 +1,8 @@
 import React from "react";
-import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { FilterValues } from "types/common";
 import { ServerSort } from "@/types/server-query";
 import { sortingToServer } from "@/lib/sortingToServer";
+import { PaginationState, SortingState } from "@tanstack/react-table";
 
 
 type UseServerTableControllerOptions<T, FK extends string, FT extends string, DF> = {
@@ -33,11 +33,6 @@ export function useServerTableController<T, FK extends string, FT extends string
     { id: String(defaultSort.id), desc: !!defaultSort.desc },
   ]);
 
-  // รีเซ็ตหน้าทุกครั้งที่ filters/เงื่อนไขเปลี่ยน
-  React.useEffect(() => {
-    setPagination((p) => ({ ...p, pageIndex: 0 }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, resetDeps);
 
   // แปลง filters โดเมน ↔︎ SimpleFilters (สำหรับ FilterBar)
   const simpleFilters = React.useMemo(() => toSimple(domainFilters), [domainFilters, toSimple]);

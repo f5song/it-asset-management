@@ -25,7 +25,7 @@ export function useExceptionInventory(
   const serviceQuery = React.useMemo(() => {
     const { pageIndex = 0, pageSize = 10, sortBy, sortOrder } = serverQuery;
 
-    const searchText = filters.searchText ?? "";
+    const search = filters.search ?? "";
     const status = toUndefTrim(filters.status) as PolicyStatus | undefined;
     const category = toUndefTrim(filters.category) as ExceptionCategory | undefined;
     const owner = toUndefTrim(filters.owner);
@@ -35,7 +35,7 @@ export function useExceptionInventory(
       limit: pageSize,
       sortBy,
       sortOrder,
-      searchText,
+      search,
       statusFilter: status ?? "",
       categoryFilter: category ?? "",
       ownerFilter: owner ?? "",
@@ -45,7 +45,7 @@ export function useExceptionInventory(
     serverQuery.pageSize,
     serverQuery.sortBy,
     serverQuery.sortOrder,
-    filters.searchText,
+    filters.search,
     filters.status,
     filters.category,
     filters.owner,

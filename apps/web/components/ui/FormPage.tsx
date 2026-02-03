@@ -1,6 +1,5 @@
-
 // FormPage.tsx
-'use client';
+"use client";
 
 import React from "react";
 import {
@@ -9,30 +8,46 @@ import {
   DefaultValues,
   SubmitHandler,
   FieldErrors,
+  Resolver,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import type { z } from "zod";
 
 import { SelectInput, TextArea, TextInput } from "./Field";
 import { PageHeader } from "./PageHeader";
 import { FormActions } from "./FormActions";
 import { Container } from "./Container";
 
-// ✅ ใช้ชนิดจากไฟล์ types เท่านั้น (อย่าประกาศใหม่ซ้ำ)
-import type { FormPageProps as _FormPageProps, FormField } from "types";
+// ⬇️ ปรับ path ให้ตรงกับโปรเจกต์
+import type { FormShellProps, FormField } from "@/types/forms";
 
-// ทำ alias เพื่อเพิ่ม constraint กับ FieldValues ของ RHF
-export type FormPageProps<TValues extends FieldValues> = Omit<
-  _FormPageProps<TValues>,
-  "defaultValues" | "onSubmit"
-> & {
-  /** RHF ต้องการ DefaultValues<TValues> */
-  defaultValues?: DefaultValues<TValues>;
-  /** RHF SubmitHandler */
-  onSubmit: SubmitHandler<TValues>;
+/** ให้ชัดว่า FieldValues คือ object */
+type AnyValues = Record<string, any>;
+
+/** schema: ไม่ผูก generic ให้ TS ชน — รับได้ทั้งมี/ไม่มี transform */
+type AnySchema = z.ZodTypeAny;
+
+/** แปลง zodResolver ให้เป็น Resolver<TIn, any, TOut> (แปะ cast จุดเดียว) */
+
+const makeResolver = <TIn extends FieldValues, TOut extends AnyValues>(
+  schema?: AnySchema,
+): Resolver<TIn, any, TOut> | undefined => {
+  if (!schema) return undefined;
+  const zr: any = zodResolver;                 // ← cast ที่ “ตัวฟังก์ชัน”
+  return zr(schema) as Resolver<TIn, any, TOut>;
 };
 
-export function FormPage<TValues extends FieldValues>({
+/** Props ของฟอร์ม (UI shell + RHF/Zod) */
+export type FormPageProps<
+  TIn extends AnyValues,
+  TOut extends AnyValues = TIn,
+> = FormShellProps<TIn, TOut> & {
+  schema?: AnySchema; // ZodTypeAny เพื่อเลี่ยง generic ชน
+  defaultValues?: DefaultValues<TIn>; // ค่าที่เข้าฟอร์ม
+  onSubmit: SubmitHandler<TOut>; // ค่าหลัง schema transform
+};
+
+export function FormPage<TIn extends AnyValues, TOut extends AnyValues = TIn>({
   title,
   breadcrumbs = [],
   sectionTitle = "",
@@ -43,10 +58,12 @@ export function FormPage<TValues extends FieldValues>({
   onCancel,
   submitLabel = "Submit",
   cancelLabel = "Cancel",
-}: FormPageProps<TValues>) {
-  const methods = useForm<TValues>({
+}: FormPageProps<TIn, TOut>) {
+  // ✅ RHF ใส่ generic 3 ตัว: <input, any, output>
+
+  const methods = useForm<TIn, any, TOut>({
     defaultValues,
-    resolver: schema ? zodResolver(schema as z.ZodTypeAny) : undefined,
+    resolver: makeResolver<TIn, TOut>(schema), // ✅ เรียกผ่าน helper
     mode: "onBlur",
   });
 
@@ -56,22 +73,26 @@ export function FormPage<TValues extends FieldValues>({
     formState: { errors, isSubmitting },
   } = methods;
 
+  /** errors อิง input */
   const getErrorMessage = (name: string) => {
-    const e = (errors as FieldErrors<TValues>)[name as keyof TValues];
+    const e = (errors as FieldErrors<TIn>)[name as keyof TIn];
     return (e as any)?.message as string | undefined;
   };
 
-  const renderField = (field: FormField<keyof TValues & string>) => {
+  const renderField = (field: FormField<keyof TIn & string>) => {
     const id = String(field.name);
     const errorMsg = getErrorMessage(id);
     const col = field.colSpan === 2 ? "md:col-span-2" : "md:col-span-1";
 
     switch (field.type) {
       case "text":
+      case "email":
+      case "url":
         return (
           <div className={col} key={id}>
             <TextInput
               id={id}
+              type={field.type}
               label={field.label}
               required={!!field.required}
               placeholder={field.placeholder}
@@ -138,10 +159,9 @@ export function FormPage<TValues extends FieldValues>({
               required={!!field.required}
               placeholder={field.placeholder}
               description={field.description}
-              // TIP: valueAsNumber จะให้ RHF แปลงเป็น number อัตโนมัติ
               {...register(field.name as any, {
                 required: field.required,
-                valueAsNumber: true,
+                valueAsNumber: true, // RHF แปลงเป็น number ให้อัตโนมัติ
               })}
               aria-invalid={!!errorMsg}
               aria-errormessage={errorMsg ? `${id}-error` : undefined}
@@ -162,8 +182,6 @@ export function FormPage<TValues extends FieldValues>({
               label={field.label}
               required={!!field.required}
               description={field.description}
-              // NOTE: ถ้าใน schema ใช้ string (YYYY-MM-DD) ให้เก็บเป็น string
-              // หลีกเลี่ยง valueAsDate เพื่อไม่ชนกับ zod.string()
               {...register(field.name as any, { required: field.required })}
               aria-invalid={!!errorMsg}
               aria-errormessage={errorMsg ? `${id}-error` : undefined}
@@ -184,7 +202,12 @@ export function FormPage<TValues extends FieldValues>({
     <main>
       <PageHeader title={title} breadcrumbs={breadcrumbs} />
       <Container title={sectionTitle}>
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="grid gap-6">
+        {/* onSubmit รับ TOut (หลัง schema transform) */}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
+          className="grid gap-6"
+        >
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {fields.map(renderField)}
           </div>

@@ -1,14 +1,6 @@
-
-// src/types/ui-table.ts
+// ✅ ใช้ type จาก TanStack Table v8
+import type { PaginationState, SortingState } from "@tanstack/react-table";
 import type { ReactNode } from "react";
-import type {
-  SortingState as TanSortingState,
-  PaginationState as TanPaginationState,
-} from "@tanstack/react-table";
-
-/** ใช้ alias เพื่อสื่อว่าตาม TanStack */
-export type PaginationState = TanPaginationState; // { pageIndex, pageSize }
-export type SortingState = TanSortingState;       // { id, desc }[]
 
 /** แถวพื้นฐานของตาราง */
 export interface RowBase {

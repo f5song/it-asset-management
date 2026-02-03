@@ -1,45 +1,32 @@
 // src/services/licenses.service.mock.ts
-// แนะนำปรับ path import ให้เป็น alias ของโปรเจกต์คุณ เช่น: "@/types"
-import type { LicenseFilters, LicenseItem } from "types";
+
+// ✅ ใช้ alias path ของโปรเจกต์ (ปรับให้ตรงกับโปรเจกต์คุณ เช่น "@/types")
+import type {
+  LicenseItem,
+  LicenseFilters,
+  LicenseListQuery,
+  LicenseListResponse,
+  LicenseStatus,
+  LicenseModel,
+  LicenseSummary,
+} from "@/types/license";
+import type { SortOrder } from "@/types/common";
 
 // -------------------------------------------------
-// Types
+// Types ที่ใช้ภายในไฟล์นี้
 // -------------------------------------------------
-export type LicensesQuery = {
-  page: number; // 1-based
-  pageSize: number;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
-  status?: string;        // "" = all
-  licenseModel?: string;  // "" = all
-  manufacturer?: string;  // "" = all
-  search?: string;        // "" = all
-};
 
-export type PagedResponse<T> = { items: T[]; total: number };
-
-/** ✅ ชนิดข้อมูลสรุป (ไม่ผูกกับ paging) */
-export type LicenseSummary = {
-  total: number;
-  active: number;
-  inactive: number;
-  expired: number;
-  warning: number;
-  unknown: number;
-  seatsTotal: number;
-  seatsUsed: number;
-  seatsAvailable: number;
-  byModel: Record<string, number>;
-  byManufacturer: Record<string, number>;
-};
+/** สรุป (ไม่ผูกกับ paging) */
 
 // -------------------------------------------------
-// Mock data dictionaries
+// Mock dictionaries
 // -------------------------------------------------
 const manufacturers = ["Microsoft", "Adobe", "Autodesk", "JetBrains", "Atlassian"] as const;
-const licenseModel = ["Per-User", "Perpetual", "Subscription", "Per-Device"] as const;
-const statuses = ["Active", "Expiring", "Expired"] as const;
-const complianceOptions = ["Compliant", "Non-compliant", "Warning"] as const;
+const licenseModels: LicenseModel[] = ["Per-User", "Perpetual", "Subscription", "Per-Device"];
+const statuses: LicenseStatus[] = ["Active", "Expired"]; // หมายเหตุ: mock เดิมมี "Expiring" ด้วย ถ้าต้องการให้เพิ่มที่ type
+
+// สำหรับ compliance: อ้างจากฝั่ง software ถ้าคุณมี enum กลาง ให้ import มาแทน
+const complianceOptions = ["Compliant", "Non-Compliant", "Warning"] as const;
 
 // -------------------------------------------------
 // Helpers
@@ -57,6 +44,7 @@ const SORT_KEYS = [
   "status",
   "compliance",
 ] as const;
+
 type SortKey = (typeof SORT_KEYS)[number];
 
 function isSortKey(k?: string): k is SortKey {
@@ -80,14 +68,13 @@ function compare(key: SortKey, a: LicenseItem, b: LicenseItem) {
   // number
   if (typeof va === "number" && typeof vb === "number") return va - vb;
 
-  // string (เปิด numeric)
+  // string
   return String(va ?? "").localeCompare(String(vb ?? ""), undefined, {
     numeric: true,
     sensitivity: "base",
   });
 }
 
-/** แปลงวันที่แบบปลอดภัย */
 function safeTime(d?: string | null): number {
   if (!d) return Number.NaN;
   const t = new Date(`${d}T23:59:59Z`).getTime();
@@ -95,24 +82,43 @@ function safeTime(d?: string | null): number {
 }
 
 // -------------------------------------------------
-// Mock dataset
+// Mock dataset ให้สอดคล้องกับ LicenseItem ของคุณ
 // -------------------------------------------------
 const MOCK_LICENSES: LicenseItem[] = Array.from({ length: 57 }).map((_, i) => {
   const total = 100 + (i % 7) * 5;
   const inUse = 40 + (i % 5) * 7;
-  const available = total - inUse;
+  const available = Math.max(0, total - inUse);
 
   return {
     id: `LIC-${i + 1}`,
     softwareName: `Software ${i + 1}`,
     manufacturer: manufacturers[i % manufacturers.length],
-    licenseModel: licenseModel[i % licenseModel.length] as any, // ตาม type กลางคุณเป็น enum/string ก็ได้
+    licenseModel: licenseModels[i % licenseModels.length],
+    // ฟิลด์อื่น ๆ ตาม LicenseItem ของคุณ:
+    // (ถ้า LicenseItem ในโปรเจกต์คุณต้องการ field เพิ่ม ให้เติม mock ให้ครบ)
+    sku: `SKU-${i + 1}`,
+    edition: undefined,
+    version: `v${(i % 5) + 1}.0`,
+    consumptionUnit: "perUser",
+    term: "subscription",
+
     total,
     inUse,
     available,
+
     expiryDate: `2026-${String((i % 12) + 1).padStart(2, "0")}-28`,
-    status: statuses[i % statuses.length] as any,
-    compliance: complianceOptions[i % complianceOptions.length] as any,
+    status: (i % 3 === 0 ? "Expired" : "Active") as LicenseStatus,
+
+    compliance: (i % 4 === 0 ? "Warning" : "Compliant") as any,
+
+    // metadata
+    createdAt: `2025-01-${String((i % 28) + 1).padStart(2, "0")}T12:00:00Z`,
+    updatedAt: `2025-12-${String((i % 28) + 1).padStart(2, "0")}T12:00:00Z`,
+
+    cost: 10000 + i * 137,
+    maintenanceCost: 1000 + (i % 10) * 37,
+    notes: "",
+    licenseKey: `XXXX-XXXX-XXXX-${String(i + 1).padStart(4, "0")}`,
   } as LicenseItem;
 });
 
@@ -124,26 +130,33 @@ export async function getLicenseById(id: string): Promise<LicenseItem | null> {
   return MOCK_LICENSES.find((x) => String(x.id) === String(id)) ?? null;
 }
 
-export async function getLicenses(q: LicensesQuery): Promise<PagedResponse<LicenseItem>> {
+/** -------------------------------------------------
+ *  PAGED LIST (ใช้กับตาราง) — ใช้ type กลางจากไฟล์ types
+ *  - รับ: LicenseListQuery
+ *  - คืน: LicenseListResponse (OffsetPage<LicenseItem>)
+ * ------------------------------------------------- */
+export async function getLicenses(q: LicenseListQuery): Promise<LicenseListResponse> {
   return new Promise((resolve) => {
     setTimeout(() => {
       const kw = normalize(q.search);
       let data = [...MOCK_LICENSES];
 
-      // filters (ค่าว่าง "" = ไม่กรอง)
+      // filters
       if (q.status)        data = data.filter((x) => normalize(x.status)       === normalize(q.status));
       if (q.licenseModel)  data = data.filter((x) => normalize(x.licenseModel) === normalize(q.licenseModel));
       if (q.manufacturer)  data = data.filter((x) => normalize(x.manufacturer) === normalize(q.manufacturer));
-      if (kw)
+
+      if (kw) {
         data = data.filter(
           (x) =>
             normalize(x.softwareName).includes(kw) ||
             normalize(x.manufacturer).includes(kw) ||
             normalize(x.licenseModel).includes(kw)
         );
+      }
 
       // sort
-      const dir = q.sortOrder === "desc" ? -1 : 1;
+      const dir = (q.sortOrder as SortOrder) === "desc" ? -1 : 1;
       const key = isSortKey(q.sortBy) ? q.sortBy : undefined;
       if (key) data.sort((a, b) => compare(key, a, b) * dir);
 
@@ -151,14 +164,28 @@ export async function getLicenses(q: LicensesQuery): Promise<PagedResponse<Licen
       const start = (q.page - 1) * q.pageSize;
       const items = data.slice(start, start + q.pageSize);
 
-      resolve({ items, total: data.length });
+      // ✅ รูปแบบตอบกลับเป็น OffsetPage<LicenseItem>
+      const totalCount = data.length;
+      const totalPages = Math.max(1, Math.ceil(totalCount / q.pageSize));
+      const page = q.page;
+      const pageSize = q.pageSize;
+
+      resolve({
+        items,
+        totalCount,
+        page,
+        pageSize,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+        totalPages,
+      });
     }, 400);
   });
 }
 
-/** -----------------------------
- *  ✅ Added for assignment service integration
- *  ----------------------------- */
+/** -------------------------------------------------
+ *  Assignment helpers
+ * ------------------------------------------------- */
 export async function getAvailableLicenses(): Promise<LicenseItem[]> {
   await new Promise((r) => setTimeout(r, 100));
   return MOCK_LICENSES.filter((x) => (x.available ?? x.total - x.inUse) > 0);
@@ -187,18 +214,13 @@ export async function releaseSeat(licenseId: string, n = 1): Promise<void> {
 }
 
 /** -------------------------------------------------
- *  ✅ SUMMARY API (ไม่ผูกกับ paging) + รองรับ filters + AbortSignal
- *  ------------------------------------------------- */
+ *  SUMMARY API — ใช้ LicenseFilters (pick) จากไฟล์ type
+ * ------------------------------------------------- */
 export async function getLicenseSummary(
-  filters?: {
-    status?: string;
-    licenseModel?: string;
-    manufacturer?: string;
-    search?: string;
-  },
+  filters?: Pick<LicenseFilters, "status" | "licenseModel" | "manufacturer" | "search">,
   signal?: AbortSignal
 ): Promise<LicenseSummary> {
-  // รองรับ cancel ได้ด้วย signal (consistent pattern)
+  // รองรับ cancel
   await new Promise<void>((resolve, reject) => {
     const t = setTimeout(resolve, 150);
     if (signal) {
@@ -209,12 +231,12 @@ export async function getLicenseSummary(
     }
   });
 
-  // 1) clone + filter
   let data = [...MOCK_LICENSES];
 
   if (filters?.status)        data = data.filter((x) => normalize(x.status)       === normalize(filters.status));
   if (filters?.licenseModel)  data = data.filter((x) => normalize(x.licenseModel) === normalize(filters.licenseModel));
   if (filters?.manufacturer)  data = data.filter((x) => normalize(x.manufacturer) === normalize(filters.manufacturer));
+
   if (filters?.search) {
     const kw = normalize(filters.search);
     if (kw) {
@@ -223,12 +245,12 @@ export async function getLicenseSummary(
           normalize(x.softwareName).includes(kw) ||
           normalize(x.manufacturer).includes(kw) ||
           normalize(x.licenseModel).includes(kw) ||
-          normalize(x.status).includes(kw),
+          normalize(x.status).includes(kw)
       );
     }
   }
 
-  // 2) init
+  // summary aggregation ----------------------------
   const summary: LicenseSummary = {
     total: data.length,
     active: 0,
@@ -243,38 +265,30 @@ export async function getLicenseSummary(
     byManufacturer: {},
   };
 
-  // 3) aggregate
   const nowT = Date.now();
-  const soonMs = 30 * 24 * 60 * 60 * 1000; // ภายใน 30 วัน ถือว่า warning
+  const soonMs = 30 * 24 * 60 * 60 * 1000; // 30 วัน
 
   for (const it of data) {
-    // seats
     summary.seatsTotal += it.total ?? 0;
     summary.seatsUsed += it.inUse ?? 0;
 
-    // statuses
-    if (it.status === "Active")   summary.active  += 1;
-    else if (it.status === "Expired")  summary.expired += 1;
-    else if (it.status === "Expiring") summary.warning += 1;
+    if (it.status === "Active") summary.active += 1;
+    else if (it.status === "Expired") summary.expired += 1;
+    // หมายเหตุ: ถ้าคุณอยากรองรับ "Expiring" ใน LicenseStatus ให้เพิ่มใน type แล้วนับที่นี่ด้วย
 
-    // inactive: Active แต่ไม่ถูกใช้
     if (it.status === "Active" && (it.inUse ?? 0) === 0) {
       summary.inactive += 1;
     }
 
-    // warning เพิ่มเติม: ใกล้หมดอายุ ≤ 30 วัน หรือ compliance === "Warning"
     const expT = safeTime(it.expiryDate);
     if (!Number.isNaN(expT)) {
-      if (expT >= nowT && (expT - nowT) <= soonMs) summary.warning += 1;
+      if (expT >= nowT && expT - nowT <= soonMs) summary.warning += 1;
     } else {
-      summary.unknown += 1; // expiryDate แปลงไม่ได้
+      summary.unknown += 1;
     }
 
-    if ((it as any).compliance === "Warning") {
-      summary.warning += 1;
-    }
+    if ((it as any).compliance === "Warning") summary.warning += 1;
 
-    // buckets
     summary.byModel[it.licenseModel] = (summary.byModel[it.licenseModel] ?? 0) + 1;
     summary.byManufacturer[it.manufacturer] = (summary.byManufacturer[it.manufacturer] ?? 0) + 1;
   }

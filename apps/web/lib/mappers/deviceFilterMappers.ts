@@ -10,7 +10,7 @@ export function toSimpleFilters(
     status: df.deviceGroup,
     type: df.deviceType,
     manufacturer: df.os,
-    searchText: df.search ?? "",
+    search: df.search ?? "",
   };
 }
 
@@ -23,7 +23,7 @@ export function toDomainFilters(
     deviceGroup: toUndef(sf.status as DeviceGroup | ""),
     deviceType: toUndef(sf.type as DeviceType | ""),
     os: toUndef(sf.manufacturer as DeviceOS | ""),
-    search: sf.searchText ?? "",
+    search: sf.search ?? "",
   };
 }
 
@@ -35,6 +35,6 @@ export function toServiceFilters(
     deviceGroup: (sf.status as DeviceGroup | undefined) ?? "",
     deviceType: (sf.type as DeviceType | undefined) ?? "",
     os: (sf.manufacturer as DeviceOS | undefined) ?? "",
-    search: sf.searchText ?? "",
+    search: sf.search ?? "",
   };
 }

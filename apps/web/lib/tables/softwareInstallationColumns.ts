@@ -3,8 +3,8 @@ import { show } from "lib/show";
 import type { InstallationRow } from "types";
 
 export const softwareInstallationColumns = [
-  { header: "Device", accessor: (r) => show(r.device) },
-  { header: "User", accessor: (r) => show(r.user) },
+  { header: "Device", accessor: (r) => show(r.deviceName) },
+  { header: "User", accessor: (r) => show(r.userName) },
   { header: "License Status", accessor: () => "Active" },
   { header: "License Key", accessor: () => "—" },
   { header: "Scanned License", accessor: () => "—" },

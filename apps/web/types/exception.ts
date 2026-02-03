@@ -1,15 +1,17 @@
-// types/exception.ts
+// src/types/exception.ts
+
+import type { OffsetPage, OffsetPaginationParams, Searchable } from "./common";
 
 /** สถานะของ "นโยบายข้อยกเว้น" (Policy-level) */
-export type PolicyStatus = 'Active' | 'Inactive' | 'Deprecated' | 'Archived';
+export type PolicyStatus = "Active" | "Inactive" | "Deprecated" | "Archived";
 
 export type ExceptionCategory =
-  | 'AI'
-  | 'USBDrive'
-  | 'MessagingApp'
-  | 'ADPasswordPolicy';
+  | "AI"
+  | "USBDrive"
+  | "MessagingApp"
+  | "ADPasswordPolicy";
 
-export type RiskLevel = 'Low' | 'Medium' | 'High';
+export type RiskLevel = "Low" | "Medium" | "High";
 
 /**
  * ExceptionDefinition: รายการ "นโยบายยกเว้น" ในระบบ (ระดับ Catalog)
@@ -39,30 +41,29 @@ export interface ExceptionDefinition {
 export type ExceptionAssignmentRow = {
   id: string;                      // mapping id หรือ userId
   definitionId: string;            // FK -> ExceptionDefinition.id
-  employeeId: string;                // ผู้ใช้ที่ได้รับสิทธิ์
+  employeeId: string;              // ผู้ใช้ที่ได้รับสิทธิ์
   employeeName?: string | null;
   department?: string | null;
   assignedBy?: string | null;
   assignedAt?: string | null;      // ISO
   expiresAt?: string | null;       // ISO
-  status?: 'Active' | 'Pending' | 'Expired' | 'Revoked' | 'Unknown';
+  status?: "Active" | "Pending" | "Expired" | "Revoked" | "Unknown";
   notes?: string | null;
 };
 
-/** ฟิลเตอร์หน้า Inventory (Definition-level) */
+/** ฟิลเตอร์หน้า Inventory (Definition-level) — ใช้คีย์มาตรฐาน search */
 export type ExceptionDomainFilters = {
-  searchText?: string;
+  search?: string;
   status?: PolicyStatus;
   category?: ExceptionCategory;
   owner?: string;
 };
 
-/** ฟิลเตอร์แบบ simple (ใช้ใน FilterBar) */
+/** ฟิลเตอร์แบบ UI (ใช้ใน FilterBar) — ใช้ชื่อสม่ำเสมอ */
 export type ExceptionFilterValues = {
-  status?: PolicyStatus;          // map -> status
-  type?: ExceptionCategory;       // map -> category
-  searchText?: string;            // keyword
-  q?: string;                     // alias ของ searchText
+  status?: PolicyStatus;         // map -> status
+  type?: ExceptionCategory;      // map -> category
+  search?: string;               // keyword
 };
 
 /** สำหรับแบบฟอร์ม Edit ของ Definition (ไม่ใช่คำขอ) */
@@ -77,3 +78,22 @@ export type ExceptionEditValues = {
   reviewAt?: string | null;       // datetime-local หรือ ISO
   notes: string;
 };
+
+/** ✅ Query/Response ของ Definition list (สำหรับ service/hook) */
+export type ExceptionDefinitionListQuery =
+  OffsetPaginationParams &
+  Searchable &
+  ExceptionDomainFilters;
+
+export type ExceptionDefinitionListResponse = OffsetPage<ExceptionDefinition>;
+
+/** ✅ Query/Response ของ Assignment list (เชิงต่อยอด หากมีหน้ารายการผู้ได้รับสิทธิ์) */
+export type ExceptionAssignmentListQuery =
+  OffsetPaginationParams &
+  Searchable & {
+    definitionId?: string;        // กรองตาม definition
+    status?: "Active" | "Pending" | "Expired" | "Revoked" | "Unknown";
+    department?: string;
+  };
+
+export type ExceptionAssignmentListResponse = OffsetPage<ExceptionAssignmentRow>;

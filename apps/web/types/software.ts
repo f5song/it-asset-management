@@ -1,5 +1,5 @@
-
 // src/types/software.ts
+import type { OffsetPage, OffsetPaginationParams, Searchable } from "./common";
 import type { LicenseModel } from "./license";
 
 export type SoftwareStatus = "Active" | "Expired" | "Expiring";
@@ -10,8 +10,8 @@ export type ClientServer = "Client" | "Server";
 /** ฟิลเตอร์หน้า Software */
 export type SoftwareFilters = {
   manufacturer?: string;
-  status?: SoftwareStatus | string;
-  type?: SoftwareType | string;
+  status?: SoftwareStatus;
+  type?: SoftwareType;
   search?: string;
 };
 
@@ -21,14 +21,13 @@ export type SoftwareItem = {
   manufacturer: string;
   version: string;
   category: string;
-  expiryDate?: string | null;      // ISO date
+  expiryDate?: string | null; 
   status: SoftwareStatus;
   policyCompliance: Compliance;
   softwareType: SoftwareType;
   clientServer: ClientServer;
   licenseModel: LicenseModel;
 };
-
 
 export interface SoftwareEditValues {
   softwareName: string;
@@ -39,16 +38,21 @@ export interface SoftwareEditValues {
   policyCompliance: string;
 }
 
-
 export interface InstallationRow {
   id: string;
-
-  // License installation fields
   deviceName?: string;
   userName?: string;
   licenseStatus?: string;
   licenseKey?: string;
   scannedLicenseKey?: string;
   workStation?: string;
-
 }
+
+/** Query มาตรฐาน (รวม pagination, sorting, searching, filters) */
+export type SoftwareListQuery =
+  OffsetPaginationParams &
+  Searchable &
+  SoftwareFilters;
+
+/** Response แบบแบ่งหน้า */
+export type SoftwareListResponse = OffsetPage<SoftwareItem>;

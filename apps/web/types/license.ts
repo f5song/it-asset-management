@@ -1,34 +1,25 @@
 // src/types/license.ts
 import type { Compliance } from "./software";
-import type { ISODateString } from "./common";
+import type { ISODateString, OffsetPage, OffsetPaginationParams } from "./common";
 import type { Employees } from "./employees";
 
 /** โมเดลลิขสิทธิ์ (ระดับสินค้า/ซอฟต์แวร์) */
-export enum LicenseModel {
-  "Per-User" = "Per-User",
-  "Per-Device" = "Per-Device",
-  Perpetual = "Perpetual",
-  Subscription = "Subscription",
-}
+export type LicenseModel = "Per-User" | "Per-Device" | "Perpetual" | "Subscription";
 
-/** สถานะของ License */
-export enum LicenseStatus {
-  Active = "Active",
-  Expired = "Expired",
-}
-
+// ถ้าต้องการให้รองรับ "Expiring" ด้วย (mock คุณใช้)
+export type LicenseStatus = "Active" | "Expired" | "Expiring";
 /** หน่วยการบริโภค */
 export type ConsumptionUnit = "perUser" | "perDevice" | "concurrent";
 
 /** อายุสัญญา */
 export type LicenseTerm = "subscription" | "perpetual" | "unknown";
 
-/** ฟิลเตอร์หน้า License */
+/** ฟิลเตอร์หน้า License (ใช้มาตรฐานเดียวกับทั้งระบบ) */
 export type LicenseFilters = {
   manufacturer?: string;
   status?: LicenseStatus;
   licenseModel?: LicenseModel;
-  searchText?: string;
+  search?: string; 
 };
 
 /** รายการ License (ข้อมูลหลัก) */
@@ -38,8 +29,8 @@ export interface LicenseItem {
   manufacturer: string;
 
   // ใช้สำหรับการ Assign
-  licenseModel: LicenseModel; // "Per-User" | "Per-Device" | ...
-  perType: "per_user" | "per_device"; // แปลงจาก LicenseModel เพื่อใช้งานใน UI
+  licenseModel: LicenseModel; // "Per-User" | "Per-Device" | "Perpetual" | "Subscription"
+  perType: "per_user" | "per_device"; // เก็บไว้ให้ UI ใช้สะดวก (derive จาก LicenseModel ได้ แต่เก็บตรง ๆ ก็โอเค)
   sku?: string;
   edition?: string;
   version?: string;
@@ -117,4 +108,28 @@ export type LicenseEditValues = {
   licenseCost?: number;
   maintenanceCost?: number;
   notes?: string;
+};
+
+/** ✅ Query/Response สำหรับ License (หน้าตาเหมือน Software) */
+export type LicenseListQuery = OffsetPaginationParams & {
+  // ถ้าคุณมี Searchable แยกใน common เช่น:
+  // export type Searchable = { search?: string }
+  // ก็สามารถทำ: OffsetPaginationParams & Searchable & LicenseFilters
+  // แต่ถ้ายังไม่มี ให้รวม search ลงใน LicenseFilters (เราทำไว้แล้วข้างบน)
+} & LicenseFilters;
+
+export type LicenseListResponse = OffsetPage<LicenseItem>;
+
+export type LicenseSummary = {
+  total: number;
+  active: number;
+  inactive: number;
+  expired: number;
+  warning: number;
+  unknown: number;
+  seatsTotal: number;
+  seatsUsed: number;
+  seatsAvailable: number;
+  byModel: Record<string, number>;
+  byManufacturer: Record<string, number>;
 };

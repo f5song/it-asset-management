@@ -16,20 +16,22 @@ const toISO = (ddmmyyyy: string): string => {
 };
 
 const perTypeFromModel = (m: LicenseModel): "per_user" | "per_device" => {
-  if (m === LicenseModel["Per-User"]) return "per_user";
-  if (m === LicenseModel["Per-Device"]) return "per_device";
-  // สำหรับ Perpetual/Subscription ไม่มีบอก per-type ชัดเจน → ตั้งค่าเริ่มต้นให้ง่าย
+  if (m === "Per-User") return "per_user";
+  if (m === "Per-Device") return "per_device";
+  // สำหรับ Perpetual/Subscription ไม่มี per-type ชัดเจน → ตั้งค่าเริ่มต้นให้ง่าย
   return "per_user";
 };
-
 const consumptionUnitFromPerType = (
   pt: "per_user" | "per_device",
 ): "perUser" | "perDevice" | "concurrent" =>
   pt === "per_device" ? "perDevice" : "perUser";
 
-const termFromModel = (m: LicenseModel): "subscription" | "perpetual" | "unknown" => {
-  if (m === LicenseModel.Subscription) return "subscription";
-  if (m === LicenseModel.Perpetual) return "perpetual";
+
+export const termFromModel = (
+  m: LicenseModel
+): "subscription" | "perpetual" | "unknown" => {
+  if (m === "Subscription") return "subscription";
+  if (m === "Perpetual") return "perpetual";
   return "unknown";
 };
 
@@ -110,121 +112,121 @@ export const MOCK_LICENSES: LicenseItem[] = [
     id: "LIC-1",
     softwareName: "Microsoft Office 365",
     manufacturer: "Microsoft",
-    licenseModel: LicenseModel.Subscription,
+    licenseModel: "Subscription",
     total: 120,
     inUse: 97,
     expiry: "11-11-2025",
-    status: LicenseStatus.Active,
+    status: "Active",
     compliance: "Compliant",
   }),
   mk({
     id: "LIC-2",
     softwareName: "Adobe Photoshop",
     manufacturer: "Adobe",
-    licenseModel: LicenseModel["Per-User"],
+    licenseModel: "Per-User",
     total: 80,
     inUse: 80,
     expiry: "10-10-2025",
-    status: LicenseStatus.Expired,
+    status: "Expired",
     compliance: "Compliant",
   }),
   mk({
     id: "LIC-3",
     softwareName: "LINE Works",
     manufacturer: "LINE Corp",
-    licenseModel: LicenseModel.Subscription,
+    licenseModel: "Subscription",
     total: 200,
     inUse: 178,
     expiry: "02-09-2025",
-    status: LicenseStatus.Active,
+    status: "Active",
     compliance: "Compliant",
   }),
   mk({
     id: "LIC-4",
     softwareName: "AutoCAD",
     manufacturer: "Autodesk",
-    licenseModel: LicenseModel["Per-Device"],
+    licenseModel: "Per-Device",
     total: 50,
     inUse: 46,
     expiry: "05-02-2025",
-    status: LicenseStatus.Active,
+    status: "Active",
     compliance: "Compliant",
   }),
   mk({
     id: "LIC-5",
     softwareName: "Windows Server CAL",
     manufacturer: "Microsoft",
-    licenseModel: LicenseModel["Per-User"],
+    licenseModel: "Per-User",
     total: 300,
     inUse: 287,
     expiry: "15-12-2025",
-    status: LicenseStatus.Active,
+    status: "Active",
     compliance: "Compliant",
   }),
   mk({
     id: "LIC-6",
     softwareName: "Adobe Acrobat DC",
     manufacturer: "Adobe",
-    licenseModel: LicenseModel.Subscription,
+    licenseModel: "Subscription",
     total: 150,
     inUse: 149,
     expiry: "10-10-2024",
-    status: LicenseStatus.Expired,
+    status: "Expired",
     compliance: "Non-Compliant",
   }),
   mk({
     id: "LIC-7",
     softwareName: "3ds Max",
     manufacturer: "Autodesk",
-    licenseModel: LicenseModel["Per-Device"],
+    licenseModel: "Per-Device",
     total: 60,
     inUse: 52,
     expiry: "01-12-2024",
-    status: LicenseStatus.Active,
+    status: "Active",
     compliance: "Non-Compliant",
   }),
   mk({
     id: "LIC-8",
     softwareName: "Visio",
     manufacturer: "Microsoft",
-    licenseModel: LicenseModel.Perpetual,
+    licenseModel: "Perpetual",
     total: 40,
     inUse: 12,
     expiry: "30-06-2026",
-    status: LicenseStatus.Active,
+    status: "Active",
     compliance: "Non-Compliant",
   }),
   mk({
     id: "LIC-9",
     softwareName: "Figma",
     manufacturer: "Figma Inc.",
-    licenseModel: LicenseModel.Subscription,
+    licenseModel: "Subscription",
     total: 100,
     inUse: 84,
     expiry: "15-03-2025",
-    status: LicenseStatus.Active,
+    status: "Active",
     compliance: "Non-Compliant",
   }),
   mk({
     id: "LIC-10",
     softwareName: "Slack",
     manufacturer: "Slack",
-    licenseModel: LicenseModel.Subscription,
+    licenseModel: "Subscription",
     total: 250,
     inUse: 230,
     expiry: "11-11-2025",
-    status: LicenseStatus.Active,
+    status: "Active",
     compliance: "Non-Compliant",
   }),
   mk({
     id: "LIC-11",
     softwareName: "VS Code",
     manufacturer: "Microsoft",
-    licenseModel: LicenseModel["Per-User"],
+    licenseModel: "Per-User",
     total: 500,
     inUse: 480,
     expiry: "01-01-2025",
-    status: LicenseStatus.Active,
+    status: "Active",
     // เดิม mock มี 'Active' (ไม่ใช่ Compliance) → ใช้ 'Compliant'
     compliance: "Compliant",
   }),
@@ -232,11 +234,11 @@ export const MOCK_LICENSES: LicenseItem[] = [
     id: "LIC-12",
     softwareName: "Adobe Illustrator",
     manufacturer: "Adobe",
-    licenseModel: LicenseModel["Per-User"],
+    licenseModel: "Per-User",
     total: 120,
     inUse: 115,
     expiry: "20-08-2025",
-    status: LicenseStatus.Active,
+    status: "Active",
     compliance: "Compliant",
   }),
 ];

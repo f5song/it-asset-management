@@ -1,7 +1,7 @@
 
 // src/components/ui/PageHeader.tsx
+import { BreadcrumbItem } from "@/types";
 import React from "react";
-import type { BreadcrumbItem } from "../../types/forms";
 
 export const PageHeader: React.FC<{
   title: string;

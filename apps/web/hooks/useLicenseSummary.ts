@@ -8,7 +8,7 @@ import type { LicenseFilters } from "types";
 export type LicenseSummary = Awaited<ReturnType<typeof getLicenseSummary>>;
 
 export function useLicenseSummary(
-  filters?: Pick<LicenseFilters, "status" | "licenseModel" | "manufacturer" | "searchText">
+  filters?: Pick<LicenseFilters, "status" | "licenseModel" | "manufacturer" | "search">
 ) {
   const [summary, setSummary] = React.useState<LicenseSummary | null>(null);
   const [isLoading, setLoading] = React.useState(false);
@@ -27,16 +27,17 @@ export function useLicenseSummary(
         setLoading(true);
         setError(false);
         setErrorMessage(undefined);
+
         const res = await getLicenseSummary(
           {
             status: filters?.status,
             licenseModel: filters?.licenseModel,
             manufacturer: filters?.manufacturer,
-            // service ใช้ key "search"
-            search: filters?.searchText,
+            search: filters?.search, // ✅ ใช้ key "search" ตามมาตรฐานใหม่
           },
           ac.signal
         );
+
         if (!alive) return;
         setSummary(res);
       } catch (e: any) {

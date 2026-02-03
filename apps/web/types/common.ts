@@ -48,5 +48,11 @@ export type FilterValues<TStatus extends string = string, TType extends string =
   status?: TStatus;
   type?: TType;
   manufacturer?: string;
-  searchText?: string;
+  search?: string;
+};
+
+
+export type Searchable = {
+  /** คำค้นหาทั่วไป (เช่น ค้นหา name/manufacturer) */
+  search?: string;
 };
