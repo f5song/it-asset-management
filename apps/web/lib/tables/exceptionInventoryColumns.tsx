@@ -21,13 +21,6 @@ export const exceptionInventoryColumns: AppColumnDef<ExceptionDefinition>[] = [
     cell: (value) => show(value as string),
   },
   {
-    id: "category",
-    header: "Category",
-    accessorKey: "category",
-    getSortValue: (row) => row.category,
-    cell: (value) => show(value as string),
-  },
-  {
     id: "status",
     header: "Status",
     accessorKey: "status",
@@ -42,36 +35,10 @@ export const exceptionInventoryColumns: AppColumnDef<ExceptionDefinition>[] = [
     cell: (value) => show(value as string),
   },
   {
-    id: "owner",
-    header: "Owner",
-    accessorKey: "owner",
-    getSortValue: (row) => row.owner ?? "",
-    cell: (value) => show(value as string),
-  },
-  {
-    id: "assignments",
-    header: "Assignments",
-    accessorKey: "totalAssignments",
-    getSortValue: (row) => row.totalAssignments ?? 0,
-    cell: (_value, row) => {
-      const active = row.activeAssignments ?? 0;
-      const total = row.totalAssignments ?? 0;
-      return `${active}/${total}`;
-    },
-    align: "right",
-  },
-  {
     id: "createdAt",
     header: "Created At",
     accessorKey: "createdAt",
     getSortValue: (row) => row.createdAt ?? "",
-    cell: (value) => formatDate(value as string | null | undefined),
-  },
-  {
-    id: "reviewAt",
-    header: "Review At",
-    accessorKey: "reviewAt",
-    getSortValue: (row) => row.reviewAt ?? "",
     cell: (value) => formatDate(value as string | null | undefined),
   },
   {

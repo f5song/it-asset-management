@@ -5,11 +5,6 @@ import type { OffsetPage, OffsetPaginationParams, Searchable } from "./common";
 /** สถานะของ "นโยบายข้อยกเว้น" (Policy-level) */
 export type PolicyStatus = "Active" | "Inactive" | "Deprecated" | "Archived";
 
-export type ExceptionCategory =
-  | "AI"
-  | "USBDrive"
-  | "MessagingApp"
-  | "ADPasswordPolicy";
 
 export type RiskLevel = "Low" | "Medium" | "High";
 
@@ -19,19 +14,14 @@ export type RiskLevel = "Low" | "Medium" | "High";
 export interface ExceptionDefinition {
   id: string;                    // EXC-001
   name: string;                  // เช่น "Allow LINE on PC" / "Allow USB storage"
-  category: ExceptionCategory;   // AI | USBDrive | MessagingApp | ADPasswordPolicy
   status: PolicyStatus;          // Active | Inactive | Deprecated | Archived
   risk?: RiskLevel;
-  owner?: string;
-
   // เวลา/รอบทบทวนของนโยบาย
   createdAt: string;             // ISO
   lastUpdated?: string | null;   // ISO
-  reviewAt?: string | null;      // ISO
   notes?: string;
 
   // สถิติการมอบหมาย (สำหรับ UI)
-  activeAssignments?: number;    // จำนวนที่ Active
   totalAssignments?: number;     // รวมทั้งหมด
 }
 
@@ -47,7 +37,7 @@ export type ExceptionAssignmentRow = {
   assignedBy?: string | null;
   assignedAt?: string | null;      // ISO
   expiresAt?: string | null;       // ISO
-  status?: "Active" | "Pending" | "Expired" | "Revoked" | "Unknown";
+  status?: "Active" | "Pending"  | "Revoked" 
   notes?: string | null;
 };
 
@@ -55,23 +45,19 @@ export type ExceptionAssignmentRow = {
 export type ExceptionDomainFilters = {
   search?: string;
   status?: PolicyStatus;
-  category?: ExceptionCategory;
   owner?: string;
 };
 
 /** ฟิลเตอร์แบบ UI (ใช้ใน FilterBar) — ใช้ชื่อสม่ำเสมอ */
 export type ExceptionFilterValues = {
   status?: PolicyStatus;         // map -> status
-  type?: ExceptionCategory;      // map -> category
   search?: string;               // keyword
 };
 
 /** สำหรับแบบฟอร์ม Edit ของ Definition (ไม่ใช่คำขอ) */
 export type ExceptionEditValues = {
   name: string;
-  category: ExceptionCategory;
   status: PolicyStatus;
-  owner: string;
   risk: RiskLevel;
   createdAt: string;              // datetime-local หรือ ISO
   lastUpdated?: string | null;    // datetime-local หรือ ISO
@@ -92,7 +78,7 @@ export type ExceptionAssignmentListQuery =
   OffsetPaginationParams &
   Searchable & {
     definitionId?: string;        // กรองตาม definition
-    status?: "Active" | "Pending" | "Expired" | "Revoked" | "Unknown";
+    status?: "Active" | "Pending" | "Expired";
     department?: string;
   };
 

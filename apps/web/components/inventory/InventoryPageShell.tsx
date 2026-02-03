@@ -5,7 +5,7 @@ import React from "react";
 import { DataTable } from "components/table";
 import { FilterBar } from "components/ui/FilterBar";
 import { PageHeader } from "components/ui/PageHeader";
-import { Card } from "components/ui/Card"; // ✅ ใช้ Card เดียวกับโปรเจ็กต์ของพี่
+import { Card } from "components/ui/Card";
 
 import type { AppColumnDef } from "types/ui-table";
 import type { ExportFormat, FilterValues, ToolbarAction } from "types";
@@ -22,35 +22,34 @@ export type SummaryCardItem = {
 };
 
 /**
- * ✅ ใช้ FilterValues<TStatus, TType> สำหรับ FilterBar
- * - TStatus/TType เป็น union string ที่สอดคล้องกับโดเมนของแต่ละเพจ
- * - manufacturer และ searchText อยู่ใน FilterValues เดิม
+ * Base props ที่ทุกโดเมนใช้ร่วมกัน
  */
-type ShellProps<
+type BaseShellProps<
   TRow extends RowBase,
   TStatus extends string,
-  TType extends string,
+  TType extends string
 > = {
   title: string;
   breadcrumbs: { label: string; href: string }[];
 
-  // ===== ✅ NEW: Summary cards =====
-  /** ส่ง array การ์ดแบบเบา ๆ เพื่อให้ Shell แสดงเป็น grid ใต้ PageHeader */
+  // ===== Summary cards =====
   summaryCards?: SummaryCardItem[];
-  /** ส่ง JSX เองเพื่อควบคุมการแสดงผล summary (ถ้าส่งมา จะถูกใช้แทน summaryCards) */
   summaryRender?: React.ReactNode;
 
-  // FilterBar props (ใช้ FilterValues แทน SimpleFilters)
+  // FilterBar props
+  /** ใช้ FilterValues<TStatus, TType> ให้สอดคล้องกับโดเมน */
   filters: FilterValues<TStatus, TType>;
   onFiltersChange: (next: FilterValues<TStatus, TType>) => void;
-  statusOptions?: readonly string[];
-  typeOptions?: readonly string[];
-  manufacturerOptions?: readonly string[];
+
+  /** สถานะ (ทำเป็น generic TStatus) */
+  statusOptions?: readonly TStatus[];
   allStatusLabel?: string;
-  allTypeLabel?: string;
+
+  /** ผู้ผลิต (ถ้าโดเมนมี) */
+  manufacturerOptions?: readonly string[];
   allManufacturerLabel?: string;
 
-  // ✅ ช่องพิเศษทางขวาของ FilterBar (เช่นปุ่ม Bulk, ปุ่ม Assign)
+  /** ช่องพิเศษทางขวาของ FilterBar (เช่นปุ่ม Bulk/Assign) */
   filterBarRightExtra?: React.ReactNode;
 
   // DataTable
@@ -59,7 +58,7 @@ type ShellProps<
   totalRows: number;
   pagination: { pageIndex: number; pageSize: number };
   onPaginationChange: (p: { pageIndex: number; pageSize: number }) => void;
-  sorting: { id: string; desc: boolean }[]; // ใช้ any/struct ของคุณได้
+  sorting: { id: string; desc: boolean }[];
   onSortingChange: (s: { id: string; desc: boolean }[]) => void;
   rowHref?: (row: TRow) => string;
 
@@ -79,7 +78,7 @@ type ShellProps<
   selectable?: boolean;
 
   /** ids ที่ถูกเลือก (controlled) */
-  selectedIds?: string[]; // <- ปรับให้เป็น string[] ชัดเจน
+  selectedIds?: string[];
   onSelectedIdsChange?: (ids: string[]) => void;
 
   /** ถ้า id ไม่ได้อยู่ใน field 'id' ให้ส่งฟังก์ชันอ่านค่า id ของแถว */
@@ -89,29 +88,65 @@ type ShellProps<
   selectionScope?: "page" | "all";
 };
 
-export function InventoryPageShell<
+/**
+ * โหมดที่ "มี" type/category filter
+ * - ต้องส่ง hasType = true และส่ง typeOptions/allTypeLabel ได้
+ */
+type WithTypeFilter<TType extends string> = {
+  hasType: true;
+  typeOptions: readonly TType[];
+  allTypeLabel?: string;
+};
+
+/**
+ * โหมดที่ "ไม่มี" type/category filter
+ * - ห้ามส่ง typeOptions/allTypeLabel
+ */
+type WithoutTypeFilter = {
+  hasType?: false;
+  typeOptions?: never;
+  allTypeLabel?: never;
+};
+
+/**
+ * Props หลัก = Base + (WithTypeFilter | WithoutTypeFilter)
+ */
+type ShellProps<
   TRow extends RowBase,
   TStatus extends string,
-  TType extends string,
+  TType extends string
+> = BaseShellProps<TRow, TStatus, TType> &
+  (WithTypeFilter<TType> | WithoutTypeFilter);
+
+/**
+ * InventoryPageShell
+ * - ใส่ default generics: ถ้าเพจไม่มี status/type ให้ใช้ never แล้วไม่ต้องส่ง options
+ */
+export function InventoryPageShell<
+  TRow extends RowBase,
+  TStatus extends string = never,
+  TType extends string = never
 >(props: ShellProps<TRow, TStatus, TType>) {
   const {
     title,
     breadcrumbs,
 
-    // NEW: Summary
+    // Summary
     summaryCards,
     summaryRender,
 
+    // FilterBar
     filters,
     onFiltersChange,
     statusOptions,
-    typeOptions,
-    manufacturerOptions,
     allStatusLabel,
-    allTypeLabel,
+
+    // manufacturer
+    manufacturerOptions,
     allManufacturerLabel,
     filterBarRightExtra,
 
+    // DataTable
     columns,
     rows,
     totalRows,
@@ -121,16 +156,18 @@ export function InventoryPageShell<
     onSortingChange,
     rowHref,
 
+    // States
     emptyMessage = "ไม่พบรายการ",
     isLoading = false,
     isError = false,
     errorMessage,
     maxBodyHeight = 420,
 
+    // Toolbar
     onExport,
     onAction,
 
-    // NEW: selection
+    // Selection
     selectable = false,
     selectedIds,
     onSelectedIdsChange,
@@ -138,13 +175,13 @@ export function InventoryPageShell<
     selectionScope = "page",
   } = props;
 
-  // ✅ สะพาน array <-> Set สำหรับ DataTable
+  // ✅ แปลง array <-> Set สำหรับ DataTable
   const selectedIdSet = React.useMemo(
     () =>
       selectedIds && Array.isArray(selectedIds)
         ? new Set<string | number>(selectedIds)
         : undefined,
-    [selectedIds],
+    [selectedIds]
   );
 
   const handleSelectionChange = React.useCallback(
@@ -152,12 +189,12 @@ export function InventoryPageShell<
       const asStrings = Array.from(next).map(String);
       onSelectedIdsChange?.(asStrings);
     },
-    [onSelectedIdsChange],
+    [onSelectedIdsChange]
   );
 
   // ✅ สร้าง UI ของ summary (ถ้ามี)
   const summaryArea = React.useMemo(() => {
-    if (summaryRender) return summaryRender; // ใช้ JSX จากภายนอก
+    if (summaryRender) return summaryRender;
     if (!summaryCards || summaryCards.length === 0) return null;
 
     return (
@@ -177,24 +214,29 @@ export function InventoryPageShell<
     );
   }, [summaryCards, summaryRender]);
 
+  // ✅ แยก hasType ออกมาเพื่อช่วย render แบบ type-safe
+  const hasType = "hasType" in props && props.hasType === true;
+
   return (
     <div style={{ padding: 6 }}>
       <PageHeader title={title} breadcrumbs={breadcrumbs} />
 
-      {/* ✅ Summary Cards (วางใต้ PageHeader) */}
+      {/* Summary Cards */}
       {summaryArea}
 
       <FilterBar
         filters={filters}
         onFiltersChange={onFiltersChange}
-        statusOptions={statusOptions}
-        typeOptions={typeOptions}
+        statusOptions={statusOptions as readonly string[] | undefined}
+        typeOptions={
+          hasType ? (props.typeOptions as readonly string[]) : undefined
+        }
         manufacturerOptions={manufacturerOptions}
         onExport={onExport}
         onAction={onAction}
         labels={{
           allStatus: allStatusLabel,
-          allType: allTypeLabel,
+          allType: hasType ? props.allTypeLabel : undefined,
           allManufacturer: allManufacturerLabel,
         }}
         rightExtra={filterBarRightExtra}
@@ -215,7 +257,7 @@ export function InventoryPageShell<
         errorMessage={errorMessage}
         maxBodyHeight={maxBodyHeight}
         rowHref={rowHref}
-        // ✅ Selection (ส่งต่อแบบ optional)
+        // Selection (optional)
         selectable={selectable}
         selectedIds={selectedIdSet}
         onSelectionChange={handleSelectionChange}

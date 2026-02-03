@@ -104,11 +104,9 @@ export default function ExceptionsDetail({
     () => [
       { label: "Exception ID", value: show(item.id) },
       { label: "Name", value: show(item.name) },
-      { label: "Category", value: show(item.category) },
       { label: "Risk", value: show(item.risk) },
-      { label: "Owner", value: show(item.owner) },
     ],
-    [item.id, item.name, item.category, item.risk, item.owner],
+    [item.id, item.name, item.risk],
   );
 
   const infoRight = React.useMemo(
@@ -116,9 +114,8 @@ export default function ExceptionsDetail({
       { label: "Status", value: show(item.status) },
       { label: "Created At", value: formatDateSafe(item.createdAt) },
       { label: "Last Updated", value: formatDateSafe(item.lastUpdated) },
-      { label: "Review At", value: formatDateSafe(item.reviewAt) },
     ],
-    [item.status, item.createdAt, item.lastUpdated, item.reviewAt],
+    [item.status, item.createdAt, item.lastUpdated],
   );
 
   const editConfig = React.useMemo<EditConfig<ExceptionEditValues>>(
@@ -127,13 +124,10 @@ export default function ExceptionsDetail({
       fields: exceptionEditFields,
       initialValues: {
         name: item.name ?? "",
-        category: item.category,
         status: item.status,
-        owner: item.owner ?? "",
         risk: item.risk ?? "Low",
         createdAt: toLocalInput(item.createdAt),
         lastUpdated: toLocalInput(item.lastUpdated ?? ""),
-        reviewAt: toLocalInput(item.reviewAt ?? ""),
         notes: item.notes ?? "",
       },
       onSubmit: async (values) => {
@@ -151,13 +145,13 @@ export default function ExceptionsDetail({
     }),
     [
       item.name,
-      item.category,
+
       item.status,
-      item.owner,
+
       item.risk,
       item.createdAt,
       item.lastUpdated,
-      item.reviewAt,
+
       item.notes,
     ],
   );
