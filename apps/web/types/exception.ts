@@ -83,3 +83,20 @@ export type ExceptionAssignmentListQuery =
   };
 
 export type ExceptionAssignmentListResponse = OffsetPage<ExceptionAssignmentRow>;
+
+/** Payload สำหรับ Assign Exception Definitions ให้กลุ่มพนักงาน */
+export type AssignExceptionsToEmployeesPayload = {
+  employeeIds: string[];
+  definitionIds: string[];     // อ้างอิง ExceptionDefinition.id
+  effectiveDate?: string;      // YYYY-MM-DD
+  expiresAt?: string | null;   // ถ้าอยากกำหนดวันหมดอายุ
+  notes?: string;
+};
+
+/** ผลลัพธ์หลัง Assign */
+export type AssignExceptionsToEmployeesResult = {
+  ok: boolean;
+  assignedCount: number;       // จำนวนพนักงานที่ได้รับมอบหมาย
+  definitionIds: string[];
+};
+``

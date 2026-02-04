@@ -1,5 +1,5 @@
 import type { FilterValues } from "types";
-import type { EmployeesFilters, EmployeeStatus } from "types/employees";
+import type { EmployeeDomainFilters, EmployeesFilterValues, EmployeesListQuery, EmployeeStatus } from "types/employees";
 import { toUndef, normalizeByMap } from "lib/filters";
 
 // เผื่อรองรับพิมพ์เล็กจาก input ภายนอก/บริการอื่น
@@ -17,36 +17,39 @@ const normStatus = normalizeByMap({
 const normalizeDepartment = (d?: string): string => (d ? d.trim() : "");
 
 // Domain -> Simple
+
 export function toSimpleFilters(
-  df: EmployeesFilters
-): FilterValues<EmployeeStatus, string> {
+  df: EmployeeDomainFilters,
+): EmployeesFilterValues {
   return {
-    status: toUndef(df.status as EmployeeStatus | ""),
-    type: toUndef(df.department as string | ""),
-    manufacturer: undefined, // ไม่ใช้ในหน้านี้
-    search: df.search ?? "",
+    department: df.department ?? undefined,
+    status: df.status ?? undefined,
+    search: df.search ?? undefined,
   };
 }
+
 
 // Simple -> Domain
+
 export function toDomainFilters(
-  sf?: FilterValues<EmployeeStatus, string>
-): EmployeesFilters {
-  if (!sf) return {};
+  sf?: Partial<EmployeesFilterValues>,
+): EmployeeDomainFilters {
   return {
-    status: toUndef(sf.status as EmployeeStatus),
-    department: toUndef(sf.type as string),
-    search: sf.search ?? "",
+    department: sf?.department ?? undefined,
+    status: sf?.status ?? undefined,
+    search: sf?.search ?? undefined,
   };
 }
 
+
 // Simple -> Service
+
 export function toServiceFilters(
-  sf: FilterValues<EmployeeStatus, string>
-) {
+  sf: EmployeesFilterValues,
+): Partial<EmployeesListQuery> {
   return {
-    status: normStatus(sf.status as string | undefined),
-    department: normalizeDepartment(sf.type as string | undefined),
-    search: sf.search ?? "",
+    department: sf.department ?? undefined,
+    status: sf.status ?? undefined,
+    search: sf.search ?? undefined,
   };
 }

@@ -54,7 +54,6 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
     selectedIds,
     onSelectionChange,
     getRowId,
-    selectionScope = 'page',
   } = props;
 
   const router = useRouter();

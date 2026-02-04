@@ -1,7 +1,7 @@
 // src/types/license.ts
 import type { Compliance } from "./software";
 import type { ISODateString, OffsetPage, OffsetPaginationParams } from "./common";
-import type { Employees } from "./employees";
+
 
 /** โมเดลลิขสิทธิ์ (ระดับสินค้า/ซอฟต์แวร์) */
 export type LicenseModel = "Per-User" | "Per-Device" | "Perpetual" | "Subscription";
@@ -86,14 +86,6 @@ export type AssignRow = {
   decision?: PolicyDecision;
   exception?: boolean;
   reason?: string;
-};
-
-export type LicenseAssignFormValues = {
-  licenseId: string;
-  employees: Employees[];
-  mapping: AssignRow[];
-  seatMode: "partial" | "all-or-nothing";
-  installedOn: ISODateString; // YYYY-MM-DD
 };
 
 export type LicenseEditValues = {

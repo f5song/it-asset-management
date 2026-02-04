@@ -3,7 +3,6 @@ import type {
   ExceptionDomainFilters,
   ExceptionFilterValues,
   PolicyStatus,
-  ExceptionCategory,
 } from "types/exception";
 
 /**
@@ -18,7 +17,6 @@ export function toDomainFilters(
   const s = simple ?? {};
   return {
     status: s.status as PolicyStatus | undefined,
-    category: s.type as ExceptionCategory | undefined,
     search: s.search ?? s.q ?? "",
   };
 }
@@ -32,7 +30,6 @@ export function toSimpleFilters(
   const q = domain.search && domain.search.trim() ? domain.search.trim() : undefined;
   return {
     status: domain.status as PolicyStatus | undefined,
-    type: domain.category as ExceptionCategory | undefined,
     q,
     search: q,
   };
@@ -45,7 +42,6 @@ export function toSimpleFilters(
 export function toServiceFilters(simple: ExceptionFilterValues & { q?: string; search?: string }) {
   const out: Record<string, string> = {};
   if (simple.status) out.status = String(simple.status);
-  if (simple.type) out.category = String(simple.type);
   const k = simple.search ?? simple.q;
   if (k) out.search = k;
   return out;

@@ -3,40 +3,47 @@ import * as React from "react";
 
 import { InventoryPageShell } from "components/inventory/InventoryPageShell";
 import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
-
 import { useServerTableController } from "hooks/useServerTableController";
-import { useEmployeesInventory } from "hooks/useEmployeeInventory"; // ให้ export เป็น useEmployeesInventory
-
+import { useEmployeesInventory } from "hooks/useEmployeeInventory";
 import type { ExportFormat } from "types";
-import { Employees, EmployeesFilters, EmployeeStatus } from "types/employees";
+
+import type {
+  EmployeeItem,
+  EmployeeStatus,
+  EmployeeDomainFilters,
+  EmployeesFilterValues,
+} from "types/employees";
 
 import { employeeColumns } from "@/lib/tables/employeeInventoryColumns";
 import {
-  toDomainFilters,
-  toServiceFilters,
-  toSimpleFilters,
+  toDomainFilters, // (sf?: Partial<EmployeesFilterValues>) => EmployeeDomainFilters
+  toServiceFilters, // (sf: EmployeesFilterValues) => Partial<EmployeesListQuery>
+  toSimpleFilters, // (df: EmployeeDomainFilters) => EmployeesFilterValues
 } from "lib/mappers/employeeFilterMappers";
 
 export default function EmployeesPage() {
   // ---- Domain filters (undefined = ไม่กรอง) ----
-  const [domainFilters, setDomainFilters] = React.useState<EmployeesFilters>(
-    toDomainFilters(), // empty filters
-  );
+  const [domainFilters, setDomainFilters] =
+    React.useState<EmployeeDomainFilters>(toDomainFilters()); // empty filters
 
   // ---- Controller (pagination/sorting + simpleFilters) ----
   const ctl = useServerTableController<
-    Employees,
-    EmployeeStatus, // TStatus
-    string,         // TType (department)
-    EmployeesFilters
+    EmployeeItem, // TRow
+    EmployeeDomainFilters, // DF
+    EmployeesFilterValues // SF (UI)
   >({
     pageSize: 8,
     defaultSort: { id: "id", desc: false },
     domainFilters,
     setDomainFilters,
-    toSimple: () => toSimpleFilters(domainFilters),
+    toSimple: (df) => toSimpleFilters(df),
     fromSimple: (sf) => toDomainFilters(sf),
-    resetDeps: [domainFilters.department, domainFilters.status],
+    // รีเซ็ตหน้าเมื่อฟิลเตอร์สำคัญเปลี่ยน
+    resetDeps: [
+      domainFilters.department,
+      domainFilters.status,
+      domainFilters.search,
+    ],
   });
 
   // ---- Simple -> Service params ----
@@ -46,15 +53,16 @@ export default function EmployeesPage() {
   );
 
   // ---- Fetch rows ----
+  // ผูก query จาก controller + domain filters ให้ hook ไป compose เป็น EmployeesListQuery
   const { rows, totalRows, isLoading, isError, errorMessage } =
     useEmployeesInventory(ctl.serverQuery, domainFilters);
 
   // ---- Options ----
   const statusOptions: readonly EmployeeStatus[] = [
-    EmployeeStatus.Active,
-    EmployeeStatus.Inactive,
-    EmployeeStatus.Contractor,
-    EmployeeStatus.Intern,
+    "Active",
+    "Inactive",
+    "OnLeave",
+    "Resigned",
   ];
 
   const departmentOptions: readonly string[] = [
@@ -70,9 +78,9 @@ export default function EmployeesPage() {
   const manufacturerOptions: readonly string[] = [];
 
   // ---- Selection (ใช้กับ Toolbar) ----
-  const [selectedEmployeeIds, setSelectedEmployeeIds] = React.useState<string[]>(
-    [],
-  );
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = React.useState<
+    string[]
+  >([]);
 
   const handleExport = React.useCallback(
     (fmt: ExportFormat) => {
@@ -97,22 +105,24 @@ export default function EmployeesPage() {
   );
 
   return (
-    <InventoryPageShell<Employees, EmployeeStatus, string>
+    <InventoryPageShell<EmployeeItem, EmployeeStatus, string>
       title="Employees"
       breadcrumbs={[{ label: "Employees", href: "/employees" }]}
-      // FilterBar
-      filters={ctl.simpleFilters}
+      // ===== FilterBar =====
+      filters={ctl.simpleFilters} // EmployeesFilterValues (shape: {status?, department?, search?})
       onFiltersChange={ctl.onSimpleFiltersChange}
-      statusOptions={statusOptions}
-      typeOptions={departmentOptions}
-      manufacturerOptions={manufacturerOptions}
+      statusOptions={statusOptions} // EmployeeStatus[]
+      // ✅ บอกว่าเพจนี้มี type/category filter (department)
+      hasType={true}
+      typeOptions={departmentOptions} // department (string[])
+      manufacturerOptions={manufacturerOptions} // ไม่ใช้ในหน้านี้
       allStatusLabel="All Status"
       allTypeLabel="All Departments"
       allManufacturerLabel="—"
       onExport={handleExport}
       filterBarRightExtra={rightExtra}
-      // DataTable
-      columns={employeeColumns}
+      // ===== DataTable =====
+      columns={employeeColumns} // columns map กับ EmployeeItem
       rows={rows}
       totalRows={totalRows}
       pagination={ctl.pagination}
@@ -120,11 +130,12 @@ export default function EmployeesPage() {
       sorting={ctl.sorting}
       onSortingChange={ctl.setSorting}
       rowHref={(row) => `/employees/${row.id}`}
-      // States
+      // ===== States =====
       isLoading={isLoading}
       isError={isError}
       errorMessage={errorMessage}
-      // ✅ Selection (เหมือน devices)
+      // ===== Selection =====
+      // ถ้าต้องการให้มี checkbox selection ในตาราง
       selectedIds={selectedEmployeeIds}
       onSelectedIdsChange={setSelectedEmployeeIds}
     />

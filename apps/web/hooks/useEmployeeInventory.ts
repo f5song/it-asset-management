@@ -1,16 +1,32 @@
-'use client';
+"use client";
 
 import * as React from "react";
-import { getEmployees } from "services/employees.service.mock";
-import type { Employees, EmployeesFilters } from "types/employees";
+import { listEmployees } from "services/employees.service.mock";
+import type {
+  EmployeeItem,
+  EmployeeDomainFilters,
+  EmployeesListQuery,
+  EmployeesListResponse,
+} from "types/employees";
 import type { ServerQuery } from "types/server-query";
 import { toUndefTrim } from "@/lib/filters";
 
+type UseEmployeesInventoryResult = {
+  rows: EmployeeItem[];
+  totalRows: number;
+  isLoading: boolean;
+  isError: boolean;
+  errorMessage?: string;
+};
+
+/**
+ * Hook: ดึงรายการพนักงานตาม server-side pagination/sorting + domain filters
+ */
 export function useEmployeesInventory(
   serverQuery: ServerQuery,
-  filters: EmployeesFilters = {}
-) {
-  const [rows, setRows] = React.useState<Employees[]>([]);
+  filters: EmployeeDomainFilters = {},
+): UseEmployeesInventoryResult {
+  const [rows, setRows] = React.useState<EmployeeItem[]>([]);
   const [totalRows, setTotalRows] = React.useState(0);
   const [isLoading, setLoading] = React.useState(false);
   const [isError, setError] = React.useState(false);
@@ -19,26 +35,34 @@ export function useEmployeesInventory(
   /**
    * ประกอบ query สำหรับ service (object เสถียร)
    * - pageIndex (0-based) -> page (1-based)
-   * - แปลง filters undefined/"" ให้เป็นค่าที่ service รองรับ
-   *   เช่น statusFilter, departmentFilter, search
+   * - pageSize -> pageSize
+   * - แนบ search/status/department
+   * - ส่ง sortBy/sortOrder ถ้ามี
    */
   const serviceQuery = React.useMemo(() => {
     const { pageIndex = 0, pageSize = 10, sortBy, sortOrder } = serverQuery;
 
-    // normalize filters: ถ้า UI ส่งค่าว่างมา ให้แปลงเป็น undefined ก่อน แล้ว map เป็น "" เฉพาะ key ที่ service ต้องการ
-    const status = toUndefTrim(filters.status);
-    const department = toUndefTrim(filters.department);
-    const search = filters.search ?? "";
+    // ✅ status: ใช้ค่าจากฟิลเตอร์ตรง ๆ (คง union type)
+    const status = filters.status; // EmployeeStatus | undefined
 
-    return {
-      page: pageIndex + 1,               // service ของคุณใช้ 1-based
-      limit: pageSize,                   // ถ้า service ใช้ pageSize ให้แก้เป็น pageSize
-      sortBy,
-      sortOrder,
-      search: search,
-      statusFilter: status ?? "",        // ตาม signature ปัจจุบันของ getEmployees
-      departmentFilter: department ?? "",
+    // ✅ department/search ค่อย trim
+    const department = toUndefTrim(filters.department);
+    const search = toUndefTrim(filters.search) ?? "";
+
+    const q: EmployeesListQuery & {
+      sortBy?: string;
+      sortOrder?: "asc" | "desc";
+    } = {
+      page: pageIndex + 1,
+      pageSize,
+      search,
+      status, // ✅ OK: EmployeeStatus | undefined
+      department: department ?? undefined,
+      ...(sortBy ? { sortBy: String(sortBy) } : {}),
+      ...(sortOrder ? { sortOrder } : {}),
     };
+
+    return q;
   }, [
     serverQuery.pageIndex,
     serverQuery.pageSize,
@@ -59,27 +83,22 @@ export function useEmployeesInventory(
         setError(false);
         setErrorMessage(undefined);
 
-        const res = await getEmployees(serviceQuery, ac.signal);
+        const res: EmployeesListResponse = await listEmployees(
+          serviceQuery as any,
+          ac.signal,
+        );
 
         if (!alive) return;
 
-        // รองรับได้หลายโครง response (กันไว้):
-        // - { data, pagination: { total } }
-        // - { items, total }
-        // - { items, totalCount }
-        const items =
-          (res as any).data ??
-          (res as any).items ??
-          [];
-
+        const items = (res as any).items ?? [];
         const total =
-          (res as any).pagination?.total ??
           (res as any).totalCount ??
+          (res as any).pagination?.total ??
           (res as any).total ??
           0;
 
-        setRows(Array.isArray(items) ? items : []);
-        setTotalRows(Number.isFinite(total) ? total : 0);
+        setRows(Array.isArray(items) ? (items as EmployeeItem[]) : []);
+        setTotalRows(Number.isFinite(total) ? Number(total) : 0);
       } catch (e: any) {
         if (e?.name === "AbortError") return;
         if (!alive) return;

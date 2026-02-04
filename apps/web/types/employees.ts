@@ -1,55 +1,57 @@
 // src/types/employees.ts
 
-import type { FilterValues, OffsetPage, OffsetPaginationParams, Searchable } from "./common";
+import type { OffsetPage, OffsetPaginationParams, Searchable } from "./common";
 
-export enum EmployeeStatus {
-  Active = "Active",
-  Inactive = "Inactive",
-  Contractor = "Contractor",
-  Intern = "Intern",
-}
+/** สถานะพนักงาน (string union เหมือนกับโดเมนอื่น ๆ ในระบบ) */
+export type EmployeeStatus = "Active" | "Inactive" | "OnLeave" | "Resigned";
 
-export type Employees = {
-  id: string;
-  name: string;
-  department: string;
-  status: EmployeeStatus;
-  email: string;
-  jobTitle: string;
-  phone: string;
-  device: string;
-};
-
-/** ฟิลเตอร์ของ Employees (มาตรฐานเดียวกับระบบ: ใช้ search) */
-export type EmployeesFilters = {
+/** ฟิลเตอร์ของโดเมน Employees (ให้รูปแบบเหมือน device) */
+export type EmployeeDomainFilters = {
   department?: string;
   status?: EmployeeStatus;
   search?: string;
 };
 
-/** ค่าที่ใช้ตอนแก้ไข/สร้าง (สำหรับฟอร์ม) */
+/** ข้อมูลพนักงานหนึ่งรายการ (align กับ DeviceItem) */
+export type EmployeeItem = {
+  id: string;
+  name: string;
+  department?: string;
+  status: EmployeeStatus;
+  email?: string;
+  jobTitle?: string;
+  phone?: string;
+  device?: string | null;
+};
+
+/**
+ * Query มาตรฐานสำหรับ service รายการพนักงาน
+ * ใช้มาตรฐานเดียวกับ Device/Software/License:
+ * - pagination: OffsetPaginationParams
+ * - search: Searchable
+ * - filters: EmployeeDomainFilters
+ */
+export type EmployeesListQuery =
+  OffsetPaginationParams &
+  Searchable &
+  EmployeeDomainFilters;
+
+/** Response ของรายการพนักงาน */
+export type EmployeesListResponse = OffsetPage<EmployeeItem>;
+
+/** ฟิลเตอร์แบบ UI (FilterBar) — ตั้งให้เหมือน device (custom shape) */
+export type EmployeesFilterValues = {
+  status?: EmployeeStatus;
+  department?: string;
+  search?: string;
+};
+
+/** ใช้ในฟอร์มแก้ไข/สร้าง (align กับ device ฝั่งฟอร์ม) */
 export interface EmployeesEditValues {
   name: string;
   department?: string;
-  status: string;      // เก็บเป็น string ให้เข้ากับ input control; map เป็น enum ในชั้น service/action
+  status: string;      // เก็บเป็น string ให้เข้ากับ input control; map เป็น EmployeeStatus ที่ชั้น service/action
   phone?: string;
   jobTitle?: string;
   device?: string;
 }
-
-/**
- * ฟิลเตอร์แบบ UI (FilterBar) ใช้มาตรฐาน FilterValues<TStatus, TType>
- * - ในโดเมน Employees ไม่มี type ชัดเจน ⇒ ให้ใช้ string หรือ never ก็ได้
- *   ถ้าอยาก strict กว่า แนะนำใช้ never (จะไม่มี field type ใน UI)
- */
-export type EmployeesFilterValues = FilterValues<EmployeeStatus, string>; 
-// หรือถ้าอยาก strict มากขึ้น: export type EmployeesFilterValues = FilterValues<EmployeeStatus, never>;
-
-/** ✅ Query สำหรับ list (pagination + search + filters) */
-export type EmployeesListQuery =
-  OffsetPaginationParams &
-  Searchable &
-  EmployeesFilters;
-
-/** ✅ Response สำหรับ list (รูปแบบเดียวกับโดเมนอื่น) */
-export type EmployeesListResponse = OffsetPage<Employees>;
