@@ -1,6 +1,8 @@
+// src/components/assign/AssignEmployeeExceptionsPage.tsx
 "use client";
 
 import * as React from "react";
+
 import { useServerTableController } from "@/hooks/useServerTableController";
 import { useEmployeesInventory } from "@/hooks/useEmployeeInventory";
 import { DataTable } from "@/components/table";
@@ -16,20 +18,41 @@ import type {
 import type { ExceptionDefinition } from "@/types/exception";
 
 import { employeeColumns } from "@/lib/tables/employeeInventoryColumns";
-import {
-  toDomainFilters,
-  toSimpleFilters,
-} from "@/lib/mappers/employeeFilterMappers";
+import { toDomainFilters, toSimpleFilters } from "@/lib/mappers/employeeFilterMappers";
 import {
   assignExceptionsToEmployees,
-  getActiveExceptionDefinitions,
 } from "@/services/exception.service.mock";
 import EmployeeFilterBar from "@/components/filters/EmployeeFilterBar";
+import { useActiveExceptionDefinitions } from "@/hooks/useActiveExceptionDefinitions";
 
+/* --------------------------------------------------------------------------------
+ * Constants
+ * ------------------------------------------------------------------------------*/
+const STATUS_OPTIONS: readonly EmployeeStatus[] = [
+  "Active",
+  "Inactive",
+  "OnLeave",
+  "Resigned",
+];
+
+const DEPARTMENT_OPTIONS: readonly string[] = [
+  "Engineering",
+  "Design",
+  "Finance",
+  "HR",
+  "Operations",
+  "Sales",
+];
+
+
+/* --------------------------------------------------------------------------------
+ * Page Component
+ * ------------------------------------------------------------------------------*/
 export default function AssignEmployeeExceptionsPage() {
-  // Controller ของตารางพนักงาน
-  const [domainFilters, setDomainFilters] =
-    React.useState<EmployeeDomainFilters>(toDomainFilters());
+  /* --------------------------- Controller & Data --------------------------- */
+  const [domainFilters, setDomainFilters] = React.useState<EmployeeDomainFilters>(
+    toDomainFilters(),
+  );
 
   const ctl = useServerTableController<
     EmployeeItem,
@@ -42,57 +65,38 @@ export default function AssignEmployeeExceptionsPage() {
     setDomainFilters,
     toSimple: (df) => toSimpleFilters(df),
     fromSimple: (sf) => toDomainFilters(sf),
-    resetDeps: [
-      domainFilters.status,
-      domainFilters.department,
-      domainFilters.search,
-    ],
+    resetDeps: [domainFilters.status, domainFilters.department, domainFilters.search],
   });
 
-  const { rows, totalRows, isLoading, isError, errorMessage } =
-    useEmployeesInventory(ctl.serverQuery, domainFilters);
+  const { rows, totalRows, isLoading, isError, errorMessage } = useEmployeesInventory(
+    ctl.serverQuery,
+    domainFilters,
+  );
 
-  // Selection: Employees
-  const [selectedEmployeeIds, setSelectedEmployeeIds] = React.useState<
-    string[]
-  >([]);
+  /* ------------------------------ Selections ------------------------------ */
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = React.useState<string[]>([]);
   const selectedIdSet = React.useMemo(
     () => new Set<string | number>(selectedEmployeeIds),
     [selectedEmployeeIds],
   );
-  const handleSelectionChange = React.useCallback(
-    (next: Set<string | number>) =>
-      setSelectedEmployeeIds(Array.from(next).map(String)),
-    [],
-  );
 
-  // Active Exception Definitions → checkbox
-  const [defs, setDefs] = React.useState<ExceptionDefinition[]>([]);
-  const [checkedDefIds, setCheckedDefIds] = React.useState<string[]>([]);
-  const [loadingDefs, setLoadingDefs] = React.useState(false);
-
-  React.useEffect(() => {
-    const ac = new AbortController();
-    setLoadingDefs(true);
-    getActiveExceptionDefinitions(ac.signal)
-      .then((list) => setDefs(list))
-      .catch((e) => {
-        if (e?.name !== "AbortError") console.error(e);
-      })
-      .finally(() => setLoadingDefs(false));
-    return () => ac.abort();
+  const handleSelectionChange = React.useCallback((next: Set<string | number>) => {
+    setSelectedEmployeeIds(Array.from(next).map(String));
   }, []);
 
-  const toggleDef = (id: string, checked: boolean) => {
+  /* -------------------- Exception Definitions (Active) -------------------- */
+  const { defs, isLoading: loadingDefs } = useActiveExceptionDefinitions();
+  const [checkedDefIds, setCheckedDefIds] = React.useState<string[]>([]);
+
+  const toggleDef = React.useCallback((id: string, checked: boolean) => {
     setCheckedDefIds((prev) => {
       const s = new Set(prev);
-      if (checked) s.add(id);
-      else s.delete(id);
+      checked ? s.add(id) : s.delete(id);
       return Array.from(s);
     });
-  };
+  }, []);
 
-  // ฟอร์ม (วันที่+note)
+  /* --------------------------------- Form --------------------------------- */
   const [effectiveDate, setEffectiveDate] = React.useState<string>(
     new Date().toISOString().slice(0, 10),
   );
@@ -100,11 +104,11 @@ export default function AssignEmployeeExceptionsPage() {
 
   const canSubmit = selectedEmployeeIds.length > 0 && checkedDefIds.length > 0;
 
-  // Submit
+  /* -------------------------------- Submit -------------------------------- */
   const [submitting, setSubmitting] = React.useState(false);
   const [lastMsg, setLastMsg] = React.useState<string | null>(null);
 
-  const onAssign = async () => {
+  const onAssign = React.useCallback(async () => {
     if (!canSubmit) return;
     setSubmitting(true);
     setLastMsg(null);
@@ -121,32 +125,18 @@ export default function AssignEmployeeExceptionsPage() {
           ? `Assigned ${res.assignedCount} employee(s) → [${res.definitionIds.join(", ")}] สำเร็จ`
           : "Assign ล้มเหลว",
       );
-      setSelectedEmployeeIds([]);
+      setSelectedEmployeeIds([]); // reset selection (ตาม UX ที่ต้องการ)
     } catch (e: any) {
       setLastMsg(e?.message ?? "Assign ล้มเหลว (unknown error)");
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [canSubmit, checkedDefIds, effectiveDate, note, selectedEmployeeIds]);
 
-  // Options
-  const statusOptions: readonly EmployeeStatus[] = [
-    "Active",
-    "Inactive",
-    "OnLeave",
-    "Resigned",
-  ];
-  const departmentOptions: readonly string[] = [
-    "Engineering",
-    "Design",
-    "Finance",
-    "HR",
-    "Operations",
-    "Sales",
-  ];
-
+  /* --------------------------------- Render -------------------------------- */
   return (
     <div className="p-4 md:p-6 space-y-4">
+      {/* Header */}
       <PageHeader
         title="Assign Exceptions → Employees"
         breadcrumbs={[
@@ -155,22 +145,19 @@ export default function AssignEmployeeExceptionsPage() {
         ]}
       />
 
+      {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Card
-          title="Selected Employees"
-          count={selectedEmployeeIds.length}
-          compact
-        />
+        <Card title="Selected Employees" count={selectedEmployeeIds.length} compact />
         <Card title="Chosen Exceptions" count={checkedDefIds.length} compact />
         <Card title="Total Employees" count={totalRows} compact />
       </div>
 
-      {/* ✅ Top row: Status + Department + Effective date + Note + ปุ่มขวา (เหมือนภาพแรก) */}
+      {/* Filter Bar (Top row: Status + Department + Effective date + Note + Confirm on right) */}
       <EmployeeFilterBar
         filters={ctl.simpleFilters}
         onFiltersChange={ctl.onSimpleFiltersChange}
-        statusOptions={statusOptions}
-        departmentOptions={departmentOptions}
+        statusOptions={STATUS_OPTIONS}
+        departmentOptions={DEPARTMENT_OPTIONS}
         labels={{
           status: "All Status",
           type: "All Departments",
@@ -187,6 +174,7 @@ export default function AssignEmployeeExceptionsPage() {
                 className="rounded border border-slate-300 px-2 py-1 h-9"
                 value={effectiveDate}
                 onChange={(e) => setEffectiveDate(e.target.value)}
+                aria-label="Effective date"
               />
             </label>
           </div>
@@ -196,13 +184,14 @@ export default function AssignEmployeeExceptionsPage() {
             className="rounded bg-slate-900 text-white px-4 py-2 text-sm h-9 disabled:opacity-50"
             disabled={!canSubmit || submitting}
             onClick={onAssign}
+            aria-disabled={!canSubmit || submitting}
           >
             {submitting ? "Assigning..." : "Confirm Assign"}
           </button>
         }
       />
 
-      {/* ✅ Exceptions (Active) — อยู่ “ใต้” แถบฟิลเตอร์ เหมือนภาพแรก */}
+      {/* Exceptions (Active) — under FilterBar like the first image */}
       <section className="rounded-md border border-slate-200 p-3">
         <div className="font-semibold mb-2">Exceptions (Active)</div>
         {loadingDefs ? (
@@ -212,15 +201,13 @@ export default function AssignEmployeeExceptionsPage() {
         ) : (
           <div className="flex flex-wrap gap-4">
             {defs.map((d) => (
-              <label
-                key={d.id}
-                className="inline-flex items-center gap-2 text-sm"
-              >
+              <label key={d.id} className="inline-flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   className="h-4 w-4"
                   checked={checkedDefIds.includes(d.id)}
                   onChange={(e) => toggleDef(d.id, e.target.checked)}
+                  aria-label={`Select exception ${d.name}`}
                 />
                 <span>
                   {d.name}
@@ -232,7 +219,7 @@ export default function AssignEmployeeExceptionsPage() {
         )}
       </section>
 
-      {/* ตารางพนักงาน */}
+      {/* Employees table */}
       <section>
         <DataTable
           columns={employeeColumns}
@@ -249,7 +236,7 @@ export default function AssignEmployeeExceptionsPage() {
           errorMessage={errorMessage}
           maxBodyHeight={480}
           rowHref={(row) => `/employees/${row.id}`}
-          selectable={true}
+          selectable
           selectedIds={selectedIdSet}
           onSelectionChange={handleSelectionChange}
           getRowId={(row: EmployeeItem) => row.id}
