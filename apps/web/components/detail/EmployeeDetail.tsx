@@ -7,8 +7,8 @@ import { DetailView } from "components/detail/DetailView";
 import { InstallationSection } from "components/tabbar/InstallationSection";
 import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
 
-import type { Employees } from "types/employees";
-import type { BreadcrumbItem, EmployeeAssignmentRow, HistoryEvent } from "types";
+
+import type { BreadcrumbItem, EmployeeAssignmentRow, EmployeeItem, HistoryEvent } from "types";
 
 import { show } from "lib/show";
 import { employeesEditFields } from "app/config/forms/employeeEditFields";
@@ -19,7 +19,7 @@ import { employeeAssignmentColumns } from "@/lib/tables/employeeAssignmentColumn
  *  TYPES
  * ------------------------------------------------------- */
 type EmployeeDetailProps = {
-  item: Employees;
+  item: EmployeeItem;
   history?: HistoryEvent[];
   assignments?: EmployeeAssignmentRow[];
   breadcrumbs?: BreadcrumbItem[];

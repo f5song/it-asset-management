@@ -2,7 +2,6 @@
 
 import React from "react";
 import { ExportSelect } from "./ExportSelect";
-import { ActionSelect } from "./ActionSelect";
 import { SelectField } from "./SelectField";
 import { SearchInput } from "./SearchInput";
 import { ExportFormat, FilterValues, ToolbarAction } from "types";

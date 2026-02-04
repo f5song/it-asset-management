@@ -1,40 +1,37 @@
+// src/components/assign/AssignEmployeeToExceptionsClient.tsx
 "use client";
 
 import * as React from "react";
 import { useServerTableController } from "@/hooks/useServerTableController";
-import { ExceptionDefinition, ExceptionDomainFilters, PolicyStatus } from "@/types/exception";
-import { EmployeeItem } from "@/types";
-import { assignExceptionsToEmployees } from "@/services/exception.service.mock";
-import { PageHeader } from "../ui/PageHeader";
-import { Card } from "../ui/Card";
-import { DataTable } from "../table";
+import { useExceptionDefinitionsInventory } from "@/hooks/useExceptionDefinitionsInventory";
+import type { ExceptionDefinition, PolicyStatus } from "@/types/exception";
+import type { EmployeeItem } from "@/types";
+import { DataTable } from "@/components/table";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card } from "@/components/ui/Card";
 import { exceptionInventoryColumns } from "@/lib/tables/exceptionInventoryColumns";
+import { assignExceptionsToEmployees } from "@/services/exception.service.mock";
+import ExceptionFilterBar, {
+  ExceptionUIFilters,
+} from "@/components/filters/ExceptionFilterBar";
+import BackButton from "../ui/BackButton";
 
-
-// UI Filters ของหน้านี้ (เรียบง่าย)
-type ExceptionUIFilters = {
-  status?: PolicyStatus;
-  search?: string;
-};
+type ExceptionDomainFilters = { status?: PolicyStatus; search?: string };
 
 function toDomainFilters(ui: ExceptionUIFilters): ExceptionDomainFilters {
-  return {
-    status: ui.status ?? undefined,
-    search: ui.search ?? undefined,
-  };
+  return { status: ui.status, search: ui.search };
 }
 function toSimpleFilters(df: ExceptionDomainFilters): ExceptionUIFilters {
-  return {
-    status: df.status ?? undefined,
-    search: df.search ?? "",
-  };
+  return { status: df.status, search: df.search ?? "" };
 }
 
-export default function AssignEmployeeToExceptionsClient({ employee }: { employee: EmployeeItem }) {
-  // ----------------- Filters/Controller ของตาราง Exception Definitions -----------------
-  const [domainFilters, setDomainFilters] = React.useState<ExceptionDomainFilters>(
-    toDomainFilters({}),
-  );
+export default function AssignEmployeeToExceptionsClient({
+  employee,
+}: {
+  employee: EmployeeItem;
+}) {
+  const [domainFilters, setDomainFilters] =
+    React.useState<ExceptionDomainFilters>(toDomainFilters({}));
 
   const ctl = useServerTableController<
     ExceptionDefinition,
@@ -53,17 +50,20 @@ export default function AssignEmployeeToExceptionsClient({ employee }: { employe
   const { rows, totalRows, isLoading, isError, errorMessage } =
     useExceptionDefinitionsInventory(ctl.serverQuery, domainFilters);
 
-  // ----------------- Selection ของ DataTable (Definitions) -----------------
+  // Selection
   const [selectedDefIds, setSelectedDefIds] = React.useState<string[]>([]);
   const selectedIdSet = React.useMemo(
     () => new Set<string | number>(selectedDefIds),
     [selectedDefIds],
   );
-  const handleSelectionChange = React.useCallback((next: Set<string | number>) => {
-    setSelectedDefIds(Array.from(next).map(String));
-  }, []);
+  const handleSelectionChange = React.useCallback(
+    (next: Set<string | number>) => {
+      setSelectedDefIds(Array.from(next).map(String));
+    },
+    [],
+  );
 
-  // ----------------- ฟอร์ม (วันที่เริ่มใช้/หมดอายุ + หมายเหตุ) -----------------
+  // Form
   const [effectiveDate, setEffectiveDate] = React.useState<string>(
     new Date().toISOString().slice(0, 10),
   );
@@ -71,8 +71,6 @@ export default function AssignEmployeeToExceptionsClient({ employee }: { employe
   const [note, setNote] = React.useState<string>("");
 
   const canSubmit = selectedDefIds.length > 0;
-
-  // ----------------- Submit -----------------
   const [submitting, setSubmitting] = React.useState(false);
   const [lastMsg, setLastMsg] = React.useState<string | null>(null);
 
@@ -88,14 +86,11 @@ export default function AssignEmployeeToExceptionsClient({ employee }: { employe
         expiresAt: expiresAt?.trim() ? expiresAt : undefined,
         notes: note.trim() || undefined,
       });
-
       setLastMsg(
         res.ok
           ? `Assigned ${res.definitionIds.length} exception(s) ให้ ${employee.name} สำเร็จ`
           : "Assign ล้มเหลว",
       );
-
-      // เคลียร์ selection ตามต้องการ
       setSelectedDefIds([]);
     } catch (e: any) {
       setLastMsg(e?.message ?? "Assign ล้มเหลว (unknown error)");
@@ -106,62 +101,47 @@ export default function AssignEmployeeToExceptionsClient({ employee }: { employe
 
   return (
     <div className="p-4 md:p-6 space-y-4">
+      <BackButton />
       <PageHeader
         title="Assign Exceptions → Employee"
         breadcrumbs={[
           { label: "Employees", href: "/employees" },
-          { label: `${employee.name} (${employee.id})`, href: `/employees/${employee.id}` },
-          { label: "Assign Exceptions", href: `/employees/${employee.id}/exceptions/assign` },
+          {
+            label: `${employee.name} (${employee.id})`,
+            href: `/employees/${employee.id}`,
+          },
+          {
+            label: "Assign Exceptions",
+            href: `/employees/${employee.id}/exceptions/assign`,
+          },
         ]}
       />
 
-      {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Card title="Employee" count={`${employee.name} (${employee.id})`} compact />
-        <Card title="Selected Exceptions" count={selectedDefIds.length} compact />
+        <Card
+          title="Employee"
+          count={`${employee.name} (${employee.id})`}
+          compact
+        />
+        <Card
+          title="Selected Exceptions"
+          count={selectedDefIds.length}
+          compact
+        />
         <Card title="Total Exceptions" count={totalRows} compact />
       </div>
 
-      {/* Simple Filters */}
-      <section className="rounded-md border border-slate-200 p-4">
-        <h2 className="font-semibold mb-3">ตัวกรอง</h2>
-        <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
-          <label className="text-sm">
-            Status:
-            <select
-              className="ml-2 rounded border border-slate-300 px-2 py-1"
-              value={ctl.simpleFilters.status ?? ""}
-              onChange={(e) =>
-                ctl.onSimpleFiltersChange({
-                  ...ctl.simpleFilters,
-                  status: (e.target.value || undefined) as PolicyStatus | undefined,
-                })
-              }
-            >
-              <option value="">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-              <option value="Deprecated">Deprecated</option>
-              <option value="Archived">Archived</option>
-            </select>
-          </label>
-
-          <label className="text-sm flex-1">
-            Search:
-            <input
-              type="text"
-              className="ml-2 rounded border border-slate-300 px-2 py-1 w-full"
-              placeholder="ค้นหา ID / ชื่อ / หมายเหตุ"
-              value={ctl.simpleFilters.search ?? ""}
-              onChange={(e) =>
-                ctl.onSimpleFiltersChange({
-                  ...ctl.simpleFilters,
-                  search: e.target.value,
-                })
-              }
-            />
-          </label>
-
+      {/* ✅ ใช้ ExceptionFilterBar แทน UI ฟิลเตอร์เดิม */}
+      <ExceptionFilterBar
+        filters={ctl.simpleFilters}
+        onFiltersChange={ctl.onSimpleFiltersChange}
+        statusOptions={["Active", "Inactive", "Deprecated", "Archived"]}
+        labels={{
+          status: "Status",
+          searchPlaceholder: "ค้นหา ID / ชื่อ / หมายเหตุ",
+          allStatus: "All Status",
+        }}
+        rightExtra={
           <button
             className="rounded bg-slate-900 text-white px-4 py-2 text-sm disabled:opacity-50"
             disabled={!canSubmit || submitting}
@@ -169,43 +149,35 @@ export default function AssignEmployeeToExceptionsClient({ employee }: { employe
           >
             {submitting ? "Assigning..." : "Confirm Assign"}
           </button>
-        </div>
+        }
+        extraFilters={
+          <div className="flex flex-wrap gap-4 items-center">
+            {/* Status already handled by ExceptionFilterBar */}
 
-        <div className="mt-3 flex flex-col md:flex-row gap-3 items-start md:items-center">
-          <label className="text-sm">
-            Effective date:
-            <input
-              type="date"
-              className="ml-2 rounded border border-slate-300 px-2 py-1"
-              value={effectiveDate}
-              onChange={(e) => setEffectiveDate(e.target.value)}
-            />
-          </label>
+            {/* Effective date */}
+            <label className="flex items-center gap-2 text-sm whitespace-nowrap">
+              <span>Effective date:</span>
+              <input
+                type="date"
+                className="rounded border border-slate-300 px-2 py-1 h-9"
+                value={effectiveDate}
+                onChange={(e) => setEffectiveDate(e.target.value)}
+              />
+            </label>
 
-          <label className="text-sm">
-            Expires at:
-            <input
-              type="date"
-              className="ml-2 rounded border border-slate-300 px-2 py-1"
-              value={expiresAt}
-              onChange={(e) => setExpiresAt(e.target.value)}
-            />
-          </label>
-
-          <label className="text-sm flex-1">
-            Note:
-            <input
-              type="text"
-              className="ml-2 rounded border border-slate-300 px-2 py-1 w-full"
-              placeholder="เหตุผล/หมายเหตุ (ถ้ามี)"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-            />
-          </label>
-        </div>
-
-        {lastMsg && <p className="mt-3 text-sm text-slate-700">{lastMsg}</p>}
-      </section>
+            {/* Expires at */}
+            <label className="flex items-center gap-2 text-sm whitespace-nowrap">
+              <span>Expires at:</span>
+              <input
+                type="date"
+                className="rounded border border-slate-300 px-2 py-1 h-9"
+                value={expiresAt}
+                onChange={(e) => setExpiresAt(e.target.value)}
+              />
+            </label>
+          </div>
+        }
+      />
 
       {/* ตาราง Exception Definitions */}
       <section>
@@ -223,7 +195,6 @@ export default function AssignEmployeeToExceptionsClient({ employee }: { employe
           isError={isError}
           errorMessage={errorMessage}
           maxBodyHeight={480}
-          // Selection
           selectable={true}
           selectedIds={selectedIdSet}
           onSelectionChange={handleSelectionChange}
@@ -231,10 +202,8 @@ export default function AssignEmployeeToExceptionsClient({ employee }: { employe
           selectionScope="page"
         />
       </section>
+
+      {lastMsg && <p className="text-sm text-slate-700">{lastMsg}</p>}
     </div>
   );
 }
-function useExceptionDefinitionsInventory(serverQuery: { pageIndex: number; pageSize: number; sortBy: string | undefined; sortOrder: "asc" | "desc" | undefined; }, domainFilters: ExceptionDomainFilters): { rows: any; totalRows: any; isLoading: any; isError: any; errorMessage: any; } {
-    throw new Error("Function not implemented.");
-}
-
