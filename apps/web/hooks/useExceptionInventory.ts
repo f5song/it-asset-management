@@ -6,7 +6,6 @@ import { getExceptionDefinitions } from "services/exceptions.service.mock";
 import type {
   ExceptionDefinition,
   PolicyStatus,
-  ExceptionCategory,
   ExceptionDomainFilters
 } from "types/exception";
 import type { ServerQuery } from "types/server-query";
@@ -27,7 +26,6 @@ export function useExceptionInventory(
 
     const search = filters.search ?? "";
     const status = toUndefTrim(filters.status) as PolicyStatus | undefined;
-    const category = toUndefTrim(filters.category) as ExceptionCategory | undefined;
     const owner = toUndefTrim(filters.owner);
 
     return {
@@ -37,7 +35,6 @@ export function useExceptionInventory(
       sortOrder,
       search,
       statusFilter: status ?? "",
-      categoryFilter: category ?? "",
       ownerFilter: owner ?? "",
     };
   }, [
@@ -47,7 +44,6 @@ export function useExceptionInventory(
     serverQuery.sortOrder,
     filters.search,
     filters.status,
-    filters.category,
     filters.owner,
   ]);
 

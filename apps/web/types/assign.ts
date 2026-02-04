@@ -1,6 +1,6 @@
 // src/types/assign.ts
 import type { ISODateString } from "./common";
-import type { Employees } from "./employees";
+import { EmployeeItem } from "./employees";
 import type { LicenseItem } from "./license";
 
 // โหมดการทำงาน
@@ -20,7 +20,7 @@ export type AssignRow = {
 
 export type LicenseAssignFormValues = {
   licenseId: string;
-  employees: Employees[];
+  employees: EmployeeItem[];
   mapping: AssignRow[];
   seatMode: "partial" | "all-or-nothing";
   installedOn: ISODateString; // YYYY-MM-DD

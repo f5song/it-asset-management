@@ -16,8 +16,19 @@ type Props = {
 
 const AssignFormSchema = z.object({
   employeeIds: z.array(z.string()).min(1, "กรุณาเลือกพนักงานอย่างน้อย 1 คน"),
+  effectiveDate: z.string().optional(),    // YYYY-MM-DD
+  expiresAt: z.string().optional(),        // YYYY-MM-DD
 });
 type AssignFormValues = z.infer<typeof AssignFormSchema>;
+
+const { handleSubmit, setValue, formState, register, watch } = useForm<AssignFormValues>({
+  defaultValues: {
+    employeeIds: [],
+    effectiveDate: new Date().toISOString().slice(0, 10), // default วันนี้
+    expiresAt: undefined,
+  },
+  mode: "onChange",
+});
 
 export default function AssignExceptionPage({ exceptionId }: Props) {
   const router = useRouter();
@@ -74,17 +85,25 @@ export default function AssignExceptionPage({ exceptionId }: Props) {
   };
 
   // ยืนยัน Assign
-  const onSubmit = async (values: AssignFormValues) => {
-    try {
-      await assignException(exceptionId, values.employeeIds);
-      alert(`Assign สำเร็จให้ ${values.employeeIds.length} คน`);
-      router.push(`/exceptions/${exceptionId}`);
-      router.refresh();
-    } catch (e) {
-      console.error(e);
-      alert(`Assign ล้มเหลว: ${(e as Error).message}`);
-    }
-  };
+
+const onSubmit = async (values: AssignFormValues) => {
+  try {
+    await assignException({
+      definitionId: exceptionId,         // <— id ของข้อยกเว้น
+      employeeIds: values.employeeIds,   // <— พนักงานที่เลือก
+      effectiveDate: values.effectiveDate,
+      expiresAt: values.expiresAt,
+    });
+
+    alert(`Assign สำเร็จให้ ${values.employeeIds.length} คน`);
+    router.push(`/exceptions/${exceptionId}`);
+    router.refresh();
+  } catch (e) {
+    console.error(e);
+    alert(`Assign ล้มเหลว: ${(e as Error).message}`);
+  }
+};
+
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">

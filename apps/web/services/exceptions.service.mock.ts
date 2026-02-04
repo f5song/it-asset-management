@@ -2,7 +2,6 @@
 
 import {
   ExceptionAssignmentRow,
-  ExceptionCategory,
   ExceptionDefinition,
   PolicyStatus,
   // ✅ ใช้ type กลางที่นิยามไว้ใน "@/types/exception"
@@ -11,7 +10,7 @@ import {
 } from "@/types/exception";
 
 // ---------- Mock dataset ----------
-const CATEGORIES = ["AI", "USBDrive", "MessagingApp", "ADPasswordPolicy"] as const satisfies readonly ExceptionCategory[];
+
 const STATUSES = ["Active", "Inactive", "Deprecated", "Archived"] as const satisfies readonly PolicyStatus[];
 const OWNERS = ["SecOps", "IT", "Infra", "HR", "Compliance"] as const;
 const USER_PREFIX = ["jirawee", "qa", "dev", "ops", "hr", "fin"] as const;
@@ -27,15 +26,6 @@ function makeDates(idx: number) {
   return { createdAt: iso(created), lastUpdated: iso(lastUpdated), reviewAt: iso(reviewAt) };
 }
 
-function makeName(category: ExceptionCategory) {
-  switch (category) {
-    case "AI": return "Allow AI tools";
-    case "USBDrive": return "Allow USB storage";
-    case "MessagingApp": return "Allow LINE on PC";
-    case "ADPasswordPolicy": return "Relax AD password policy";
-    default: return "Security exception";
-  }
-}
 
 function toDisplayName(employeeId: string): string {
   // mock: "dev.012" -> "Dev 012"
@@ -44,31 +34,33 @@ function toDisplayName(employeeId: string): string {
 }
 
 // ---------- Definitions (Catalog) ----------
+// สมมุติว่ามี helpers พวก pad(), STATUSES, makeDates(i) เหมือนเดิม
+const NAMES = [
+  "Allow LINE on PC",
+  "Allow USB storage",
+  "Bypass Proxy",
+] as const;
+
 const MOCK_DEFINITIONS: ExceptionDefinition[] = Array.from({ length: 24 }).map((_, i) => {
   const idNum = i + 1;
-  const category = CATEGORIES[i % CATEGORIES.length];
+  const id = `EXC-${pad(idNum)}`;
   const status = STATUSES[(i * 3) % STATUSES.length];
-  const owner = OWNERS[(i * 7) % OWNERS.length];
-  const { createdAt, lastUpdated, reviewAt } = makeDates(i);
+  const { createdAt, lastUpdated } = makeDates(i);
 
   const total = (i % 7) + 3;
-  const active = status === "Active" ? Math.max(1, total - (i % 3)) : 0;
 
   return {
-    id: `EXC-${pad(idNum)}`,
-    name: makeName(category),
-    category,
+    id,
+    name: NAMES[i % NAMES.length],                    // ✅ ต้องมี name
     status,
     risk: (["Low", "Medium", "High"] as const)[i % 3],
-    owner,
     createdAt,
     lastUpdated,
-    reviewAt,
     notes: "",
-    activeAssignments: active,
-    totalAssignments: total,
+    totalAssignments: total,                          // ✅ อยู่ใน type
   };
 });
+
 
 // ---------- Assignments (Per definition) ----------
 const MOCK_ASSIGNMENTS: Record<string, ExceptionAssignmentRow[]> = {};
@@ -79,11 +71,7 @@ for (const def of MOCK_DEFINITIONS) {
     const employeeId = `${USER_PREFIX[i % USER_PREFIX.length]}.${pad((i % 20) + 1)}`;
     const employeeName = toDisplayName(employeeId);
     const assignedAt = addDays(new Date(def.createdAt), i).toISOString();
-    const statusIdx = (i + 1) % 4;
-    const status: NonNullable<ExceptionAssignmentRow["status"]> =
-      statusIdx === 1 ? "Active" :
-      statusIdx === 2 ? "Pending" :
-      statusIdx === 3 ? "Expired" : "Revoked";
+  
 
     rows.push({
       id: `${def.id}-U-${pad(i + 1)}`,
@@ -91,11 +79,6 @@ for (const def of MOCK_DEFINITIONS) {
       employeeId,
       employeeName,
       department: ["IT","HR","FIN","OPS"][i % 4],
-      assignedBy: def.owner ?? "IT",
-      assignedAt,
-      // mock: ผูกกับ reviewAt ของ policy
-      expiresAt: def.reviewAt ?? null,
-      status,
       notes: i % 2 === 0 ? "Demo assignment note" : null,
     });
   }
@@ -142,8 +125,6 @@ export async function getExceptionDefinitions(
       (e) =>
         includesCI(e.id, search) ||
         includesCI(e.name, search) ||
-        includesCI(e.owner ?? "", search) ||
-        includesCI(String(e.category), search) ||
         includesCI(String(e.status), search)
     );
   }
@@ -152,14 +133,6 @@ export async function getExceptionDefinitions(
   if (q.status) {
     const s = ci(q.status);
     filtered = filtered.filter((e) => ci(e.status) === s);
-  }
-  if (q.category) {
-    const s = ci(q.category);
-    filtered = filtered.filter((e) => ci(e.category) === s);
-  }
-  if (q.owner) {
-    const s = ci(q.owner);
-    filtered = filtered.filter((e) => includesCI(e.owner ?? "", s));
   }
 
   // sort

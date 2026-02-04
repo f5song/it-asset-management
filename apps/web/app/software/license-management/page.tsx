@@ -130,6 +130,7 @@ export default function LicenseManagementPage() {
       allManufacturerLabel="All Manufacturers"
       onExport={handleExport}
       filterBarRightExtra={rightExtra}
+      hasType={true}
       // DataTable
       columns={licenseColumns}
       rows={rows}

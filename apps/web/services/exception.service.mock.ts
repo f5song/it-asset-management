@@ -1,15 +1,17 @@
+// src/services/exception.service.mock.ts
 "use client";
 
 import type {
-  AssignExceptionsToEmployeesPayload,
-  AssignExceptionsToEmployeesResult,
   ExceptionDefinition,
   ExceptionDefinitionListQuery,
   ExceptionDefinitionListResponse,
-  PolicyStatus,
-  RiskLevel,
+  AssignExceptionsToEmployeesPayload,
+  AssignExceptionsToEmployeesResult,
 } from "@/types/exception";
 
+/* -------------------------------------------------------------------------- */
+/* Mock dataset & utils                                                       */
+/* -------------------------------------------------------------------------- */
 const NOW = new Date().toISOString();
 
 const MOCK_DEFS: ExceptionDefinition[] = [
@@ -47,6 +49,13 @@ const MOCK_DEFS: ExceptionDefinition[] = [
 const ci = (s?: string) => (s ?? "").toLowerCase();
 const includesCI = (text: string, q: string) => ci(text).includes(ci(q));
 
+function sleep(ms: number) {
+  return new Promise<void>((res) => setTimeout(res, ms));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Definition list                                                            */
+/* -------------------------------------------------------------------------- */
 export async function listExceptionDefinitions(
   q: ExceptionDefinitionListQuery,
   signal?: AbortSignal,
@@ -63,13 +72,12 @@ export async function listExceptionDefinitions(
         includesCI(d.id, search) ||
         includesCI(d.name, search) ||
         includesCI(d.status, search) ||
-        includesCI(d.notes ?? "", search)
+        includesCI(d.notes ?? "", search),
     );
   }
   if (q.status) {
     filtered = filtered.filter((d) => d.status === q.status);
   }
-  // (owner ถูกข้ามใน mock นี้)
 
   const page = Math.max(1, Number((q as any).page ?? 1));
   const pageSize = Math.max(1, Number((q as any).pageSize ?? 10));
@@ -90,19 +98,18 @@ export async function listExceptionDefinitions(
   };
 }
 
-/** ดึง definitions ที่ Active ทั้งหมดสำหรับ checkbox (สะดวก ๆ) */
+/** ดึง definitions ที่ Active ทั้งหมดสำหรับ checkbox */
 export async function getActiveExceptionDefinitions(signal?: AbortSignal) {
   const res = await listExceptionDefinitions(
     { page: 1, pageSize: 999, search: "", status: "Active" } as ExceptionDefinitionListQuery,
-    signal
+    signal,
   );
   return res.items;
 }
 
-function sleep(ms: number) {
-  return new Promise<void>((res) => setTimeout(res, ms));
-}
-
+/* -------------------------------------------------------------------------- */
+/* Canonical bulk assign API                                                  */
+/* -------------------------------------------------------------------------- */
 export async function assignExceptionsToEmployees(
   payload: AssignExceptionsToEmployeesPayload,
   signal?: AbortSignal,
@@ -110,12 +117,71 @@ export async function assignExceptionsToEmployees(
   await sleep(250);
   if (signal?.aborted) throw Object.assign(new Error("Aborted"), { name: "AbortError" });
 
-  // ในของจริง: POST ไป backend
+  // ของจริง: POST ไป backend
   console.log("[mock] assignExceptionsToEmployees", payload);
 
   return {
     ok: true,
     assignedCount: payload.employeeIds.length,
     definitionIds: payload.definitionIds,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Convenience wrapper: assignException (2 รูปแบบ)                            */
+/*  - ย้าย helper types มาไว้ที่ service (ไม่ปนใน types ของโดเมน)            */
+/* -------------------------------------------------------------------------- */
+export type AssignExceptionPayload =
+  | {
+      employeeId: string;
+      definitionIds: string[];
+      effectiveDate?: string;
+      expiresAt?: string;
+      notes?: string;
+    }
+  | {
+      employeeIds: string[];
+      definitionId: string;
+      effectiveDate?: string;
+      expiresAt?: string;
+      notes?: string;
+    };
+
+export type AssignExceptionResult = {
+  ok: boolean;
+  employeeIds: string[];
+  definitionIds: string[];
+  assignedCount: number;
+};
+
+export async function assignException(
+  input: AssignExceptionPayload,
+  signal?: AbortSignal,
+): Promise<AssignExceptionResult> {
+  // normalize payload
+  let employeeIds: string[] = [];
+  let definitionIds: string[] = [];
+  const { effectiveDate, expiresAt, notes } = input as any;
+
+  if ("employeeId" in input) {
+    employeeIds = [input.employeeId];
+    definitionIds = input.definitionIds ?? [];
+  } else if ("definitionId" in input) {
+    employeeIds = input.employeeIds ?? [];
+    definitionIds = [input.definitionId];
+  } else {
+    throw new Error("Invalid payload for assignException");
+  }
+
+  const res = await assignExceptionsToEmployees(
+    { employeeIds, definitionIds, effectiveDate, expiresAt, notes },
+    signal,
+  );
+
+  return {
+    ok: res.ok,
+    employeeIds,
+    definitionIds,
+    assignedCount: res.assignedCount,
   };
 }

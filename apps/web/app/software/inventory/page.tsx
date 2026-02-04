@@ -30,7 +30,10 @@ export default function SoftwarePage() {
     resetDeps: [domainFilters.status, domainFilters.type, domainFilters.manufacturer],
   });
 
-  const serviceFilters = React.useMemo(() => toServiceFilters(ctl.simpleFilters), [ctl.simpleFilters]);
+  const serviceFilters = React.useMemo(
+    () => toServiceFilters(ctl.simpleFilters),
+    [ctl.simpleFilters]
+  );
 
   const {
     rows,
@@ -46,10 +49,13 @@ export default function SoftwarePage() {
   const [selectedSoftwareIds, setSelectedSoftwareIds] = React.useState<string[]>([]);
 
   const getRowHref = React.useCallback((row: SoftwareItem) => `/software/inventory/${row.id}`, []);
-  const handleExport = React.useCallback((fmt: ExportFormat) => {
-    console.log("Export software format:", fmt);
-    // TODO: exportSoftware(fmt, ctl.serverQuery, serviceFilters)
-  }, [ctl.serverQuery, serviceFilters]);
+  const handleExport = React.useCallback(
+    (fmt: ExportFormat) => {
+      console.log("Export software format:", fmt);
+      // TODO: exportSoftware(fmt, ctl.serverQuery, serviceFilters)
+    },
+    [ctl.serverQuery, serviceFilters]
+  );
 
   const rightExtra = (
     <InventoryActionToolbar
@@ -71,6 +77,7 @@ export default function SoftwarePage() {
       filters={ctl.simpleFilters}
       onFiltersChange={ctl.onSimpleFiltersChange}
       statusOptions={statusOptions}
+      hasType={true}                    
       typeOptions={typeOptions}
       manufacturerOptions={manufacturerOptions}
       allStatusLabel="All Status"
@@ -91,7 +98,8 @@ export default function SoftwarePage() {
       isLoading={isLoading}
       isError={isError}
       errorMessage={errorMessage}
-      // ✅ Selection (เหมือน devices/employees)
+      // Selection
+      selectable={true}
       selectedIds={selectedSoftwareIds}
       onSelectedIdsChange={setSelectedSoftwareIds}
     />

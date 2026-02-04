@@ -125,6 +125,7 @@ export default function DevicesPage() {
       allManufacturerLabel="All OS"
       filterBarRightExtra={rightExtra}
       onExport={handleExport}
+      hasType={true}
       // DataTable
       columns={deviceInventoryColumns}
       rows={rows}

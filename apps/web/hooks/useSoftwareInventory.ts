@@ -3,17 +3,37 @@ import { SoftwareItem, SoftwareStatus, SoftwareType } from "@/types";
 import React from "react";
 
 export function useSoftwareInventory(
-  query: { pageIndex: number; pageSize: number; sortBy?: string; sortOrder?: "asc" | "desc" },
-  filters?: { status?: SoftwareStatus; type?: SoftwareType; manufacturer?: string; search?: string }
+  query: {
+    pageIndex: number;
+    pageSize: number;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+  },
+  filters?: {
+    status?: SoftwareStatus;
+    type?: SoftwareType;
+    manufacturer?: string;
+    search?: string;
+  },
 ) {
   const [rows, setRows] = React.useState<SoftwareItem[]>([]);
   const [totalRows, setTotalRows] = React.useState(0);
   const [isLoading, setLoading] = React.useState(false);
   const [isError, setError] = React.useState(false);
-  const [errorMessage, setErrorMessage] = React.useState<string | undefined>(undefined);
+  const [errorMessage, setErrorMessage] = React.useState<string | undefined>(
+    undefined,
+  );
 
-  const statusOptions = ["Active", "Expired", "Expiring"];
-  const typeOptions = ["Standard", "Special", "Exception"];
+  const statusOptions: readonly SoftwareStatus[] = [
+    "Active",
+    "Expired",
+    "Expiring",
+  ];
+  const typeOptions: readonly SoftwareType[] = [
+    "Standard",
+    "Special",
+    "Exception",
+  ];
   const manufacturerOptions = ["Microsoft", "Adobe", "Autodesk", "JetBrains"];
 
   React.useEffect(() => {
@@ -50,8 +70,14 @@ export function useSoftwareInventory(
     run();
     return () => ac.abort();
   }, [
-    query.pageIndex, query.pageSize, query.sortBy, query.sortOrder,
-    filters?.status, filters?.type, filters?.manufacturer, filters?.search
+    query.pageIndex,
+    query.pageSize,
+    query.sortBy,
+    query.sortOrder,
+    filters?.status,
+    filters?.type,
+    filters?.manufacturer,
+    filters?.search,
   ]);
 
   return {

@@ -1,46 +1,78 @@
 import React from "react";
-import { ServerSort } from "@/types/server-query";
-import { sortingToServer } from "@/lib/sortingToServer";
 import { PaginationState, SortingState } from "@tanstack/react-table";
+import { sortingToServer } from "@/lib/sortingToServer";
+import type { ServerSort } from "@/types/server-query";
+import type { FilterValues } from "types";
 
 /**
- * ตัวเลือกสำหรับควบคุมตารางฝั่งเซิร์ฟเวอร์ (Server-side Table Controller)
- * - TRow: ชนิดของแถว (row) ในตาราง
- * - DF:   ชนิดของ "โดเมนฟิลเตอร์" ที่ฝั่งโดเมนใช้จริง (เช่น { status?: 'active'; search?: string })
- * - SF:   ชนิดของ "ซิมเปิลฟิลเตอร์" ที่ UI/FilterBar ใช้ (เช่น { status?: string; q?: string })
+ * รูปแบบเดิม (V1): ระบุ DF (domain filters) + SF (simple/UI filters) เอง
  */
-export type UseServerTableControllerOptions<TRow, DF, SF> = {
-  /** จำนวนแถวต่อหน้าเริ่มต้น */
+export type UseServerTableControllerOptionsV1<TRow, DF, SF> = {
   pageSize: number;
-
-  /** ค่าเริ่มต้นของการเรียง (id ของคอลัมน์ และทิศทาง) */
   defaultSort: { id: keyof TRow | string; desc?: boolean };
-
-  /** ฟิลเตอร์โดเมน ณ ปัจจุบัน + setter */
   domainFilters: DF;
   setDomainFilters: (next: DF) => void;
-
-  /** mapping: DF -> SF (เพื่อป้อนให้ FilterBar) */
   toSimple: (df: DF) => SF;
-
-  /** mapping: SF -> DF (เมื่อ FilterBar เปลี่ยนค่า) */
   fromSimple: (sf: SF) => DF;
-
-  /** ถ้าฟิลเตอร์/เงื่อนไขเปลี่ยน ให้รีเซ็ต pageIndex = 0 (ใส่ deps ที่ต้องการเฝ้าดู) */
   resetDeps?: React.DependencyList;
 };
 
 /**
- * ฮุคควบคุมการแบ่งหน้า/เรียง/แปลงฟิลเตอร์ และผลิต query สำหรับยิงไป backend
- *
- * ใช้งานหลายโดเมนได้ (device / software / license / ...) โดย:
- * - กำหนด DF (โดเมนฟิลเตอร์) ของโดเมนนั้น
- * - กำหนด SF (ซิมเปิลฟิลเตอร์) สำหรับ UI
- * - ส่งตัวแปลง toSimple / fromSimple ให้ตรงกัน
+ * รูปแบบ V2: ระบุ TStatus/TType แล้ว SF จะเป็น FilterValues<TStatus, TType> อัตโนมัติ
+ * (เหมาะกับหน้า inventory ส่วนใหญ่ที่ใช้ FilterBar มาตรฐาน)
  */
+export type UseServerTableControllerOptionsV2<
+  TRow,
+  TStatus extends string,
+  TType extends string,
+  DF
+> = {
+  pageSize: number;
+  defaultSort: { id: keyof TRow | string; desc?: boolean };
+  domainFilters: DF;
+  setDomainFilters: (next: DF) => void;
+  toSimple: (df: DF) => FilterValues<TStatus, TType>;
+  fromSimple: (sf: FilterValues<TStatus, TType>) => DF;
+  resetDeps?: React.DependencyList;
+};
+
+/** โครงผลลัพธ์ที่ controller คืนให้ */
+type ControllerReturn<SF> = {
+  // สำหรับ FilterBar
+  simpleFilters: SF;
+  onSimpleFiltersChange: (sf: SF) => void;
+
+  // สำหรับ DataTable
+  pagination: PaginationState;
+  setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
+  sorting: SortingState;
+  setSorting: React.Dispatch<React.SetStateAction<SortingState>>;
+
+  // สำหรับโดเมน service/hook
+  serverQuery: {
+    pageIndex: number;
+    pageSize: number;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+  };
+};
+
+/* ----------------------- Overloads ----------------------- */
 export function useServerTableController<TRow, DF, SF>(
-  opts: UseServerTableControllerOptions<TRow, DF, SF>
-) {
+  opts: UseServerTableControllerOptionsV1<TRow, DF, SF>,
+): ControllerReturn<SF>;
+
+export function useServerTableController<
+  TRow,
+  TStatus extends string,
+  TType extends string,
+  DF
+>(
+  opts: UseServerTableControllerOptionsV2<TRow, TStatus, TType, DF>,
+): ControllerReturn<FilterValues<TStatus, TType>>;
+
+/* --------------------- Implementation -------------------- */
+export function useServerTableController(opts: any): any {
   const {
     pageSize,
     defaultSort,
@@ -62,23 +94,25 @@ export function useServerTableController<TRow, DF, SF>(
     { id: String(defaultSort.id), desc: !!defaultSort.desc },
   ]);
 
-  // แปลง filters โดเมน ↔︎ SimpleFilters (สำหรับ FilterBar)
-  const simpleFilters = React.useMemo(() => toSimple(domainFilters), [domainFilters, toSimple]);
-
-  const onSimpleFiltersChange = React.useCallback(
-    (sf: SF) => setDomainFilters(fromSimple(sf)),
-    [fromSimple, setDomainFilters]
+  // DF -> SF (UI)
+  const simpleFilters = React.useMemo(
+    () => toSimple(domainFilters),
+    [domainFilters, toSimple],
   );
 
-  // ถ้า deps บางตัวที่เกี่ยวกับฟิลเตอร์เปลี่ยน ให้รีเซ็ตหน้าเป็นหน้าแรก
+  const onSimpleFiltersChange = React.useCallback(
+    (sf: unknown) => setDomainFilters(fromSimple(sf)),
+    [fromSimple, setDomainFilters],
+  );
+
+  // reset page เมื่อ filter deps เปลี่ยน
   React.useEffect(() => {
     setPagination((p) => (p.pageIndex === 0 ? p : { ...p, pageIndex: 0 }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, resetDeps);
 
-  // query ที่พร้อมส่งไป server
+  // query พร้อมส่ง server
   const serverSort: ServerSort = sortingToServer(sorting);
-
   const serverQuery = React.useMemo(
     () => ({
       pageIndex: pagination.pageIndex,
@@ -86,21 +120,16 @@ export function useServerTableController<TRow, DF, SF>(
       sortBy: serverSort.sortBy,
       sortOrder: serverSort.sortOrder,
     }),
-    [pagination.pageIndex, pagination.pageSize, serverSort.sortBy, serverSort.sortOrder]
+    [pagination.pageIndex, pagination.pageSize, serverSort.sortBy, serverSort.sortOrder],
   );
 
   return {
-    // สำหรับ FilterBar
     simpleFilters,
     onSimpleFiltersChange,
-
-    // สำหรับ DataTable
     pagination,
     setPagination,
     sorting,
     setSorting,
-
-    // สำหรับ Hook โดเมนไปยิง API
     serverQuery,
   };
 }
