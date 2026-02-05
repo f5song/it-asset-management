@@ -2,7 +2,7 @@
 import type { FormField } from "types/forms";
 import type { PolicyStatus, RiskLevel } from "types/exception";
 
-const STATUS_OPTIONS = (["Active", "Inactive", "Deprecated", "Archived"] as PolicyStatus[])
+const STATUS_OPTIONS = (["Active", "Inactive"] as PolicyStatus[])
   .map(v => ({ label: v, value: v }));
 
 const RISK_OPTIONS = (["Low", "Medium", "High"] as RiskLevel[])

@@ -29,7 +29,7 @@ type Props = {
 export default function EmployeeFilterBar({
   filters,
   onFiltersChange,
-  statusOptions = ["Active", "Inactive", "OnLeave", "Resigned"],
+  statusOptions = ["Active", "Resigned"],
   departmentOptions = [],
   labels,
   rightExtra,

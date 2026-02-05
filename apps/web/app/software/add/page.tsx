@@ -92,7 +92,7 @@ const fields: FormField<keyof SoftwareFormValues & string>[] = [
 
 export default function AddSoftwarePage() {
   return (
-    <div style={{ padding: 6 }}>
+    <div>
       <BackButton/>
       <FormPage<SoftwareFormValues>
         title="Add Software"

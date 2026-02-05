@@ -106,7 +106,7 @@ const fields: FormField<keyof EmployeeFormValues & string>[] = [
 
 export default function AddEmployeePage() {
   return (
-    <div style={{ padding: 6 }}>
+    <div>
       <BackButton />
       <FormPage<EmployeeFormValues>
         title="Add Employee"

@@ -2,7 +2,6 @@
 
 import type {
   SoftwareItem,
-  SoftwareStatus,
   Compliance,
   SoftwareType,
   ClientServer,
@@ -15,9 +14,8 @@ import type {
  */
 const MANUFACTURERS = ["Microsoft", "Adobe", "Autodesk", "Google"] as const;
 
-const STATUSES = ["Active", "Expired", "Expiring"] as const satisfies readonly SoftwareStatus[];
 
-const SOFTWARE_TYPES = ["Standard", "Special", "Exception"] as const satisfies readonly SoftwareType[];
+const SOFTWARE_TYPES = ["Standard", "Special"] as const satisfies readonly SoftwareType[];
 
 const COMPLIANCE = ["Compliant", "Non-Compliant"] as const satisfies readonly Compliance[];
 
@@ -39,7 +37,6 @@ export const MOCK_ITEMS: SoftwareItem[] = Array.from({ length: 123 }).map((_, i)
   const idx = i + 1;
 
   const manufacturer = MANUFACTURERS[i % MANUFACTURERS.length];
-  const status = STATUSES[i % STATUSES.length];
   const softwareType = SOFTWARE_TYPES[i % SOFTWARE_TYPES.length];
   const policyCompliance = COMPLIANCE[i % COMPLIANCE.length];
   const clientServer = CLIENT_SERVER[i % CLIENT_SERVER.length];
@@ -59,7 +56,6 @@ export const MOCK_ITEMS: SoftwareItem[] = Array.from({ length: 123 }).map((_, i)
     category: idx % 2 === 0 ? "Productivity" : "Design",
     policyCompliance,
     expiryDate, // string | null | undefined → ให้เป็น string
-    status,
     softwareType,
     licenseModel,
     clientServer,

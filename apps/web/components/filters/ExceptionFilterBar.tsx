@@ -34,7 +34,7 @@ type Props = {
 export default function ExceptionFilterBar({
   filters,
   onFiltersChange,
-  statusOptions = ["Active", "Inactive", "Deprecated", "Archived"],
+  statusOptions = ["Active", "Inactive"],
   labels,
   rightExtra,
   extraFilters,

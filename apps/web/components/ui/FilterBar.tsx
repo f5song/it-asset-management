@@ -8,7 +8,7 @@ import { ExportFormat, FilterValues, ToolbarAction } from "types";
 
 export type FilterBarProps<TStatus extends string, TType extends string> = {
   /** state เดียว รวมทุกฟิลด์ */
-  filters: FilterValues<TStatus, TType>;
+  filters?: FilterValues<TStatus, TType>;
   /** อัปเดตฟิลเตอร์ */
   onFiltersChange: (next: FilterValues<TStatus, TType>) => void;
 
@@ -102,9 +102,9 @@ export function FilterBar<TStatus extends string, TType extends string>({
   );
 
   // map undefined ↔ "ALL"
-  const statusValue = (filters.status ?? "ALL") as string;
-  const typeValue = (filters.type ?? "ALL") as string;
-  const manufacturerValue = (filters.manufacturer ?? "ALL") as string;
+  const statusValue = (filters?.status ?? "ALL") as string;
+  const typeValue = (filters?.type ?? "ALL") as string;
+  const manufacturerValue = (filters?.manufacturer ?? "ALL") as string;
 
   // updater สั้น ๆ
 
@@ -168,7 +168,7 @@ export function FilterBar<TStatus extends string, TType extends string>({
 
       {/* Search */}
       <SearchInput
-        value={filters.search ?? ""}
+        value={filters?.search ?? ""}
         onChange={(q) => onFiltersChange({ ...filters, search: q })}
         placeholder={searchPlaceholder}
       />

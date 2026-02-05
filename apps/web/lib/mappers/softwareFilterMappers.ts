@@ -1,49 +1,49 @@
+// lib/mappers/softwareFilterMappers.ts
 import type { FilterValues } from "types";
-import type { SoftwareFilters, SoftwareStatus, SoftwareType } from "types";
+import type { SoftwareFilters, SoftwareType } from "types";
 import { toUndef } from "lib/filters";
 
-// ❌ ไม่ต้องมี normalizeByMap ถ้า UI ให้ค่าถูกต้องอยู่แล้ว
-// ❌ ไม่ต้องแคสต์เป็น string
-// ❌ ไม่ต้อง map lowercase
+/**
+ * Simple Filter ของหน้า Software
+ * - ไม่มี status แล้ว => ใช้ TStatus = never
+ */
+export type SoftwareSimple = FilterValues<never, SoftwareType>;
 
-// ---------------------------------------------
-// Domain -> Simple
-// ---------------------------------------------
-export function toSimpleFilters(
-  df: SoftwareFilters
-): FilterValues<SoftwareStatus, SoftwareType> {
+/* ---------------------------------------------
+ * Domain -> Simple (UI)
+ * -------------------------------------------*/
+export function toSimpleFilters(df: SoftwareFilters = {}): SoftwareSimple {
   return {
-    status: toUndef(df.status),
+    // ไม่มี status: ไม่ต้องคืนค่า field status
     type: toUndef(df.type),
     manufacturer: toUndef(df.manufacturer),
     search: df.search ?? "",
   };
 }
 
-// ---------------------------------------------
-// Simple -> Domain
-// ---------------------------------------------
-export function toDomainFilters(
-  sf?: FilterValues<SoftwareStatus, SoftwareType>
-): SoftwareFilters {
+/* ---------------------------------------------
+ * Simple -> Domain
+ * -------------------------------------------*/
+export function toDomainFilters(sf?: SoftwareSimple): SoftwareFilters {
   if (!sf) return {};
   return {
-    status: toUndef(sf.status),
+    // ไม่มี status
     type: toUndef(sf.type),
     manufacturer: toUndef(sf.manufacturer),
     search: sf.search ?? "",
   };
 }
 
-// ---------------------------------------------
-// Simple -> Service  (แบบง่ายสุด ถูกต้องสุด)
-// ---------------------------------------------
+/* ---------------------------------------------
+ * Simple -> Service (ตัวอย่าง mapping สำหรับ call API)
+ * - ปรับ key ชื่อให้เข้ากับ backend ได้ตามจริง
+ * -------------------------------------------*/
 export function toServiceFilters(
-  sf: FilterValues<SoftwareStatus, SoftwareType>
-): Pick<SoftwareFilters, "status" | "type" | "manufacturer" | "search"> {
+  sf: SoftwareSimple
+): Pick<SoftwareFilters, "type" | "manufacturer" | "search"> {
   return {
-    status: toUndef(sf.status),           // SoftwareStatus | undefined
-    type: toUndef(sf.type),               // SoftwareType | undefined
+    // ไม่มี status
+    type: toUndef(sf.type),
     manufacturer: toUndef(sf.manufacturer),
     search: sf.search ?? "",
   };

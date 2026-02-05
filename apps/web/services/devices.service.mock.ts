@@ -17,7 +17,7 @@ import type {
 
 const DEVICE_TYPES = ["Laptop", "Desktop", "VM", "Mobile"] as const;
 const DEVICE_OSES  = ["Windows", "macOS", "Linux", "iOS", "Android"] as const;
-const COMPLIANCE_SET = ["Compliant", "Non-Compliant", "Exception", "Pending"] as const;
+const COMPLIANCE_SET = ["Compliant", "Non-Compliant"] as const;
 
 const pick = <T,>(arr: readonly T[], idx: number) => arr[idx % arr.length];
 

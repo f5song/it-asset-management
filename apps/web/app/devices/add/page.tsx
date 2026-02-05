@@ -112,20 +112,23 @@ const fields: FormField<keyof DeviceFormValues & string>[] = [
     colSpan: 1,
   },
   {
-    name: "department",
-    label: "Department",
-    type: "select",
-    colSpan: 1,
-    options: [
-      { label: "Engineering", value: "engineering" },
-      { label: "Design", value: "design" },
-      { label: "Finance", value: "finance" },
-      { label: "HR", value: "hr" },
-      { label: "Operations", value: "operations" },
-      { label: "Sales", value: "sales" },
-      { label: "Other", value: "other" },
-    ],
-  },
+  name: "department",
+  label: "Department",
+  type: "select",
+  colSpan: 1,
+  options: [
+    { label: "สำนักการตลาด",                  value: "marketing" },
+    { label: "สำนักข่าว",                      value: "news" },
+    { label: "สำนักผลิตรายการ",                value: "production" },
+    { label: "สำนักกรรมการบริหาร",            value: "executive-board" },
+    { label: "สำนักกิจการและสื่อสารองค์กร",    value: "corporate-communications" },
+    { label: "สำนักสำนักทรัพยากรมนุษย์",      value: "human-resources" },
+    { label: "สำนักดิจิทัลและกลยุทธ์สื่อใหม่", value: "digital-new-media-strategy" },
+    { label: "สำนักไฟฟ้ากำลัง",               value: "power-engineering" },
+    { label: "สำนักเทคนิคโทรทัศน์",           value: "tv-engineering" },
+    { label: "สำนักการพาณิชย์",               value: "commerce" },
+  ],
+}
 ];
 
 /** ----------------------------------------------------------------
@@ -133,7 +136,7 @@ const fields: FormField<keyof DeviceFormValues & string>[] = [
  * ----------------------------------------------------------------*/
 export default function AddDevicePage() {
   return (
-    <div style={{ padding: 6 }}>
+    <div>
       <BackButton />
       <FormPage<DeviceFormValues>
         title="Add Device"

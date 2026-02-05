@@ -58,20 +58,19 @@ export default function EmployeesPage() {
     useEmployeesInventory(ctl.serverQuery, domainFilters);
 
   // ---- Options ----
-  const statusOptions: readonly EmployeeStatus[] = [
-    "Active",
-    "Inactive",
-    "OnLeave",
-    "Resigned",
-  ];
+  const statusOptions: readonly EmployeeStatus[] = ["Active", "Resigned"];
 
   const departmentOptions: readonly string[] = [
-    "Engineering",
-    "Design",
-    "Finance",
-    "HR",
-    "Operations",
-    "Sales",
+    "สำนักการตลาด",
+    "สำนักข่าว",
+    "สำนักผลิตรายการ",
+    "สำนักกรรมการบริหาร",
+    "สำนักกิจการและสื่อสารองค์กร",
+    "สำนักสำนักทรัพยากรมนุษย์",
+    "สำนักดิจิทัลและกลยุทธ์สื่อใหม่",
+    "สำนักไฟฟ้ากำลัง",
+    "สำนักเทคนิคโทรทัศน์",
+    "สำนักการพาณิชย์",
   ];
 
   // ไม่ใช้ manufacturer ในหน้านี้

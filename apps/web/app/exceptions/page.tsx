@@ -46,8 +46,6 @@ export default function ExceptionPage() {
   const statusOptions: readonly PolicyStatus[] = [
     "Active",
     "Inactive",
-    "Deprecated",
-    "Archived",
   ];
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 

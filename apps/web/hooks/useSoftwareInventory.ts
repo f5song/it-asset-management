@@ -1,5 +1,5 @@
 import { getItemsStock } from "@/services/software.service.mock";
-import { SoftwareItem, SoftwareStatus, SoftwareType } from "@/types";
+import { SoftwareItem, SoftwareType } from "@/types";
 import React from "react";
 
 export function useSoftwareInventory(
@@ -10,7 +10,6 @@ export function useSoftwareInventory(
     sortOrder?: "asc" | "desc";
   },
   filters?: {
-    status?: SoftwareStatus;
     type?: SoftwareType;
     manufacturer?: string;
     search?: string;
@@ -24,15 +23,9 @@ export function useSoftwareInventory(
     undefined,
   );
 
-  const statusOptions: readonly SoftwareStatus[] = [
-    "Active",
-    "Expired",
-    "Expiring",
-  ];
   const typeOptions: readonly SoftwareType[] = [
     "Standard",
     "Special",
-    "Exception",
   ];
   const manufacturerOptions = ["Microsoft", "Adobe", "Autodesk", "JetBrains"];
 
@@ -50,7 +43,6 @@ export function useSoftwareInventory(
           pageSize: query.pageSize,
           sortBy: query.sortBy,
           sortOrder: query.sortOrder,
-          status: filters?.status,
           type: filters?.type,
           manufacturer: filters?.manufacturer,
           search: filters?.search,
@@ -74,7 +66,6 @@ export function useSoftwareInventory(
     query.pageSize,
     query.sortBy,
     query.sortOrder,
-    filters?.status,
     filters?.type,
     filters?.manufacturer,
     filters?.search,
@@ -86,7 +77,6 @@ export function useSoftwareInventory(
     isLoading,
     isError,
     errorMessage,
-    statusOptions,
     typeOptions,
     manufacturerOptions,
   };

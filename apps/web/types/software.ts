@@ -2,15 +2,14 @@
 import type { OffsetPage, OffsetPaginationParams, Searchable } from "./common";
 import type { LicenseModel } from "./license";
 
-export type SoftwareStatus = "Active" | "Expired" | "Expiring";
-export type Compliance = "Compliant" | "Non-Compliant" | "Pending" | "Exception";
-export type SoftwareType = "Standard" | "Special" | "Exception";
+
+export type Compliance = "Compliant" | "Non-Compliant";
+export type SoftwareType = "Standard" | "Special";
 export type ClientServer = "Client" | "Server";
 
 /** ฟิลเตอร์หน้า Software */
 export type SoftwareFilters = {
   manufacturer?: string;
-  status?: SoftwareStatus;
   type?: SoftwareType;
   search?: string;
 };
@@ -22,7 +21,6 @@ export type SoftwareItem = {
   version: string;
   category: string;
   expiryDate?: string | null; 
-  status: SoftwareStatus;
   policyCompliance: Compliance;
   softwareType: SoftwareType;
   clientServer: ClientServer;

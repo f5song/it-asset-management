@@ -2,7 +2,7 @@
 import type { OffsetPage, OffsetPaginationParams, Searchable } from "./common";
 
 /** สถานะของ "นโยบายข้อยกเว้น" (Policy-level) */
-export type PolicyStatus = "Active" | "Inactive" | "Deprecated" | "Archived";
+export type PolicyStatus = "Active" | "Inactive";
 export type RiskLevel = "Low" | "Medium" | "High";
 
 /**

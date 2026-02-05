@@ -38,7 +38,7 @@ type BaseShellProps<
 
   // FilterBar props
   /** ใช้ FilterValues<TStatus, TType> ให้สอดคล้องกับโดเมน */
-  filters: FilterValues<TStatus, TType>;
+  filters?: FilterValues<TStatus, TType>;
   onFiltersChange: (next: FilterValues<TStatus, TType>) => void;
 
   /** สถานะ (ทำเป็น generic TStatus) */
@@ -94,7 +94,7 @@ type BaseShellProps<
  */
 type WithTypeFilter<TType extends string> = {
   hasType: true;
-  typeOptions: readonly TType[];
+  typeOptions?: readonly TType[];
   allTypeLabel?: string;
 };
 
@@ -218,7 +218,7 @@ export function InventoryPageShell<
   const hasType = "hasType" in props && props.hasType === true;
 
   return (
-    <div style={{ padding: 6 }}>
+    <div>
       <PageHeader title={title} breadcrumbs={breadcrumbs} />
 
       {/* Summary Cards */}

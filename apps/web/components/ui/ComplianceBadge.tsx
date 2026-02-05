@@ -9,8 +9,6 @@ import { cn } from '@/lib/cn';
 const complianceMap: Record<Compliance, string> = {
   'Compliant': 'text-green-700 bg-green-100',
   'Non-Compliant': 'text-red-700 bg-red-100',
-  'Pending': 'text-amber-700 bg-amber-100',
-  'Exception': 'text-amber-700 bg-amber-100',
 };
 
 export function ComplianceBadge({ label }: { label: Compliance }) {

@@ -1,42 +1,15 @@
+// hooks/useServerTableController.ts
+"use client";
+
 import React from "react";
 import { PaginationState, SortingState } from "@tanstack/react-table";
 import { sortingToServer } from "@/lib/sortingToServer";
 import type { ServerSort } from "@/types/server-query";
 import type { FilterValues } from "types";
 
-/**
- * รูปแบบเดิม (V1): ระบุ DF (domain filters) + SF (simple/UI filters) เอง
- */
-export type UseServerTableControllerOptionsV1<TRow, DF, SF> = {
-  pageSize: number;
-  defaultSort: { id: keyof TRow | string; desc?: boolean };
-  domainFilters: DF;
-  setDomainFilters: (next: DF) => void;
-  toSimple: (df: DF) => SF;
-  fromSimple: (sf: SF) => DF;
-  resetDeps?: React.DependencyList;
-};
-
-/**
- * รูปแบบ V2: ระบุ TStatus/TType แล้ว SF จะเป็น FilterValues<TStatus, TType> อัตโนมัติ
- * (เหมาะกับหน้า inventory ส่วนใหญ่ที่ใช้ FilterBar มาตรฐาน)
- */
-export type UseServerTableControllerOptionsV2<
-  TRow,
-  TStatus extends string,
-  TType extends string,
-  DF
-> = {
-  pageSize: number;
-  defaultSort: { id: keyof TRow | string; desc?: boolean };
-  domainFilters: DF;
-  setDomainFilters: (next: DF) => void;
-  toSimple: (df: DF) => FilterValues<TStatus, TType>;
-  fromSimple: (sf: FilterValues<TStatus, TType>) => DF;
-  resetDeps?: React.DependencyList;
-};
-
-/** โครงผลลัพธ์ที่ controller คืนให้ */
+/** ---------------------------
+ * Controller Return
+ * --------------------------*/
 type ControllerReturn<SF> = {
   // สำหรับ FilterBar
   simpleFilters: SF;
@@ -57,7 +30,56 @@ type ControllerReturn<SF> = {
   };
 };
 
-/* ----------------------- Overloads ----------------------- */
+/** ---------------------------
+ * V1 (GENERAL) – แนะนำให้ใช้เป็นหลัก
+ * ให้ฟีเจอร์กำหนด Simple Filter เอง (จะมี/ไม่มี status ก็ได้)
+ * --------------------------*/
+export type UseServerTableControllerOptionsV1<
+  TRow,
+  DF,
+  SF
+> = {
+  pageSize: number;
+  defaultSort: { id: keyof TRow | string; desc?: boolean };
+  domainFilters: DF;
+  setDomainFilters: (next: DF) => void;
+  toSimple: (df: DF) => SF;
+  fromSimple: (sf: SF) => DF;
+  resetDeps?: React.DependencyList;
+};
+
+/** ---------------------------
+ * V2 (CONVENIENCE) – Backward compatible
+ * สำหรับหน้าที่ต้องการใช้ FilterValues<TStatus, TType>
+ * --------------------------*/
+export type UseServerTableControllerOptionsV2<
+  TRow,
+  TStatus extends string,
+  TType extends string,
+  DF
+> = {
+  pageSize: number;
+  defaultSort: { id: keyof TRow | string; desc?: boolean };
+  domainFilters: DF;
+  setDomainFilters: (next: DF) => void;
+  toSimple: (df: DF) => FilterValues<TStatus, TType>;
+  fromSimple: (sf: FilterValues<TStatus, TType>) => DF;
+  resetDeps?: React.DependencyList;
+};
+
+/** ---------------------------
+ * รูปแบบหลัก (RECOMMENDED API) – Generic 3 ตัว
+ * เทียบกับ V1 แต่ใช้ชื่อกลางให้ชัด: TSimple = simple filter
+ * --------------------------*/
+export type UseServerTableControllerOptions<
+  TRow,
+  TSimple,
+  DF
+> = UseServerTableControllerOptionsV1<TRow, DF, TSimple>;
+
+/** ---------------------------
+ * Overloads
+ * --------------------------*/
 export function useServerTableController<TRow, DF, SF>(
   opts: UseServerTableControllerOptionsV1<TRow, DF, SF>,
 ): ControllerReturn<SF>;
@@ -71,7 +93,9 @@ export function useServerTableController<
   opts: UseServerTableControllerOptionsV2<TRow, TStatus, TType, DF>,
 ): ControllerReturn<FilterValues<TStatus, TType>>;
 
-/* --------------------- Implementation -------------------- */
+/** ---------------------------
+ * Implementation
+ * --------------------------*/
 export function useServerTableController(opts: any): any {
   const {
     pageSize,
@@ -94,18 +118,18 @@ export function useServerTableController(opts: any): any {
     { id: String(defaultSort.id), desc: !!defaultSort.desc },
   ]);
 
-  // DF -> SF (UI)
+  // Domain -> Simple (UI)
   const simpleFilters = React.useMemo(
     () => toSimple(domainFilters),
     [domainFilters, toSimple],
   );
 
   const onSimpleFiltersChange = React.useCallback(
-    (sf: unknown) => setDomainFilters(fromSimple(sf)),
+    (sf: any) => setDomainFilters(fromSimple(sf)),
     [fromSimple, setDomainFilters],
   );
 
-  // reset page เมื่อ filter deps เปลี่ยน
+  // reset page เมื่อ deps ใน filter เปลี่ยน
   React.useEffect(() => {
     setPagination((p) => (p.pageIndex === 0 ? p : { ...p, pageIndex: 0 }));
     // eslint-disable-next-line react-hooks/exhaustive-deps

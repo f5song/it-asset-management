@@ -224,7 +224,7 @@ const fields = [
  * ========================================================= */
 export default function AddLicensePage() {
   return (
-    <div style={{ padding: 6 }}>
+    <div>
       <BackButton />
       <FormPage<LicenseFormValues>
         title="Add License"

@@ -65,15 +65,17 @@ export default function DashboardPage() {
       id: 1,
       title: "Total Software",
       count: ORG_SOFTWARE_TOTAL,
-      icon: <FiCpu />, // ซอฟต์แวร์/ระบบ
-      tone: "blue" as const, // โทนฟ้า อ่านสบาย
+      icon: <FiCpu />, // สื่อถึงซอฟต์แวร์/ระบบ
+      tone: "blue" as const, // โทนฟ้า: อ่านสบาย
+      href: "/software/inventory", // (ออปชัน) ให้การ์ดทั้งใบคลิกได้
     },
     {
       id: 2,
       title: "Devices Registered",
       count: ORG_DEVICES_REGISTERED,
-      icon: <FiMonitor />, // อุปกรณ์/เครื่อง
+      icon: <FiMonitor />, // จอ/อุปกรณ์
       tone: "green" as const, // โทนเขียว
+      href: "/devices",
     },
     {
       id: 3,
@@ -81,13 +83,15 @@ export default function DashboardPage() {
       count: active,
       icon: <FiAlertCircle />, // คำเตือน/ข้อยกเว้น
       tone: "amber" as const, // โทนเหลืองส้ม เตือนสายตา
+      href: "/exceptions?status=Active",
     },
     {
       id: 4,
       title: "Pending Requests",
       count: ORG_PENDING_REQUESTS,
-      icon: <FiInbox />, // กล่องคำขอค้าง
+      icon: <FiInbox />, // กล่องคำขอ
       tone: "violet" as const, // โทนม่วง แยกหมวดงาน
+      href: "/requests?status=Pending",
     },
   ] as const;
 
@@ -105,8 +109,9 @@ export default function DashboardPage() {
                 key={item.id}
                 title={item.title}
                 count={item.count}
-                icon={item.icon} 
-                tone={item.tone} 
+                icon={item.icon}
+                tone={item.tone}
+                href={item.href}
                 compact
                 hideFooter
                 className="h-[84px]" // สูงกำลังดี

@@ -9,8 +9,7 @@ import { LicenseModel } from "types/license"; // ถ้า licenseModel เป�
 // (ถ้าเป็น string union อยู่แล้ว ก็ไม่ต้อง import enum)
 
 const COMPLIANCE = ["Compliant", "Non-Compliant"] as const;
-const STATUS = ["Active", "Expired", "Expiring"] as const;
-const TYPE = ["Standard", "Special", "Exception"] as const;
+const TYPE = ["Standard", "Special"] as const;
 const CLIENT_SERVER = ["Client", "Server"] as const;
 // แนะนำให้ใช้ enum เพื่อชนิดแน่น:
 const MODEL = [
@@ -29,7 +28,6 @@ const ALL: SoftwareItem[] = Array.from({ length: 57 }).map((_, i) => ({
   category: ["IDE", "Security", "Design", "CAD"][i % 4],
   policyCompliance: COMPLIANCE[i % COMPLIANCE.length],
   expiryDate: "2026-12-31",
-  status: STATUS[i % STATUS.length],
   softwareType: TYPE[i % TYPE.length],
   licenseModel: MODEL[i % MODEL.length],
   clientServer: CLIENT_SERVER[i % CLIENT_SERVER.length],
@@ -65,7 +63,6 @@ export async function getItemsStock(q: SoftwareListQuery, signal?: AbortSignal):
         r.manufacturer.toLowerCase().includes(search)
     );
   }
-  if (q.status) filtered = filtered.filter((r) => r.status === q.status);
   if (q.type) filtered = filtered.filter((r) => r.softwareType === q.type);
   if (q.manufacturer)
     filtered = filtered.filter((r) => r.manufacturer === q.manufacturer);

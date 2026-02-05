@@ -137,7 +137,7 @@ export default function AssignEmployeeToExceptionsClient({
       <ExceptionFilterBar
         filters={ctl.simpleFilters}
         onFiltersChange={ctl.onSimpleFiltersChange}
-        statusOptions={["Active", "Inactive", "Deprecated", "Archived"]}
+        statusOptions={["Active", "Inactive"]}
         labels={{
           status: "Status",
           searchPlaceholder: "ค้นหา ID / ชื่อ / หมายเหตุ",

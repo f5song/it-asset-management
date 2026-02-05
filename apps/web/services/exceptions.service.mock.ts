@@ -11,7 +11,7 @@ import {
 
 // ---------- Mock dataset ----------
 
-const STATUSES = ["Active", "Inactive", "Deprecated", "Archived"] as const satisfies readonly PolicyStatus[];
+const STATUSES = ["Active", "Inactive"] as const satisfies readonly PolicyStatus[];
 const OWNERS = ["SecOps", "IT", "Infra", "HR", "Compliance"] as const;
 const USER_PREFIX = ["jirawee", "qa", "dev", "ops", "hr", "fin"] as const;
 

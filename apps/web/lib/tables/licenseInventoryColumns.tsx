@@ -38,6 +38,6 @@ export const licenseColumns: AppColumnDef<LicenseItem>[] = [
     header: "Status",
     accessorKey: "status",
     width: 120,
-    cell: (v, r) => <StatusBadge label={(r.status ?? v ?? "-") as string} />,
+    cell: (v, r) => <StatusBadge label={(r.status ?? v ?? "-") as string} variant="license" />,
   },
 ];

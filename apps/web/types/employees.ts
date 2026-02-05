@@ -3,7 +3,7 @@
 import type { OffsetPage, OffsetPaginationParams, Searchable } from "./common";
 
 /** สถานะพนักงาน (string union เหมือนกับโดเมนอื่น ๆ ในระบบ) */
-export type EmployeeStatus = "Active" | "Inactive" | "OnLeave" | "Resigned";
+export type EmployeeStatus = "Active" | "Resigned";
 
 /** ฟิลเตอร์ของโดเมน Employees (ให้รูปแบบเหมือน device) */
 export type EmployeeDomainFilters = {

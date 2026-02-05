@@ -14,6 +14,6 @@ export const employeeColumns: AppColumnDef<EmployeeItem>[] = [
     header: "Status",
     accessorKey: "status",
     width: 140,
-    cell: (v) => <StatusBadge label={String(v ?? "-")} />,
+    cell: (v) => <StatusBadge label={String(v ?? "-")} variant="employees"/>,
   },
 ];
