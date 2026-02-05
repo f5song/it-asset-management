@@ -1,9 +1,8 @@
+"use client";
 
-'use client';
-
-import React from 'react';
-import '../../lib/chartjs';
-import { Bar } from 'react-chartjs-2';
+import React from "react";
+import "../../lib/chartjs";
+import { Bar } from "react-chartjs-2";
 
 type Props = {
   title?: string;
@@ -12,15 +11,17 @@ type Props = {
   labels?: string[];
   values?: number[];
   color?: string;
+  optionsOverride?: any; // สามารถส่ง options ทับได้
 };
 
 export default function HorizontalBarChart({
-  title = 'License Expiry Trend',
+  title,
   className,
   height = 280,
-  labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-  values = [5, 8, 12, 7, 18, 28],
-  color = '#10b981',
+  labels = [],
+  values = [],
+  color = "#10b981",
+  optionsOverride,
 }: Props) {
   const data = {
     labels,
@@ -31,12 +32,13 @@ export default function HorizontalBarChart({
         backgroundColor: color,
         borderRadius: 8,
         barThickness: 16,
+        hoverBackgroundColor: "#059669", // emerald-600
       },
     ],
   };
 
   const options = {
-    indexAxis: 'y' as const,
+    indexAxis: "y" as const,
     responsive: true,
     maintainAspectRatio: false as const,
     plugins: {
@@ -45,9 +47,11 @@ export default function HorizontalBarChart({
       tooltip: { enabled: true },
     },
     scales: {
-      x: { beginAtZero: true },
-      y: { ticks: { autoSkip: false } },
+      x: { beginAtZero: true, grid: { drawBorder: false } },
+      y: { ticks: { autoSkip: false }, grid: { display: false } },
     },
+    animation: { duration: 300 },
+    ...optionsOverride, // allow override
   };
 
   return (

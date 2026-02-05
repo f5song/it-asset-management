@@ -1,7 +1,7 @@
 // lib/tables/exceptionInventoryColumns.ts
 import type { ExceptionDefinition } from "types/exception";
 import { show } from "lib/show";
-import { formatDate } from "lib/date";
+import { formatDateTH } from "lib/date";
 import { StatusBadge } from "components/ui/StatusBadge";
 import { AppColumnDef } from "@/types";
 
@@ -39,7 +39,7 @@ export const exceptionInventoryColumns: AppColumnDef<ExceptionDefinition>[] = [
     header: "Created At",
     accessorKey: "createdAt",
     getSortValue: (row) => row.createdAt ?? "",
-    cell: (value) => formatDate(value as string | null | undefined),
+    cell: (value) => formatDateTH(value as string | null | undefined),
   },
   {
     id: "notes",

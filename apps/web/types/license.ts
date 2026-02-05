@@ -63,6 +63,22 @@ export interface LicenseItem {
   licenseKey: string;
 }
 
+export type LicenseSummary = {
+  total: number;
+  active: number;
+  inactive: number;
+  expired: number;
+  warning: number;
+  available: number;
+  unknown: number;
+  seatsTotal: number;
+  seatsUsed: number;
+  seatsAvailable: number;
+  byModel: Record<string, number>;
+  byManufacturer: Record<string, number>;
+};
+
+
 /** กิจกรรมที่เกี่ยวกับ License */
 export type LicenseAction =
   | "Assign"
@@ -112,16 +128,3 @@ export type LicenseListQuery = OffsetPaginationParams & {
 
 export type LicenseListResponse = OffsetPage<LicenseItem>;
 
-export type LicenseSummary = {
-  total: number;
-  active: number;
-  inactive: number;
-  expired: number;
-  warning: number;
-  unknown: number;
-  seatsTotal: number;
-  seatsUsed: number;
-  seatsAvailable: number;
-  byModel: Record<string, number>;
-  byManufacturer: Record<string, number>;
-};

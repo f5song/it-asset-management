@@ -1,7 +1,8 @@
 // components/ui/StatusBadge.tsx
 'use client';
 
-import { cn } from '.'; // หรือ path ที่คุณใช้จริง
+import { cn } from "@/lib/cn";
+
 
 type StatusVariant =
   | 'neutral'

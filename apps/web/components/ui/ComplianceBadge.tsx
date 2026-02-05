@@ -2,8 +2,9 @@
 // components/ui/ComplianceBadge.tsx
 'use client';
 import React from 'react';
-import { cn } from '.';
+
 import { Compliance } from '@/types';
+import { cn } from '@/lib/cn';
 
 const complianceMap: Record<Compliance, string> = {
   'Compliant': 'text-green-700 bg-green-100',

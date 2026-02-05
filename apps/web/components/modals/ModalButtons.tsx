@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { cn } from '../ui';
+import { cn } from "@/lib/cn";
 
 
 type BaseButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {

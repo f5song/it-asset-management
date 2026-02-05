@@ -1,68 +1,73 @@
-
+// components/ui/Card.tsx
 "use client";
 
 import React from "react";
 import Link from "next/link";
-import { FaAngleRight } from "react-icons/fa";
-import { cn } from "../ui";
+import { cn } from "@/lib/cn";
 
-type CardProps = {
+export type Tone = "blue" | "green" | "slate" | "amber" | "red" | "violet";
+
+export type CardProps = {
   title: string;
   count: number | string;
   href?: string;
   compact?: boolean;
+  loading?: boolean;
   className?: string;
+  hideFooter?: boolean;
+  icon?: React.ReactNode;
+  tone?: Tone;
 };
+
+const toneBg = {
+  blue: "bg-blue-50 text-blue-700",
+  green: "bg-emerald-50 text-emerald-700",
+  amber: "bg-amber-50 text-amber-700",
+  red: "bg-red-50 text-red-700",
+  violet: "bg-violet-50 text-violet-700",
+  slate: "bg-slate-50 text-slate-700",
+} as const;
 
 export const Card: React.FC<CardProps> = ({
   title,
   count,
   href,
   compact = false,
+  loading = false,
   className,
+  hideFooter = true,
+  icon,
+  tone = "slate",
 }) => {
+  const Container: any = href ? Link : "div";
+  const showIcon = Boolean(icon);
+
   return (
-    <div
+    <Container
+      href={href}
       className={cn(
-        "w-full h-full rounded-lg border border-slate-200 bg-white shadow-sm",
-        "flex flex-col justify-between",
-        "transition-all",
+        "block rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all",
         compact ? "p-4" : "p-5",
         className
       )}
     >
-      {/* Title */}
-      <div className="text-xs md:text-sm text-slate-500 font-medium truncate">
-        {title}
-      </div>
-
-      {/* Count */}
-      <div
-        className={cn(
-          "mt-3 font-bold text-slate-900 leading-none tracking-tight",
-          compact ? "text-xl md:text-2xl" : "text-2xl md:text-[28px]"
-        )}
-      >
-        {typeof count === "number" ? count.toLocaleString() : count}
-      </div>
-
-      {/* Footer: “View all” link */}
-      <div className="flex items-center justify-end mt-1">
-        {href ? (
-          <Link
-            href={href}
-            className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-900 hover:underline transition"
-          >
-            <span className="hidden sm:inline">View all</span>
-            <FaAngleRight className="text-[10px]" />
-          </Link>
-        ) : (
-          <div className="flex items-center gap-1 text-[11px] text-slate-400 select-none">
-            <span className="hidden sm:inline">View all</span>
-            <FaAngleRight className="text-[10px]" />
+      <div className="flex items-center gap-3">
+        {showIcon && (
+          <div className={cn("w-10 h-10 flex items-center justify-center rounded-lg", toneBg[tone])}>
+            {icon}
           </div>
         )}
+
+        <div className="flex-1 min-w-0">
+          {/* ปรับให้ไม่ตัดเร็ว: แค่ md ขึ้นไปค่อย truncate */}
+          <div className="text-[13px] text-slate-600 md:truncate">{title}</div>
+          <div className="text-[22px] font-semibold text-slate-900 mt-0.5 leading-tight">
+            {loading ? "…" : typeof count === "number" ? count.toLocaleString() : count}
+          </div>
+        </div>
       </div>
-    </div>
+
+      {!hideFooter && <div className="mt-2 text-[11px] text-slate-400">View all</div>}
+    </Container>
   );
 };

@@ -1,53 +1,58 @@
+"use client";
 
-'use client';
-
-import React from 'react';
-import '../../lib/chartjs';
-import { Doughnut } from 'react-chartjs-2';
-import type { Plugin } from 'chart.js';
+import React from "react";
+import "../../lib/chartjs";
+import { Doughnut } from "react-chartjs-2";
+import type { Plugin } from "chart.js";
 
 type Props = {
-  value?: number;     // 0-100
+  value: number;     // 0-100
   title?: string;
   className?: string;
   height?: number;
-  color?: string;
+  color?: string;     // ถ้าส่งมา จะ override threshold
+  thresholds?: { good: number; warn: number }; // NEW: เปลี่ยนสีอัตโนมัติ
 };
 
 const centerTextPlugin = (text: string): Plugin => ({
-  id: 'centerText',
+  id: "centerText",
   afterDraw(chart) {
-    const { ctx, chartArea } = chart;
+    const { ctx, chartArea } = chart as any;
     if (!ctx || !chartArea) return;
-
     ctx.save();
-    const centerX = (chartArea.left + chartArea.right) / 2;
-    const centerY = chartArea.bottom - (chartArea.height * 0.25);
-
-    ctx.font = '700 28px Outfit, sans-serif';
-    ctx.fillStyle = '#111827';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    const { left, right, bottom, height } = chartArea;
+    const centerX = (left + right) / 2;
+    const centerY = bottom - height * 0.25;
+    ctx.font = "700 28px Inter, system-ui, sans-serif";
+    ctx.fillStyle = "#111827";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
     ctx.fillText(text, centerX, centerY);
     ctx.restore();
   },
 });
 
 export default function SemiRadialGauge({
-  value = 92,
-  title = 'Compliance Rate',
+  value,
+  title,
   className,
-  height = 260,
-  color = '#10b981',
+  height = 150,
+  color,
+  thresholds = { good: 80, warn: 40 },
 }: Props) {
   const v = Math.max(0, Math.min(100, value));
+  // Auto color by thresholds
+  const autoColor =
+    v >= thresholds.good ? "#10b981" : v >= thresholds.warn ? "#f59e0b" : "#ef4444";
+
   const data = {
-    labels: [title],
+    labels: [title ?? ""],
     datasets: [
       {
         data: [v, 100 - v],
-        backgroundColor: [color, '#e5e7eb'],
+        backgroundColor: [color ?? autoColor, "#e5e7eb"],
         borderWidth: 0,
+        hoverOffset: 2,
       },
     ],
   };
@@ -56,7 +61,7 @@ export default function SemiRadialGauge({
     responsive: true,
     maintainAspectRatio: false as const,
     circumference: 180, // ครึ่งวง
-    rotation: -90,       // เริ่มจากซ้ายไปขวา
+    rotation: -90, // เริ่มจากซ้ายไปขวา
     plugins: {
       legend: { display: false },
       title: { display: !!title, text: title },
@@ -66,7 +71,7 @@ export default function SemiRadialGauge({
         },
       },
     },
-    cutout: '60%',
+    cutout: "60%",
   };
 
   return (

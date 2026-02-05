@@ -257,6 +257,7 @@ export async function getLicenseSummary(
     inactive: 0,
     expired: 0,
     warning: 0,
+    available: 0,
     unknown: 0,
     seatsTotal: 0,
     seatsUsed: 0,

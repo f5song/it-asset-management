@@ -22,7 +22,9 @@ import {
   demoExceptionHistory,
 } from "lib/demo/exceptionDetailDemoData";
 import { exceptionEditFields } from "app/config/forms/exceptionEditFields";
-import { formatDateDeterministic } from "@/lib/date";
+import { formatDateSafe } from "@/lib/date";
+import { toLocalInput } from "@/lib/date-input";
+
 
 type ExceptionsDetailProps = {
   item: ExceptionDefinition;
@@ -30,24 +32,6 @@ type ExceptionsDetailProps = {
   assignments?: ExceptionAssignmentRow[];
   breadcrumbs?: BreadcrumbItem[];
 };
-
-function formatDateSafe(v?: string | null) {
-  return formatDateDeterministic(v); // ✅ แทนที่ toLocaleString()
-}
-
-/** ISO -> YYYY-MM-DDTHH:mm (สำหรับ input type="datetime-local") */
-function toLocalInput(dt?: string | null): string {
-  if (!dt) return "";
-  const d = new Date(dt);
-  if (isNaN(d.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  const mm = pad(d.getMonth() + 1);
-  const dd = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mi = pad(d.getMinutes());
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-}
 
 export default function ExceptionsDetail({
   item,

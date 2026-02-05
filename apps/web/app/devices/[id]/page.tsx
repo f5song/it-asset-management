@@ -1,9 +1,10 @@
 
 // app/devices/[id]/page.tsx
-import BackButton from "components/ui/BackButton";
+
+import DeviceDetail from "@/components/detail/DeviceDetail";
+import BackButton from "@/components/ui/BackButton";
+import { getDeviceById } from "@/services/devices.service.mock";
 import { notFound } from "next/navigation";
-import { getDeviceById } from "services/devices.service.mock";
-import DeviceDetail from "../../../components/detail/DeviceDetail";
 
 type PageProps = { params: { id: string } };
 

@@ -1,54 +1,39 @@
-import { SoftwareItem } from "../types";
-
 // src/utils/date.ts
-export const formatDate = (iso?: string | null) => {
-  if (!iso) return 'N/A';
-  const d = new Date(iso);
-  return d.toLocaleDateString('th-TH', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+export type DateInput = string | number | Date | null | undefined;
+
+const FALLBACK = "—";
+
+function toDateSafe(input: DateInput): Date | null {
+  if (input == null) return null;
+  const d = new Date(input);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** 1) UI ไทย — ใช้ใน dashboard ขององค์กรไทย */
+export function formatDateTH(input: DateInput): string {
+  const d = toDateSafe(input);
+  if (!d) return FALLBACK;
+  return d.toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+/** 2) UI สากล — ระบุ locale ได้ (ค่าปริยาย en-US) */
+export function formatDateTime(input: DateInput, locale = "en-US", withSeconds = false): string {
+  const d = toDateSafe(input);
+  if (!d) return FALLBACK;
+  return d.toLocaleString(locale, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    ...(withSeconds ? { second: "2-digit" } : {}),
   });
-};
+}
 
-export const exportToCSV = (rows: SoftwareItem[], filename = 'software_inventory.csv') => {
-  const headers = [
-    'Software Name',
-    'Manufacturer',
-    'Version',
-    'Category',
-    'Policy Compliance',
-    'Expiry Date',
-    'Status',
-  ];
-  const csvRows = rows.map((r) =>
-    [
-      r.softwareName,
-      r.manufacturer,
-      r.version,
-      r.category,
-      r.policyCompliance,
-      r.expiryDate ?? 'N/A',
-      r.status,
-    ].join(',')
-  );
-  const csv = [headers.join(','), ...csvRows].join('\n');
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-// lib/dateDeterministic.ts
-export function formatDateDeterministic(value?: string | null) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return "—";
-  // ล็อก locale + timeZone ให้เหมือนกันทุกสภาพแวดล้อม
+/** 3) Deterministic (UTC) — ใช้ใน CSV/Logs/Test/Audit ให้ได้ผลลัพธ์เท่ากันทุกเครื่อง */
+export function formatDateUTC(input: DateInput): string {
+  const d = toDateSafe(input);
+  if (!d) return FALLBACK;
   return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -56,11 +41,5 @@ export function formatDateDeterministic(value?: string | null) {
   }).format(d);
 }
 
-export function formatDateOnlyDeterministic(value?: string | null) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-GB", {
-    year: "numeric", month: "2-digit", day: "2-digit", timeZone: "UTC",
-  }).format(d);
-}
+/** (Option) alias semantic ชื่อจำง่ายใน component ฝั่งระบบ */
+export const formatDateSafe = formatDateUTC;

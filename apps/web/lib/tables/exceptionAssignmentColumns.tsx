@@ -2,7 +2,7 @@
 import type { ReactNode } from "react";
 import { StatusBadge } from "components/ui/StatusBadge";
 import { show } from "lib/show";
-import { formatDate } from "lib/date";
+import { formatDateTH } from "lib/date";
 import type { ExceptionAssignmentRow } from "types/exception";
 
 /**
@@ -28,12 +28,12 @@ export const exceptionAssignmentColumns = [
   {
     header: "Assigned At",
     accessor: (r: ExceptionAssignmentRow): ReactNode =>
-      show(formatDate(r.assignedAt)),
+      show(formatDateTH(r.assignedAt)),
   },
   {
     header: "Expires At",
     accessor: (r: ExceptionAssignmentRow): ReactNode =>
-      show(formatDate(r.expiresAt)),
+      show(formatDateTH(r.expiresAt)),
   },
   {
     header: "Status",

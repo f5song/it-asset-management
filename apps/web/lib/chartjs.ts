@@ -1,29 +1,38 @@
-
 // src/lib/chartjs.ts
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
   ArcElement,
+  BarElement,
   PointElement,
   LineElement,
+  Title,
   Tooltip,
   Legend,
-  Title,
-} from 'chart.js';
+  Filler,
+} from "chart.js";
 
-// ต้อง register ก่อนใช้ ไม่งั้น Chart.js จะ error
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  BarElement,
   ArcElement,
+  BarElement,
   PointElement,
   LineElement,
+  Title,
   Tooltip,
   Legend,
-  Title
+  Filler
 );
+
+// Global defaults
+ChartJS.defaults.font.family =
+  "'Inter', system-ui, -apple-system, Segoe UI, Roboto, 'Noto Sans Thai', sans-serif";
+ChartJS.defaults.color = "#334155"; // slate-700
+ChartJS.defaults.responsive = true;
+ChartJS.defaults.plugins.legend.labels.boxWidth = 10;
+ChartJS.defaults.plugins.tooltip.mode = "index";
+ChartJS.defaults.plugins.tooltip.intersect = false;
 
 export { ChartJS };

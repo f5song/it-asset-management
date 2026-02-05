@@ -2,18 +2,18 @@
 // components/detail/DetailView.tsx
 "use client";
 
+import { BreadcrumbItem, Compliance, HistoryEvent } from "@/types";
 import React, { ReactNode, useState } from "react";
-import { Compliance, HistoryEvent } from "../../types";
-import { DetailHeader } from "./DetailHeader";
-import { TabList, TabPanel, TabTrigger } from "../ui/Tabs";
-import { HistoryList } from "./HistoryList";
-import { DetailInfoGrid } from "./DetailInfo";
-import { ConfirmModal } from "../modals/ConfirmModal";
-import { EditModal } from "../modals/EditModal";
-import type { BreadcrumbItem } from "../../types";
+
 
 // ✅ นำเข้า FormField แทน EditField
 import type { FormField } from "types/forms";
+import { DetailHeader } from "./DetailHeader";
+import { TabList, TabPanel, TabTrigger } from "../ui/Tabs";
+import { DetailInfoGrid } from "./DetailInfo";
+import { HistoryList } from "./HistoryList";
+import { ConfirmModal } from "../modals/ConfirmModal";
+import { EditModal } from "../modals/EditModal";
 
 /* ---------------- Types ---------------- */
 

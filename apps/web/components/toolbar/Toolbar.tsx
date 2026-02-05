@@ -3,7 +3,7 @@
 'use client';
 
 import { ToolbarControl } from '@/types/toolbar';
-import { cn } from '../ui';
+import { cn } from "@/lib/cn";
 
 /** props หลักของ Toolbar */
 export type ToolbarProps = {

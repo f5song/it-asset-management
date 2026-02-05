@@ -1,10 +1,10 @@
 "use client";
+import BackButton from "@/components/ui/BackButton";
+import { FormPage } from "@/components/ui/FormPage";
+import { FormField } from "@/types";
 import React from "react";
 import { z } from "zod";
 
-import { FormPage } from "../../../components/ui/FormPage";
-import BackButton from "../../../components/ui/BackButton";
-import { FormField } from "types/forms";
 
 // หากคุณมี enum อยู่แล้ว สามารถ import มาใช้แทน string literal ได้ เช่น:
 // import { EmployeeStatus } from "types/employees";

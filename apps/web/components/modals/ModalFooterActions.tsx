@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { PrimaryButton, SecondaryButton } from './ModalButtons';
-import { cn } from '../ui';
+import { cn } from "@/lib/cn";
 
 export type ModalFooterActionsProps = {
   onCancel: () => void;

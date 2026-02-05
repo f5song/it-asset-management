@@ -8,9 +8,10 @@ import { DataTableHeader } from './DataTableHeader';
 import { DataTableBody } from './DataTableBody';
 import { LoadingBody, ErrorBody, EmptyBody } from './DataTableStates';
 import { DataTablePaginationBar } from './DataTablePaginationBar';
-import { cn } from '../ui';
+
 
 import type { AppColumnDef, DataTableProps as _DataTableProps } from '../../types/ui-table';
+import { cn } from '@/lib/cn';
 
 type ExtraSelectionProps<TRow extends { id?: string | number }> = {
   /** เปิด/ปิด checkbox selection */

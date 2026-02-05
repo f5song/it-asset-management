@@ -1,8 +1,9 @@
 
 // src/components/ui/Tabs.tsx
 "use client";
+import { cn } from "@/lib/cn";
 import React from "react";
-import { cn } from ".";
+
 
 export function TabTrigger({
   active,

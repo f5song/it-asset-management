@@ -13,7 +13,7 @@ import {
   Cog6ToothIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
-import { cn } from "../ui";
+import { cn } from "@/lib/cn";
 
 type MenuItem = {
   key: string;

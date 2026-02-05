@@ -2,7 +2,7 @@
 // src/components/installation/SelectField.tsx
 "use client";
 import React from "react";
-import { cn } from "../ui";
+import { cn } from "@/lib/cn";
 
 
 type Option = { label: string; value: string };

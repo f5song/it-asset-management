@@ -99,7 +99,6 @@ export default function SoftwarePage() {
       isError={isError}
       errorMessage={errorMessage}
       // Selection
-      selectable={true}
       selectedIds={selectedSoftwareIds}
       onSelectedIdsChange={setSelectedSoftwareIds}
     />

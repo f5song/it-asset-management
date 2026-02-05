@@ -1,10 +1,8 @@
-import BackButton from "components/ui/BackButton";
-import { PageHeader } from "components/ui/PageHeader";
-
+import SoftwareDetail from "@/components/detail/SoftwareDetail";
+import BackButton from "@/components/ui/BackButton";
+import { getHistoryBySoftware, getInstallationsBySoftware } from "@/mock";
+import { getItemById } from "@/services/software.service.mock";
 import { notFound } from "next/navigation";
-import { getItemById } from "services/software.service.mock";
-import SoftwareDetail from "../../../../components/detail/SoftwareDetail";
-import { getHistoryBySoftware, getInstallationsBySoftware } from "mock";
 
 interface PageProps {
   params: { id: string };

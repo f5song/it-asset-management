@@ -3,7 +3,7 @@ import * as React from "react";
 import type { AppColumnDef } from "types/ui-table";
 import type { LicenseItem } from "types";
 import { StatusBadge } from "components/ui/StatusBadge";
-import { formatDate } from "lib/date";
+import { formatDateTH } from "lib/date";
 
 export const licenseColumns: AppColumnDef<LicenseItem>[] = [
   {
@@ -31,7 +31,7 @@ export const licenseColumns: AppColumnDef<LicenseItem>[] = [
     header: "Expiry Date",
     accessorKey: "expiryDate",
     width: 140,
-    cell: (v) => formatDate(typeof v === "string" ? v : undefined),
+    cell: (v) => formatDateTH(typeof v === "string" ? v : undefined),
   },
   {
     id: "status",

@@ -1,43 +1,57 @@
+"use client";
 
-'use client';
+import React from "react";
+import "../../lib/chartjs";
+import { Doughnut } from "react-chartjs-2";
+import type { ChartOptions } from "chart.js";
 
-import React from 'react';
-import '../../lib/chartjs';
-import { Doughnut } from 'react-chartjs-2';
+type LegendPos = "top" | "right" | "bottom" | "left";
 
 type Props = {
   title?: string;
   className?: string;
   height?: number;
-  values?: number[]; // [Standard, Special]
+  values?: number[];
+  labels?: string[];
+  colors?: string[];
+  legendPosition?: LegendPos;
+  cutout?: string | number;
 };
 
+const DEFAULT_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#a78bfa"];
+
 export default function DonutChart({
-  title = 'Software by Type',
+  title,
   className,
-  height = 260,
-  values = [94, 6],
+  height = 180,
+  values = [],
+  labels = [],
+  colors = DEFAULT_COLORS,
+  legendPosition = "right",
+  cutout = "65%",
 }: Props) {
   const data = {
-    labels: ['Standard', 'Special'],
+    labels,
     datasets: [
       {
         data: values,
-        backgroundColor: ['#10b981', '#3b82f6'],
+        backgroundColor: colors.slice(0, values.length),
         borderWidth: 0,
+        hoverOffset: 8,
       },
     ],
   };
 
-  const options = {
+  // ✅ ระบุชนิด options ให้ชัดเจน
+  const options: ChartOptions<"doughnut"> = {
     responsive: true,
-    maintainAspectRatio: false as const,
+    maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'right' as const },
-      title: { display: !!title, text: title },
+      legend: { position: legendPosition },
+      title: { display: Boolean(title), text: title },
       tooltip: { enabled: true },
     },
-    cutout: '65%',
+    cutout,
   };
 
   return (
@@ -46,3 +60,4 @@ export default function DonutChart({
     </div>
   );
 }
+``

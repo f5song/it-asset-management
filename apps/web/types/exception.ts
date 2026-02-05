@@ -12,7 +12,7 @@ export interface ExceptionDefinition {
   id: string;                  // EXC-001
   name: string;                // เช่น "Allow LINE on PC" / "Allow USB storage"
   status: PolicyStatus;        // Active | Inactive | Deprecated | Archived
-  risk?: RiskLevel;
+  risk: RiskLevel;
   createdAt: string;           // ISO
   lastUpdated?: string | null; // ISO
   notes?: string;
