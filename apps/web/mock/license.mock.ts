@@ -41,7 +41,6 @@ const asCompliance = (c: string): Compliance => {
   const map: Record<string, Compliance> = {
     Compliant: "Compliant",
     "Non-Compliant": "Non-Compliant",
-    Exception: "Exception",
   };
   return (map[c] ?? "Compliant") as Compliance;
 };

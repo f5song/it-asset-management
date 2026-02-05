@@ -1,4 +1,4 @@
-import { ClientServer, SoftwareStatus, SoftwareType } from "types";
+import { ClientServer, SoftwareType } from "types";
 
 // services/device-software.service.ts
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
@@ -18,7 +18,6 @@ export type DeviceSoftwareRow = {
 
   // ✅ ขยายเพิ่มเพื่อรวมเคส BundledSoftwareRow (ตั้ง optional เพื่อไม่บังคับแหล่งข้อมูลทั้งหมด)
   expiryDate?: string | null;
-  status?: SoftwareStatus;
   softwareType?: SoftwareType;
   clientServer?: ClientServer;
 };

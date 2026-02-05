@@ -83,7 +83,6 @@ export default function SoftwareDetail({
         right: [
           { label: "Category", value: show(item.category) },
           { label: "Expiry Date", value: show(item.expiryDate) },
-          { label: "Status", value: show(item.status) },
           { label: "Client/Server", value: show(item.clientServer) },
         ],
       }}
