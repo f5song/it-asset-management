@@ -1,0 +1,64 @@
+// app/login/page.tsx
+import { signIn } from "@/auth";
+
+export const dynamic = "force-static"; // หน้า public
+
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen grid lg:grid-cols-2">
+      {/* Brand panel */}
+      <div className="hidden lg:flex flex-col justify-between bg-gradient-to-br from-indigo-600 via-sky-600 to-cyan-500 p-12 text-white">
+        <div className="space-y-4">
+          <div className="text-2xl font-semibold tracking-tight">IT Software Management</div>
+          <h1 className="text-4xl font-bold leading-tight">
+            จัดการซอฟต์แวร์องค์กรอย่างปลอดภัย <br /> พร้อม SSO/MFA
+          </h1>
+          <p className="text-white/90">
+            ลงชื่อเข้าใช้ด้วยบัญชี Microsoft องค์กรของคุณ เพื่อเข้าถึงแดชบอร์ดและเวิร์กโฟลว์ภายใน
+          </p>
+        </div>
+        <p className="text-sm text-white/70">&copy; {new Date().getFullYear()} Your Company</p>
+      </div>
+
+      {/* Login panel */}
+      <div className="flex items-center justify-center p-8">
+        <div className="w-full max-w-md space-y-8">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold tracking-tight">เข้าสู่ระบบ</h2>
+            <p className="text-sm text-gray-500">
+              ใช้บัญชี Microsoft (องค์กร) เพื่อดำเนินการต่อ
+            </p>
+          </div>
+
+          {/* ปุ่มเดียว - Redirect ไป Microsoft */}
+          <form
+            action={async () => {
+              "use server";
+              // เรียก next-auth ให้ไปหน้า Microsoft Login แล้ว redirect กลับ
+              await signIn("azure-ad");
+            }}
+          >
+            <button
+              type="submit"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-black text-white px-4 py-2.5 font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23" className="h-5 w-5">
+                <path fill="#f35325" d="M1 1h10v10H1z" />
+                <path fill="#81bc06" d="M12 1h10v10H12z" />
+                <path fill="#05a6f0" d="M1 12h10v10H1z" />
+                <path fill="#ffba08" d="M12 12h10v10H12z" />
+              </svg>
+              Sign in with Microsoft
+            </button>
+          </form>
+
+          <div className="pt-6 border-t">
+            <p className="text-xs text-gray-500">
+              การยืนยันตัวตนและนโยบาย MFA/Conditional Access จัดการโดย Microsoft Entra ID ขององค์กรคุณ
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
