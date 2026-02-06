@@ -11,9 +11,9 @@ import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolba
 import type { BreadcrumbItem, EmployeeAssignmentRow, EmployeeItem, HistoryEvent } from "types";
 
 import { show } from "lib/show";
-import { employeesEditFields } from "app/config/forms/employeeEditFields";
 import { demoAssignments, demoHistory } from "@/lib/demo/employeeDetailDemoData";
 import { employeeAssignmentColumns } from "@/lib/tables/employeeAssignmentColumns";
+import { employeesEditFields } from "@/config/forms/employeeEditFields";
 
 /* -------------------------------------------------------
  *  TYPES

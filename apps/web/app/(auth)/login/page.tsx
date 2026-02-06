@@ -7,17 +7,17 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Brand panel */}
-      <div className="hidden lg:flex flex-col justify-between bg-gradient-to-br from-indigo-600 via-sky-600 to-cyan-500 p-12 text-white">
+      <div className="hidden lg:flex flex-col flex justify-center p-8 bg-gradient-to-br from-indigo-600 via-sky-600 to-cyan-500 p-12 text-white">
         <div className="space-y-4">
           <div className="text-2xl font-semibold tracking-tight">IT Software Management</div>
           <h1 className="text-4xl font-bold leading-tight">
-            จัดการซอฟต์แวร์องค์กรอย่างปลอดภัย <br /> พร้อม SSO/MFA
+            ระบบจัดการซอฟต์แวร์องค์กร
           </h1>
           <p className="text-white/90">
-            ลงชื่อเข้าใช้ด้วยบัญชี Microsoft องค์กรของคุณ เพื่อเข้าถึงแดชบอร์ดและเวิร์กโฟลว์ภายใน
+            ลงชื่อเข้าใช้ด้วยบัญชี Microsoft บริษัท บีอีซี เวิลด์ จำกัด (มหาชน) เพื่อเข้าสู่ระบบ
           </p>
         </div>
-        <p className="text-sm text-white/70">&copy; {new Date().getFullYear()} Your Company</p>
+        <p className="text-sm text-white/70">&copy; {new Date().getFullYear()} BEC Studio Co., Ltd</p>
       </div>
 
       {/* Login panel */}
@@ -26,7 +26,7 @@ export default function LoginPage() {
           <div className="space-y-2">
             <h2 className="text-2xl font-bold tracking-tight">เข้าสู่ระบบ</h2>
             <p className="text-sm text-gray-500">
-              ใช้บัญชี Microsoft (องค์กร) เพื่อดำเนินการต่อ
+              ใช้บัญชี Microsoft บริษัท บีอีซี เวิลด์ จำกัด (มหาชน) เพื่อดำเนินการต่อ
             </p>
           </div>
 

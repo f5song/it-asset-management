@@ -12,12 +12,11 @@ import type {
   InstallationRow,
   SoftwareItem,
 } from "types";
-
-import { softwareEditFields } from "app/config/forms/softwareEditFields";
 import { demoHistory, demoSoftwareInstallations } from "lib/demo/softwareDetailDemoData";
 import { mapSoftwareItemToForm } from "lib/mappers/mapSoftwareItemToForm";
 import { softwareInstallationColumns } from "lib/tables/softwareInstallationColumns";
 import { show } from "lib/show";
+import { softwareEditFields } from "@/config/forms/softwareEditFields";
 
 interface SoftwareDetailProps {
   item: SoftwareItem;

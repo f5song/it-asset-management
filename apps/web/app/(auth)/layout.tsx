@@ -6,12 +6,21 @@ export const metadata: Metadata = {
   description: "ลงชื่อเข้าใช้ระบบ",
 };
 
-export default function AuthRootLayout({ children }: { children: React.ReactNode }) {
+export default function AuthRootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="th">
-      <body className="min-h-screen bg-gray-50">
-        {children}
-      </body>
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+
+      <body className="min-h-screen bg-gray-50">{children}</body>
     </html>
   );
 }

@@ -18,7 +18,7 @@ import type {
 } from "types";
 
 // Form
-import { deviceEditFields } from "app/config/forms/deviceEditFields";
+
 
 // Hooks
 import { useDeviceBundledSoftware } from "hooks/useDeviceBundledSoftware";
@@ -28,6 +28,7 @@ import { show } from "lib/show";
 import { deviceInstallationColumns } from "lib/tables/deviceInstallationColumns";
 import { mapDeviceItemToForm } from "lib/mappers/mapDeviceItemToForm";
 import { demoDeviceSoftwareRows, demoHistory } from "lib/demo/deviceDetailDemoData";
+import { deviceEditFields } from "@/config/forms/deviceEditFields";
 
 // ---------------------------------------------
 // Props

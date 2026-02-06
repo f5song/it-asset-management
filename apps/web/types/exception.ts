@@ -58,7 +58,7 @@ export type ExceptionEditValues = {
   createdAt: string;           // datetime-local หรือ ISO
   lastUpdated?: string | null; // datetime-local หรือ ISO
   reviewAt?: string | null;    // datetime-local หรือ ISO
-  notes: string;
+  notes?: string;
 };
 
 /** ✅ Query/Response ของ Definition list (สำหรับ service/hook) */

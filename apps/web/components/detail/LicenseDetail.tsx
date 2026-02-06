@@ -7,7 +7,6 @@ import { DetailView } from "components/detail/DetailView";
 import { InstallationSection } from "components/tabbar/InstallationSection";
 import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
 
-import { licenseEditFields } from "app/config/forms/licenseEditFields";
 import { installationColumns } from "lib/tables/licenseInstallationColumns";
 import { demoHistory, demoInstallations } from "lib/demo/licenseDetailDemoData";
 import { mapLicenseItemToForm } from "lib/mappers/mapLicenseItemToForm";
@@ -19,6 +18,7 @@ import type {
   LicenseInstallationRow,
   LicenseItem,
 } from "types";
+import { licenseEditFields } from "@/config/forms/licenseEditFields";
 
 interface LicenseDetailProps {
   item: LicenseItem;

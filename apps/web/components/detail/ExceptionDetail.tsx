@@ -21,9 +21,9 @@ import {
   demoExceptionAssignments,
   demoExceptionHistory,
 } from "lib/demo/exceptionDetailDemoData";
-import { exceptionEditFields } from "app/config/forms/exceptionEditFields";
 import { formatDateSafe } from "@/lib/date";
 import { toLocalInput } from "@/lib/date-input";
+import { exceptionEditFields } from "@/config/forms/exceptionEditFields";
 
 
 type ExceptionsDetailProps = {
