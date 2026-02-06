@@ -2,6 +2,7 @@
 "use client";
 
 import * as React from "react";
+import { useParams } from "next/navigation";
 
 import { useServerTableController } from "@/hooks/useServerTableController";
 import { useEmployeesInventory } from "@/hooks/useEmployeeInventory";
@@ -15,7 +16,6 @@ import type {
   EmployeesFilterValues,
   EmployeeStatus,
 } from "@/types/employees";
-import type { ExceptionDefinition } from "@/types/exception";
 
 import { employeeColumns } from "@/lib/tables/employeeInventoryColumns";
 import {
@@ -25,6 +25,8 @@ import {
 import { assignExceptionsToEmployees } from "@/services/exception.service.mock";
 import EmployeeFilterBar from "@/components/filters/EmployeeFilterBar";
 import { useActiveExceptionDefinitions } from "@/hooks/useActiveExceptionDefinitions";
+// ถ้ามี hook เดี่ยว ใช้ตัวนี้แทน (แนะนำ)
+// import { useExceptionDefinition } from "@/hooks/useExceptionDefinition";
 
 /* --------------------------------------------------------------------------------
  * Constants
@@ -48,6 +50,10 @@ const DEPARTMENT_OPTIONS: readonly string[] = [
  * Page Component
  * ------------------------------------------------------------------------------*/
 export default function AssignEmployeeExceptionsPage() {
+  /* ------------------------ รับ exceptionId จาก URL ------------------------ */
+  const params = useParams(); // Next.js App Router
+  const exceptionId = String(params?.id ?? params?.exceptionId ?? "");
+
   /* --------------------------- Controller & Data --------------------------- */
   const [domainFilters, setDomainFilters] =
     React.useState<EmployeeDomainFilters>(toDomainFilters());
@@ -58,7 +64,7 @@ export default function AssignEmployeeExceptionsPage() {
     EmployeesFilterValues
   >({
     pageSize: 10,
-    defaultSort: { id: "name", desc: false },
+    defaultSort: { id: "firstNameTh", desc: false },
     domainFilters,
     setDomainFilters,
     toSimple: (df) => toSimpleFilters(df),
@@ -74,32 +80,28 @@ export default function AssignEmployeeExceptionsPage() {
     useEmployeesInventory(ctl.serverQuery, domainFilters);
 
   /* ------------------------------ Selections ------------------------------ */
-  const [selectedEmployeeIds, setSelectedEmployeeIds] = React.useState<
-    string[]
-  >([]);
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = React.useState<string[]>(
+    [],
+  );
   const selectedIdSet = React.useMemo(
     () => new Set<string | number>(selectedEmployeeIds),
     [selectedEmployeeIds],
   );
 
-  const handleSelectionChange = React.useCallback(
-    (next: Set<string | number>) => {
-      setSelectedEmployeeIds(Array.from(next).map(String));
-    },
-    [],
+  const handleSelectionChange = React.useCallback((next: Set<string | number>) => {
+    setSelectedEmployeeIds(Array.from(next).map(String));
+  }, []);
+
+  /* ----------------- Exception Definition ที่เลือกจาก URL ----------------- */
+  // ทางเลือก B: ใช้ hook ที่มีอยู่ แล้วหา def จาก id
+  const { defs, isLoading: loadingDefs } = useActiveExceptionDefinitions();
+  const currentDef = React.useMemo(
+    () => defs.find((d) => d.id === exceptionId),
+    [defs, exceptionId],
   );
 
-  /* -------------------- Exception Definitions (Active) -------------------- */
-  const { defs, isLoading: loadingDefs } = useActiveExceptionDefinitions();
-  const [checkedDefIds, setCheckedDefIds] = React.useState<string[]>([]);
-
-  const toggleDef = React.useCallback((id: string, checked: boolean) => {
-    setCheckedDefIds((prev) => {
-      const s = new Set(prev);
-      checked ? s.add(id) : s.delete(id);
-      return Array.from(s);
-    });
-  }, []);
+  // ทางเลือก A (ถ้ามี hook เดี่ยว):
+  // const { def: currentDef, isLoading: loadingDefs } = useExceptionDefinition(exceptionId);
 
   /* --------------------------------- Form --------------------------------- */
   const [effectiveDate, setEffectiveDate] = React.useState<string>(
@@ -107,7 +109,7 @@ export default function AssignEmployeeExceptionsPage() {
   );
   const [note, setNote] = React.useState<string>("");
 
-  const canSubmit = selectedEmployeeIds.length > 0 && checkedDefIds.length > 0;
+  const canSubmit = selectedEmployeeIds.length > 0 && !!exceptionId;
 
   /* -------------------------------- Submit -------------------------------- */
   const [submitting, setSubmitting] = React.useState(false);
@@ -120,7 +122,7 @@ export default function AssignEmployeeExceptionsPage() {
     try {
       const res = await assignExceptionsToEmployees({
         employeeIds: selectedEmployeeIds,
-        definitionIds: checkedDefIds,
+        definitionIds: [exceptionId], // ✅ ใช้ id จาก URL เพียงตัวเดียว
         effectiveDate,
         notes: note.trim() || undefined,
       });
@@ -130,83 +132,90 @@ export default function AssignEmployeeExceptionsPage() {
           ? `Assigned ${res.assignedCount} employee(s) → [${res.definitionIds.join(", ")}] สำเร็จ`
           : "Assign ล้มเหลว",
       );
-      setSelectedEmployeeIds([]); // reset selection (ตาม UX ที่ต้องการ)
+      setSelectedEmployeeIds([]); // reset selection
     } catch (e: any) {
       setLastMsg(e?.message ?? "Assign ล้มเหลว (unknown error)");
     } finally {
       setSubmitting(false);
     }
-  }, [canSubmit, checkedDefIds, effectiveDate, note, selectedEmployeeIds]);
+  }, [canSubmit, exceptionId, effectiveDate, note, selectedEmployeeIds]);
 
   /* --------------------------------- Render -------------------------------- */
+  const headerTitle =
+    loadingDefs
+      ? "Assign Exception → Employees"
+      : currentDef
+      ? `${currentDef.name} (${currentDef.id})`
+      : exceptionId
+      ? `Exception ${exceptionId} (ไม่พบในรายการ Active)`
+      : "Assign Exception → Employees";
+
   return (
     <div className="p-4 md:p-6 space-y-4">
       {/* Header */}
       <PageHeader
-        title="Assign Exceptions → Employees"
+        title={headerTitle} // ✅ แสดงชื่อ exception เป็นหัวข้อ
         breadcrumbs={[
-          { label: "Employees", href: "/employees" },
-          { label: "Assign Exceptions", href: "/exceptions/assign" },
+          { label: "Exceptions", href: "/exceptions" },
+          currentDef
+            ? { label: currentDef.name, href: `/exceptions/${currentDef.id}` }
+            : { label: "Exception", href: `/exceptions/${exceptionId}` },
+          { label: "Assign to Employees", href: "#" },
         ]}
       />
 
-      {/* Summary */}
+      {/* Summary ⇒ 3 ใบ: Total Employees / Selected Employees / Exception */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Card
-          title="Selected Employees"
-          count={selectedEmployeeIds.length}
-          compact
-        />
-        <Card title="Chosen Exceptions" count={checkedDefIds.length} compact />
         <Card title="Total Employees" count={totalRows} compact />
+        <Card title="Selected Employees" count={selectedEmployeeIds.length} compact />
+        <Card title="Exception" count="" compact>
+          <p className="text-sm text-slate-600">
+            {loadingDefs
+              ? "กำลังโหลด..."
+              : currentDef
+              ? `${currentDef.name} (${currentDef.id})`
+              : exceptionId
+              ? `(${exceptionId}) ไม่พบในรายการ Active`
+              : "-"}
+          </p>
+        </Card>
       </div>
 
-      {/* Exceptions (Active) — under FilterBar like the first image */}
-      <section className="rounded-md border border-slate-200 p-3">
-        <div className="font-semibold mb-2">Exceptions (Active)</div>
-        {loadingDefs ? (
-          <p className="text-sm text-slate-600">กำลังโหลด...</p>
-        ) : defs.length === 0 ? (
-          <p className="text-sm text-slate-600">ไม่มี Definition ที่ Active</p>
-        ) : (
-          <div className="flex flex-wrap gap-4">
-            {defs.map((d) => (
-              <label
-                key={d.id}
-                className="inline-flex items-center gap-2 text-sm"
-              >
-                <input
-                  type="checkbox"
-                  className="h-4 w-4"
-                  checked={checkedDefIds.includes(d.id)}
-                  onChange={(e) => toggleDef(d.id, e.target.checked)}
-                  aria-label={`Select exception ${d.name}`}
-                />
-                <span>
-                  {d.name}
-                  <span className="ml-2 text-xs text-slate-500">({d.id})</span>
-                </span>
-              </label>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Filter Bar (Top row: Status + Department + Effective date + Note + Confirm on right) */}
+      {/* Filter Bar */}
       <EmployeeFilterBar
         filters={ctl.simpleFilters}
         onFiltersChange={ctl.onSimpleFiltersChange}
         statusOptions={STATUS_OPTIONS}
         departmentOptions={DEPARTMENT_OPTIONS}
         rightExtra={
-          <button
-            className="rounded bg-slate-900 text-white px-4 py-2 text-sm h-9 disabled:opacity-50"
-            disabled={!canSubmit || submitting}
-            onClick={onAssign}
-            aria-disabled={!canSubmit || submitting}
-          >
-            {submitting ? "Assigning..." : "Confirm Assign"}
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Effective date */}
+            <input
+              type="date"
+              className="h-9 rounded border px-2 text-sm"
+              value={effectiveDate}
+              onChange={(e) => setEffectiveDate(e.target.value)}
+              aria-label="Effective date"
+            />
+            {/* Note */}
+            <input
+              type="text"
+              className="h-9 rounded border px-2 text-sm w-56"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="หมายเหตุ (optional)"
+              aria-label="Assign note"
+            />
+            {/* Confirm */}
+            <button
+              className="rounded bg-slate-900 text-white px-4 py-2 text-sm h-9 disabled:opacity-50"
+              disabled={!canSubmit || submitting}
+              onClick={onAssign}
+              aria-disabled={!canSubmit || submitting}
+            >
+              {submitting ? "Assigning..." : "Confirm Assign"}
+            </button>
+          </div>
         }
         labels={{
           status: "All Status",

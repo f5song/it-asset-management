@@ -81,14 +81,14 @@ export default function DeviceDetail({
   );
 
   // Toolbar config
-  const toolbarTo: Partial<Record<ToolbarAction, ActionPathConfig>> = {
-    assign: `/devices/${item.id}/assign`,
-  };
+  // const toolbarTo: Partial<Record<ToolbarAction, ActionPathConfig>> = {
+  //   assign: `/devices/${item.id}/assign`,
+  // };
 
   const toolbar = (
     <ActionToolbar
       selectedIds={[]}
-      to={toolbarTo}
+      // to={toolbarTo}
       onAction={(act) => console.log("toolbar:", act)}
       openInNewTab={false}
       enableDefaultMapping={false}

@@ -4,6 +4,7 @@ import type {
   EmployeeStatus,
   EmployeesListQuery,
   EmployeesListResponse,
+  EmployeeType, // ✅ ใช้สำหรับ mock EMP_TYPES
 } from "@/types/employees";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -16,30 +17,86 @@ const DEPARTMENTS = [
   "สำนักผลิตรายการ",
   "สำนักกรรมการบริหาร",
   "สำนักกิจการและสื่อสารองค์กร",
-  "สำนักสำนักทรัพยากรมนุษย์",
+  "สำนักทรัพยากรมนุษย์",
   "สำนักดิจิทัลและกลยุทธ์สื่อใหม่",
   "สำนักไฟฟ้ากำลัง",
   "สำนักเทคนิคโทรทัศน์",
   "สำนักการพาณิชย์",
 ] as const;
 
-const STATUSES: EmployeeStatus[] = [
-  "Active",
-  "Resigned",
-];
+const COMPANIES = ["BEC World", "Channel 3", "BECi"] as const;
+const SECTIONS  = ["Application", "Infrastructure", "Broadcast", "Finance Ops"] as const;
+const UNITS     = ["Core Systems", "Web Platform", "Mobile Apps", "Data Eng"] as const;
+
+const JOB_TITLES = [
+  "Application Developer Specialist",
+  "System Analyst",
+  "IT Support Engineer",
+  "Business Analyst",
+] as const;
+
+// แนะนำให้ใช้ค่า status ที่แน่ใจว่าอยู่ใน union จริงของ EmployeeStatus
+const STATUSES: EmployeeStatus[] = ["Active", "Resigned"];
+
+// ตัวอย่างประเภทพนักงาน (ให้สอดคล้องกับ EmployeeType จริงของคุณ)
+const EMP_TYPES: EmployeeType[] = ["Permanent", "Contractor"] as unknown as EmployeeType[];
+
+// ตัวอย่างชื่อ-สกุลภาษาไทย/อังกฤษ (สุ่มผสม)
+const FIRST_TH = ["ภัทรภร", "กิตติ", "ปณิธาน", "มณีรัตน์", "ธนกร", "ชลธิชา", "ศุภชัย", "ณัฐวดี"] as const;
+const LAST_TH  = ["จิตต์ปราณี", "สถาพร", "อรุณสวัสดิ์", "วีรวัฒน์", "ปิ่นมณี", "วรรณศิลป์"] as const;
+
+const FIRST_EN = ["Jane", "John", "Alice", "Bob", "Peter", "Sara", "Emily", "David"] as const;
+const LAST_EN  = ["Doe", "Smith", "Johnson", "Williams", "Brown", "Miller"] as const;
 
 // สร้างพนักงานจำลอง 73 รายการ
 const MOCK_EMPLOYEES: EmployeeItem[] = Array.from({ length: 73 }).map(
-  (_, i) => ({
-    id: `E-${(i + 1).toString().padStart(3, "0")}`,
-    name: `Employee ${i + 1}`,
-    department: DEPARTMENTS[i % DEPARTMENTS.length],
-    status: STATUSES[i % STATUSES.length],
-    jobTitle: `Application Developer Specialist`,
-    phone: `${(i + 1).toString().padStart(4, "0")}`,
-    email: `puttaraporn.j@becworld.com`,
-    device: `LAPTOP-${(i + 1).toString().padStart(3, "0")}`,
-  }),
+  (_, i) => {
+    const id = `E-${(i + 1).toString().padStart(3, "0")}`;
+
+    // pick แบบวนลูป
+    const firstNameTh = FIRST_TH[i % FIRST_TH.length];
+    const lastNameTh  = LAST_TH[i % LAST_TH.length];
+    const firstNameEn = FIRST_EN[i % FIRST_EN.length];
+    const lastNameEn  = LAST_EN[i % LAST_EN.length];
+
+    const department  = DEPARTMENTS[i % DEPARTMENTS.length];
+    const company     = COMPANIES[i % COMPANIES.length];
+    const section     = SECTIONS[i % SECTIONS.length];
+    const unit        = UNITS[i % UNITS.length];
+    const position    = i % 5 === 0 ? "Senior" : i % 3 === 0 ? "Junior" : "Staff";
+    const status      = STATUSES[i % STATUSES.length];
+    const empType     = EMP_TYPES[i % EMP_TYPES.length];
+
+    // ทำให้บางรายการไม่มี device เพื่อเทส UI
+    const device = i % 7 === 0 ? null : `LAPTOP-${(i + 1).toString().padStart(3, "0")}`;
+
+    // ทำให้เบอร์โทร/อีเมลมี pattern
+    const phone = `${(1234 + i).toString()}`; // 10 หลัก
+    const email = `user${i + 1}@becworld.com`;
+
+    return {
+      id,
+      // ===== ชื่อ-นามสกุล (ไทย/อังกฤษ)
+      firstNameTh,
+      lastNameTh,
+      firstNameEn,
+      lastNameEn,
+
+      // ===== ข้อมูลสถานะ/งาน/ติดต่อ
+      status,
+      empType,
+      email,
+      phone,
+      position,
+      company,
+      department,
+      section,
+      unit,
+
+      // อุปกรณ์หลัก (nullable)
+      device,
+    } as EmployeeItem;
+  },
 );
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -68,6 +125,14 @@ function getValue(obj: Record<string, unknown>, key: string) {
   return (obj as any)[key];
 }
 
+/** รวมชื่อสำหรับค้นหาแบบเร็ว */
+function nameTokens(e: EmployeeItem) {
+  return [
+    e.firstNameTh, e.lastNameTh,
+    e.firstNameEn, e.lastNameEn,
+  ].filter(Boolean).join(" ");
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 /** 🔎 NEW: ค้นหาพนักงานแบบ quick search (mock) */
 export async function searchEmployees(
@@ -78,15 +143,20 @@ export async function searchEmployees(
   const q = (query ?? "").trim();
   if (!q) return [];
   const k = q.toLowerCase();
+
   // คืนผลลัพธ์ไม่เกิน 20 รายการพอสำหรับแสดง suggestion
-  return MOCK_EMPLOYEES.filter(
-    (e) =>
-      e.id.toLowerCase().includes(k) ||
-      e.name.toLowerCase().includes(k) ||
-      (e.email ?? "").toLowerCase().includes(k) ||
-      (e.department ?? "").toLowerCase().includes(k) ||
-      (e.jobTitle ?? "").toLowerCase().includes(k) ||
-      (e.device ?? "").toLowerCase().includes(k),
+  return MOCK_EMPLOYEES.filter((e) =>
+    e.id.toLowerCase().includes(k) ||
+    includesCI(nameTokens(e), k) ||
+    includesCI(e.email ?? "", k) ||
+    includesCI(e.department ?? "", k) ||
+    includesCI(e.company ?? "", k) ||
+    includesCI(e.section ?? "", k) ||
+    includesCI(e.unit ?? "", k) ||
+    includesCI(e.position ?? "", k) ||
+    includesCI(e.position ?? "", k) ||
+    includesCI(e.empType ?? "", k) ||
+    includesCI(e.device ?? "", k)
   ).slice(0, 20);
 }
 
@@ -106,7 +176,7 @@ export async function getEmployeeById(
 /**
  * GET /employees (with filters/sort/pagination)
  * รูปแบบ query ที่รองรับ:
- *   - pageIndex (0-based), pageSize
+ *   - page (1-based), pageSize
  *   - search
  *   - status, department
  *   - sortBy, sortOrder (ถ้ามี)
@@ -123,16 +193,20 @@ export async function listEmployees(
   // ----- Search -----
   const search = (q.search ?? "").trim();
   if (search) {
-    filtered = filtered.filter(
-      (e) =>
-        includesCI(e.id, search) ||
-        includesCI(e.name, search) ||
-        includesCI(e.department ?? "", search) ||
-        includesCI(e.status, search) ||
-        includesCI(e.email ?? "", search) ||
-        includesCI(e.jobTitle ?? "", search) ||
-        includesCI(e.phone ?? "", search) ||
-        includesCI(e.device ?? "", search),
+    filtered = filtered.filter((e) =>
+      includesCI(e.id, search) ||
+      includesCI(nameTokens(e), search) ||
+      includesCI(e.department ?? "", search) ||
+      includesCI(e.company ?? "", search) ||
+      includesCI(e.section ?? "", search) ||
+      includesCI(e.unit ?? "", search) ||
+      includesCI(e.status ?? "", search) ||
+      includesCI(e.email ?? "", search) ||
+      includesCI(e.position ?? "", search) ||
+      includesCI(e.position ?? "", search) ||
+      includesCI(e.phone ?? "", search) ||
+      includesCI(e.device ?? "", search) ||
+      includesCI(e.empType ?? "", search)
     );
   }
 
@@ -160,10 +234,9 @@ export async function listEmployees(
   }
 
   // ----- Pagination (มาตรฐานใน type: page 1-based, pageSize) -----
-  const page     = Math.max(1, Number((q as any).page ?? 1));      // 1-based
-  const pageSize = Math.max(1, Number((q as any).pageSize ?? 10));
-  const pageIndex = page - 1;                                      // internal offset
-  const start   = pageIndex * pageSize;
+  const page      = Math.max(1, Number((q as any).page ?? 1));      // 1-based
+  const pageSize  = Math.max(1, Number((q as any).pageSize ?? 10));
+  const start     = (page - 1) * pageSize;
 
   const totalCount = filtered.length;
   const items      = filtered.slice(start, start + pageSize);
@@ -195,7 +268,6 @@ export async function getAllEmployeesQuick(
   return res.items ?? [];
 }
 
-
 /** ดึงทั้งหมดแบบวนหน้า (robust) */
 export async function getAllEmployees(
   signal?: AbortSignal,
@@ -218,16 +290,3 @@ export async function getAllEmployees(
 
   return out;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

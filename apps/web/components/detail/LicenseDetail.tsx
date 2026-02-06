@@ -60,13 +60,13 @@ export default function LicenseDetail({
       selectedIds={[item.id]}
       basePath="/software/license-management"
       enableDefaultMapping
-      visibleActions={["assign"]}
+      visibleActions={["assignLicense"]}
       singleSelectionOnly
       toOverride={{
-        assign: `/software/license-management/${item.id}/assign`,
+        assignLicense: `/software/license-management/${item.id}/license/assign`,
       }}
       onAction={(act) => {
-        if (act === "assign") {
+        if (act === "assignLicense") {
           console.log("Assign license:", item.id);
         }
       }}

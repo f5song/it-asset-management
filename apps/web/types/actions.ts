@@ -2,7 +2,7 @@
 // src/types/actions.ts
 
 /** Toolbar actions (รวมเป็นที่เดียว) */
-export type ToolbarAction = "delete" | "reassign" | "add" | "assign" | "edit";
+export type ToolbarAction = "delete" | "reassign" | "add" | "assignExceptions" | "assignLicense" | "edit";
 
 /** ฟังก์ชันคำนวณ path จาก action + selectedIds */
 export type ActionPathBuilder = (args: {

@@ -7,13 +7,21 @@ import { DetailView } from "components/detail/DetailView";
 import { InstallationSection } from "components/tabbar/InstallationSection";
 import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
 
-
-import type { BreadcrumbItem, EmployeeAssignmentRow, EmployeeItem, HistoryEvent } from "types";
+import type {
+  BreadcrumbItem,
+  EmployeeAssignmentRow,
+  EmployeeItem,
+  HistoryEvent,
+} from "types";
 
 import { show } from "lib/show";
-import { demoAssignments, demoHistory } from "@/lib/demo/employeeDetailDemoData";
+import {
+  demoAssignments,
+  demoHistory,
+} from "@/lib/demo/employeeDetailDemoData";
 import { employeeAssignmentColumns } from "@/lib/tables/employeeAssignmentColumns";
 import { employeesEditFields } from "@/config/forms/employeeEditFields";
+import { fullName } from "@/lib/name";
 
 /* -------------------------------------------------------
  *  TYPES
@@ -37,12 +45,12 @@ export default function EmployeeDetail(props: EmployeeDetailProps) {
    * ------------------------------------------------------- */
   const rows = React.useMemo<EmployeeAssignmentRow[]>(
     () => (assignments?.length ? assignments : demoAssignments),
-    [assignments]
+    [assignments],
   );
 
   const historyData = React.useMemo<HistoryEvent[]>(
     () => (history?.length ? history : demoHistory),
-    [history]
+    [history],
   );
 
   /* -------------------------------------------------------
@@ -73,17 +81,17 @@ export default function EmployeeDetail(props: EmployeeDetailProps) {
         selectedIds={[item.id]}
         basePath="/employees"
         enableDefaultMapping
-        visibleActions={["assign"]}     // แสดงเฉพาะ assign
+        visibleActions={["assignExceptions"]} // แสดงเฉพาะ assign
         singleSelectionOnly
         toOverride={{
-          assign: `/employees/${item.id}/assign`,
+          assignExceptions: `/employees/${item.id}/exceptions/assign`,
         }}
         onAction={(act) => {
-          if (act === "assign") handleAssign();
+          if (act === "assignExceptions") handleAssign();
         }}
       />
     ),
-    [item.id, handleAssign]
+    [item.id, handleAssign],
   );
 
   /* -------------------------------------------------------
@@ -94,12 +102,17 @@ export default function EmployeeDetail(props: EmployeeDetailProps) {
       title: "Edit Employee",
       fields: employeesEditFields,
       initialValues: {
-        name: item.name ?? "",
+        firstNameTh: item.firstNameTh ?? "",
+        lastNameTh: item.lastNameTh ?? "",
         department: item.department ?? "",
         status: item.status ?? "Active",
         phone: item.phone ?? "",
-        jobTitle: item.jobTitle ?? "",
+        position: item.position ?? "",
         device: item.device ?? "",
+        empType: item.empType ?? "", // Employee Type
+        company: item.company ?? "",
+        section: item.section ?? "",
+        unit: item.unit ?? "",
       },
       onSubmit: async (values: any) => {
         console.log("save employee:", values);
@@ -108,7 +121,15 @@ export default function EmployeeDetail(props: EmployeeDetailProps) {
       submitLabel: "Confirm",
       cancelLabel: "Cancel",
     }),
-    [item.device, item.department, item.jobTitle, item.name, item.phone, item.status]
+    [
+      item.device,
+      item.department,
+      item.position,
+      item.firstNameTh,
+      item.lastNameTh,
+      item.phone,
+      item.status,
+    ],
   );
 
   /* -------------------------------------------------------
@@ -116,19 +137,31 @@ export default function EmployeeDetail(props: EmployeeDetailProps) {
    * ------------------------------------------------------- */
   return (
     <DetailView
-      title={show(item.name)}
+      title={show(`${item.firstNameTh} ${item.lastNameTh}`)}
       compliance={undefined}
       installationTabLabel="Assignments"
       info={{
         left: [
           { label: "Employee ID", value: show(item.id) },
+          // ===== เฉพาะภาษาไทย =====
+          // { label: "ชื่อ (ไทย)", value: show(item.firstNameTh) },
+          // { label: "นามสกุล (ไทย)", value: show(item.lastNameTh) },
+
+          // ===== เฉพาะภาษาอังกฤษ =====
+          { label: "Name", value: fullName(item) },
+
           { label: "Email", value: show(item.email) },
-          { label: "Department", value: show(item.department) },
+          { label: "Employee Type", value: show(item.empType) },
+          { label: "Phone", value: show(item.phone) },
         ],
         right: [
+          { label: "Company", value: show(item.company) },
+          { label: "Department", value: show(item.department) },
+          { label: "Section", value: show(item.section) },
+          { label: "Unit", value: show(item.unit) },
           { label: "Status", value: show(item.status) },
-          { label: "Job Title", value: show(item.jobTitle) },
-          { label: "Phone", value: show(item.phone) },
+          { label: "Position", value: show(item.position || item.position) },
+          { label: "Device", value: show(item.device) },
         ],
       }}
       installationSection={

@@ -50,7 +50,7 @@ export function InventoryActionToolbar({
             selectedIds.length > 0
               ? `${basePath}/delete?ids=${encodeURIComponent(selectedIds.join(","))}`
               : undefined,
-          assign: ({
+          assignExceptions: ({
             selectedIds,
           }: {
             action: ToolbarAction;
@@ -82,7 +82,7 @@ export function InventoryActionToolbar({
               selectedIds.length > 0
                 ? `${basePath}/delete?ids=${encodeURIComponent(selectedIds.join(","))}`
                 : undefined,
-            assign: ({
+            assignLicense: ({
               selectedIds,
             }: {
               action: ToolbarAction;

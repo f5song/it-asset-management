@@ -11,18 +11,34 @@ export type EmployeeDomainFilters = {
   status?: EmployeeStatus;
   search?: string;
 };
+export type EmployeeType =
+  | "Contract"
+  | "Permanent";
 
-/** ข้อมูลพนักงานหนึ่งรายการ (align กับ DeviceItem) */
-export type EmployeeItem = {
+export interface EmployeeItem {
+  /** Primary key (อ้างอิงในระบบ) */
   id: string;
-  name: string;
-  department?: string;
+
+  /** ===== ชื่อ-นามสกุล (ไทย/อังกฤษ) ===== */
+  firstNameTh?: string;
+  lastNameTh?: string;
+  firstNameEn?: string;
+  lastNameEn?: string;
+
+  /** ===== ข้อมูลสถานะ/งาน/ติดต่อ ===== */
   status: EmployeeStatus;
+  empType?: EmployeeType;          // Employee Type
   email?: string;
-  jobTitle?: string;
-  phone?: string;
+  phone?: string;             
+  position?: string;               // ตำแหน่ง/ระดับ (อีกชื่อหนึ่ง ถ้าแยกใช้)
+  company?: string;
+  department?: string;
+  section?: string;
+  unit?: string;
+
+  /** อุปกรณ์หลักที่ผูกกับพนักงาน (ถ้ามี) */
   device?: string | null;
-};
+}
 
 /**
  * Query มาตรฐานสำหรับ service รายการพนักงาน
@@ -48,10 +64,20 @@ export type EmployeesFilterValues = {
 
 /** ใช้ในฟอร์มแก้ไข/สร้าง (align กับ device ฝั่งฟอร์ม) */
 export interface EmployeesEditValues {
-  name: string;
+  /** ===== ชื่อ-นามสกุล (ไทย/อังกฤษ) ===== */
+  firstNameTh?: string;
+  lastNameTh?: string;
+
+  /** ===== ข้อมูลสถานะ/งาน/ติดต่อ ===== */
+  status: EmployeeStatus;
+  empType?: EmployeeType;          // Employee Type
+  phone?: string;            // ตำแหน่งงาน (text)
+  position?: string;               // ตำแหน่ง/ระดับ (อีกชื่อหนึ่ง ถ้าแยกใช้)
+  company?: string;
   department?: string;
-  status: string;      // เก็บเป็น string ให้เข้ากับ input control; map เป็น EmployeeStatus ที่ชั้น service/action
-  phone?: string;
-  jobTitle?: string;
-  device?: string;
+  section?: string;
+  unit?: string;
+
+  /** อุปกรณ์หลักที่ผูกกับพนักงาน (ถ้ามี) */
+  device?: string | null;
 }

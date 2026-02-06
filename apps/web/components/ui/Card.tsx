@@ -9,7 +9,8 @@ export type Tone = "blue" | "green" | "slate" | "amber" | "red" | "violet";
 
 export type CardProps = {
   title: string;
-  count: number | string;
+  /** เดิมเป็น required → ถ้าจะใช้ Card เพื่อแสดงข้อความแทนตัวเลข แนะนำให้ทำเป็น optional */
+  count?: number | string;
   href?: string;
   compact?: boolean;
   loading?: boolean;
@@ -17,6 +18,8 @@ export type CardProps = {
   hideFooter?: boolean;
   icon?: React.ReactNode;
   tone?: Tone;
+  /** ✅ เพิ่ม children ลงใน props */
+  children?: React.ReactNode;
 };
 
 const toneBg = {
@@ -38,9 +41,11 @@ export const Card: React.FC<CardProps> = ({
   hideFooter = true,
   icon,
   tone = "slate",
+  children, // ✅ รับ children
 }) => {
   const Container: any = href ? Link : "div";
   const showIcon = Boolean(icon);
+  const showCount = !loading && (count !== undefined && count !== null && `${count}`.length > 0);
 
   return (
     <Container
@@ -59,11 +64,19 @@ export const Card: React.FC<CardProps> = ({
         )}
 
         <div className="flex-1 min-w-0">
-          {/* ปรับให้ไม่ตัดเร็ว: แค่ md ขึ้นไปค่อย truncate */}
           <div className="text-[13px] text-slate-600 md:truncate">{title}</div>
+
+          {/* บรรทัดตัวเลขใหญ่ (ถ้ามี) */}
           <div className="text-[22px] font-semibold text-slate-900 mt-0.5 leading-tight">
-            {loading ? "…" : typeof count === "number" ? count.toLocaleString() : count}
+            {loading ? "…" : showCount ? (typeof count === "number" ? count.toLocaleString() : count) : null}
           </div>
+
+          {/* ✅ แสดง children ต่อจาก count */}
+          {children ? (
+            <div className="mt-1 text-sm text-slate-600">
+              {children}
+            </div>
+          ) : null}
         </div>
       </div>
 

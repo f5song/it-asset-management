@@ -1,5 +1,6 @@
 
 // app/employees/[id]/page.tsx
+import { fullName } from "@/lib/name";
 import EmployeeDetail from "components/detail/EmployeeDetail";
 import BackButton from "components/ui/BackButton";
 import { notFound } from "next/navigation";
@@ -17,7 +18,7 @@ export default async function EmployeeDetailPage({ params }: PageProps) {
 
   const breadcrumbs = [
     { label: "Employees", href: "/employees" },
-    { label: employee.name ?? `Employee ${employee.id}`, href: `/employees/${employee.id}` },
+    { label: fullName(employee) ?? `Employee ${employee.id}`, href: `/employees/${employee.id}` },
   ];
 
   return (
