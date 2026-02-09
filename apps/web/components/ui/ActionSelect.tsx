@@ -37,7 +37,7 @@ export type ActionSelectProps = {
 export function ActionSelect({
   onAction,
   options,
-  placeholder = "Action ▾",
+  placeholder = "Action",
   disabled = false,
   resetAfterSelect = true,
   value,

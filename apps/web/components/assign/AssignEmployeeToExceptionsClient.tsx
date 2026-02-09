@@ -10,11 +10,12 @@ import { DataTable } from "@/components/table";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { exceptionInventoryColumns } from "@/lib/tables/exceptionInventoryColumns";
-import { assignExceptionsToEmployees } from "@/services/exception.service.mock";
 import ExceptionFilterBar, {
   ExceptionUIFilters,
 } from "@/components/filters/ExceptionFilterBar";
 import BackButton from "../ui/BackButton";
+import { assignExceptionsToEmployees } from "@/services/exceptions.service.mock";
+import { fullName } from "@/lib/name";
 
 
 
@@ -76,30 +77,58 @@ export default function AssignEmployeeToExceptionsClient({
   const [submitting, setSubmitting] = React.useState(false);
   const [lastMsg, setLastMsg] = React.useState<string | null>(null);
 
-  const onAssign = async () => {
-    if (!canSubmit) return;
-    setSubmitting(true);
-    setLastMsg(null);
-    try {
-      const res = await assignExceptionsToEmployees({
-        employeeIds: [employee.id],
-        definitionIds: selectedDefIds,
-        effectiveDate,
-        expiresAt: expiresAt?.trim() ? expiresAt : undefined,
-        notes: note.trim() || undefined,
-      });
-      setLastMsg(
-        res.ok
-          ? `Assigned ${res.definitionIds.length} exception(s) ให้ ${employee.name} สำเร็จ`
-          : "Assign ล้มเหลว",
-      );
-      setSelectedDefIds([]);
-    } catch (e: any) {
-      setLastMsg(e?.message ?? "Assign ล้มเหลว (unknown error)");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+const onAssign = async () => {
+  if (!canSubmit) return;
+  setSubmitting(true);
+  setLastMsg(null);
+  try {
+    // เตรียม payload ให้ตรงกับ signature ปัจจุบันของ service
+    const employeesPayload = [
+      {
+        employeeId: employee.id,
+        // ชื่อ/แผนกถ้าไม่ได้ส่ง จะ auto จาก toDisplayName/“–”
+        // employeeName: employee.name,
+        // department: employee.department,
+        notes: note.trim() || null,
+      },
+    ];
+
+    const defs = selectedDefIds?.map(String) ?? [];
+    if (defs.length === 0) throw new Error("ยังไม่ได้เลือก Exception");
+
+    // เรียก service แบบต่อ definition แล้วรวมผลลัพธ์
+    const results = await Promise.all(
+      defs.map((defId) =>
+        assignExceptionsToEmployees(
+          defId,
+          employeesPayload,
+          {
+            // ให้ behavior ใกล้เคียงเดิม: ถ้ามีอยู่แล้วให้ข้าม
+            skipIfExists: true,
+            // อัปเดตชื่อ/แผนกถ้าส่งมา (เราไม่ได้ส่งใน payload ข้างบนก็ไม่กระทบ)
+            upsertNameAndDept: true,
+            // ถ้ามี note ใหม่ให้ append ต่อท้าย (หรือเปลี่ยนเป็น "replace" ถ้าต้องการ)
+            noteStrategy: note.trim() ? "append" : "keep-existing",
+          }
+        )
+      )
+    );
+
+    const addedTotal   = results.reduce((n, r) => n + (r?.added ?? 0), 0);
+    const updatedTotal = results.reduce((n, r) => n + (r?.updated ?? 0), 0);
+    const skippedTotal = results.reduce((n, r) => n + (r?.skipped ?? 0), 0);
+
+    setLastMsg(
+      `Assigned ${defs.length} exception(s) ให้ ${fullName(employee)} สำเร็จ ` +
+      `(added ${addedTotal}, updated ${updatedTotal}, skipped ${skippedTotal})`
+    );
+    setSelectedDefIds([]);
+  } catch (e: any) {
+    setLastMsg(e?.message ?? "Assign ล้มเหลว (unknown error)");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -109,7 +138,7 @@ export default function AssignEmployeeToExceptionsClient({
         breadcrumbs={[
           { label: "Employees", href: "/employees" },
           {
-            label: `${employee.name} (${employee.id})`,
+            label: `${fullName(employee)} (${employee.id})`,
             href: `/employees/${employee.id}`,
           },
           {
@@ -122,7 +151,7 @@ export default function AssignEmployeeToExceptionsClient({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <Card
           title="Employee"
-          count={`${employee.name} (${employee.id})`}
+          count={`${fullName(employee)} (${employee.id})`}
           compact
         />
         <Card

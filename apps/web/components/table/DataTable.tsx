@@ -1,4 +1,3 @@
-
 // src/components/datatable/DataTable.tsx
 'use client';
 
@@ -8,7 +7,6 @@ import { DataTableHeader } from './DataTableHeader';
 import { DataTableBody } from './DataTableBody';
 import { LoadingBody, ErrorBody, EmptyBody } from './DataTableStates';
 import { DataTablePaginationBar } from './DataTablePaginationBar';
-
 
 import type { AppColumnDef, DataTableProps as _DataTableProps } from '../../types/ui-table';
 import { cn } from '@/lib/cn';
@@ -83,7 +81,7 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
     }
   };
 
-  // TanStack toggle sort style
+  // Toggle sort แบบ TanStack
   const toggleSort = (col: AppColumnDef<TRow>) => {
     const colId = String(col.accessorKey);
     const cur = sorting ?? [];
@@ -97,7 +95,7 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
     onSortingChange?.(next as any);
   };
 
-  // (optional) client-side sort (ใช้เฉพาะตารางเล็ก / mock)
+  // (optional) client-side sort เฉพาะกรณีอยากให้เรียงในหน้า (mock/demo)
   const effectiveRows = React.useMemo(() => {
     if (!clientSideSort) return rows;
     if (!sorting?.length) return rows;
@@ -123,7 +121,7 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
       const bIsDate = !isNaN(db.valueOf());
       if (aIsDate && bIsDate) return da.getTime() - db.getTime();
 
-      return String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
+      return String(a).localeCompare(String(b), undefined, { sensitivity: 'base', numeric: true });
     };
 
     const arr = [...rows]; // clone เผื่อ rows เป็น readonly

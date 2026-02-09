@@ -1,4 +1,4 @@
-import { getActiveExceptionDefinitions } from "@/services/exception.service.mock";
+import { getActiveExceptionDefinitions } from "@/services/exceptions.service.mock";
 import { ExceptionDefinition } from "@/types/exception";
 import React from "react";
 

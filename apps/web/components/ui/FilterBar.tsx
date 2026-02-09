@@ -37,6 +37,20 @@ export type FilterBarProps<TStatus extends string, TType extends string> = {
 
   /** ✅ พื้นที่ไว้เสียบฟิลเตอร์เพิ่มเติมแบบ custom */
   extraFilters?: React.ReactNode;
+
+  /** ✅ กำหนด “ลำดับที่ต้องมาก่อน” ต่อฟิลด์ เช่น { status: ["Active", "Inactive"] } */
+  optionOrder?: Partial<{
+    status: readonly string[];
+    type: readonly string[];
+    manufacturer: readonly string[];
+  }>;
+
+  /** ✅ ฟังก์ชัน sort ขั้นสูงต่อฟิลด์ (ถ้ามีจะ override optionOrder) */
+  optionSort?: Partial<{
+    status: (a: string, b: string) => number;
+    type: (a: string, b: string) => number;
+    manufacturer: (a: string, b: string) => number;
+  }>;
 };
 
 export function FilterBar<TStatus extends string, TType extends string>({
@@ -51,6 +65,9 @@ export function FilterBar<TStatus extends string, TType extends string>({
   onAction,
   rightExtra,
   extraFilters,
+
+  optionOrder,
+  optionSort,
 }: FilterBarProps<TStatus, TType>) {
   const {
     status: statusLabel = "Status",
@@ -67,38 +84,79 @@ export function FilterBar<TStatus extends string, TType extends string>({
   const hasManufacturer =
     Array.isArray(manufacturerOptions) && manufacturerOptions.length > 0;
 
+  // ---------- helpers: order & sort ----------
+  const reorderByPriority = (
+    items: readonly string[],
+    priority?: readonly string[],
+  ) => {
+    if (!priority || priority.length === 0) return [...items];
+    const set = new Set(items);
+    const head: string[] = [];
+    const tail: string[] = [];
+
+    // ดึงตัวที่อยู่ใน priority มาไว้หัว แต่อยู่เฉพาะที่มีจริงใน items
+    for (const p of priority) {
+      if (set.has(p)) {
+        head.push(p);
+        set.delete(p);
+      }
+    }
+    // ที่เหลือเรียงตามลำดับเดิม
+    for (const it of items) {
+      if (set.has(it)) tail.push(it);
+    }
+    return [...head, ...tail];
+  };
+
+  const buildSelectOptions = React.useCallback(
+    (
+      raw: readonly string[],
+      allLabel: string,
+      field: "status" | "type" | "manufacturer",
+    ) => {
+      let list = [...raw];
+
+      // 1) ถ้ามี optionSort[field] ใช้เป็น comparator
+      const cmp = optionSort?.[field];
+      if (typeof cmp === "function") {
+        list.sort(cmp);
+      } else {
+        // 2) ถ้าไม่มี comparator ใช้ optionOrder[field] เป็น priority list
+        const priority = optionOrder?.[field];
+        list = reorderByPriority(list, priority);
+      }
+
+      // ใส่ ALL ไว้หัวเสมอ
+      return [
+        { label: allLabel, value: "ALL" },
+        ...list.map((s) => ({ label: s, value: s })),
+      ];
+    },
+    [optionOrder, optionSort],
+  );
+
   // เตรียม options ให้ SelectField เฉพาะฟิลด์ที่มีข้อมูล
   const statusSelectOptions = React.useMemo(
     () =>
-      hasStatus
-        ? [
-            { label: allStatus, value: "ALL" },
-            ...statusOptions.map((s) => ({ label: s, value: s })),
-          ]
-        : [],
-    [hasStatus, statusOptions, allStatus],
+      hasStatus ? buildSelectOptions(statusOptions, allStatus, "status") : [],
+    [hasStatus, statusOptions, allStatus, buildSelectOptions],
   );
 
   const typeSelectOptions = React.useMemo(
-    () =>
-      hasType
-        ? [
-            { label: allType, value: "ALL" },
-            ...typeOptions.map((t) => ({ label: t, value: t })),
-          ]
-        : [],
-    [hasType, typeOptions, allType],
+    () => (hasType ? buildSelectOptions(typeOptions, allType, "type") : []),
+    [hasType, typeOptions, allType, buildSelectOptions],
   );
 
   const manufacturerSelectOptions = React.useMemo(
     () =>
       hasManufacturer
-        ? [
-            { label: allManufacturer, value: "ALL" },
-            ...manufacturerOptions.map((m) => ({ label: m, value: m })),
-          ]
+        ? buildSelectOptions(
+            manufacturerOptions,
+            allManufacturer,
+            "manufacturer",
+          )
         : [],
-    [hasManufacturer, manufacturerOptions, allManufacturer],
+    [hasManufacturer, manufacturerOptions, allManufacturer, buildSelectOptions],
   );
 
   // map undefined ↔ "ALL"
@@ -107,12 +165,21 @@ export function FilterBar<TStatus extends string, TType extends string>({
   const manufacturerValue = (filters?.manufacturer ?? "ALL") as string;
 
   // updater สั้น ๆ
-
   const patch = <K extends keyof FilterValues<TStatus, TType>>(
     k: K,
     value: FilterValues<TStatus, TType>[K],
   ) => onFiltersChange({ ...filters, [k]: value });
 
+  // ภายใน FilterBar
+  React.useEffect(() => {
+    if (statusSelectOptions.length) {
+      console.log(
+        "[FilterBar] statusSelectOptions:",
+        statusSelectOptions.map((o) => o.label),
+      );
+    }
+  }, [statusSelectOptions]);
+  
   return (
     <div className="space-y-3">
       {/* แถวบน: Filters + Export + Action */}

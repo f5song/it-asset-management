@@ -25,7 +25,6 @@ import { formatDateSafe } from "@/lib/date";
 import { toLocalInput } from "@/lib/date-input";
 import { exceptionEditFields } from "@/config/forms/exceptionEditFields";
 
-
 type ExceptionsDetailProps = {
   item: ExceptionDefinition;
   history?: HistoryEvent[];
@@ -42,18 +41,56 @@ export default function ExceptionsDetail({
   const router = useRouter();
 
   const historyData = React.useMemo<HistoryEvent[]>(
-    () =>
-      Array.isArray(history) && history.length ? history : demoExceptionHistory,
+    () => (Array.isArray(history) && history.length ? history : demoExceptionHistory),
     [history],
   );
 
-  const rows = React.useMemo<ExceptionAssignmentRow[]>(
-    () =>
-      Array.isArray(assignments) && assignments.length
-        ? assignments
-        : demoExceptionAssignments,
+  // ข้อมูลดิบ
+  const rawRows = React.useMemo<ExceptionAssignmentRow[]>(
+    () => (Array.isArray(assignments) && assignments.length ? assignments : demoExceptionAssignments),
     [assignments],
   );
+
+  // ✅ อ่าน "สถานะพนักงาน" จากหลายชื่อฟิลด์ที่อาจต่างกัน แล้วเรียง Active -> Resigned
+  const sortedRows = React.useMemo<ExceptionAssignmentRow[]>(() => {
+    // priority: Active (0) ก่อน Resigned (1) อื่น ๆ ไปท้าย
+    const pr = new Map<string, number>([
+      ["active", 0],
+      ["resigned", 1],
+    ]);
+
+    // ฟังก์ชันอ่าน status ให้ครอบคลุมกรณี schema ต่าง ๆ
+    const getStatus = (r: any): string | undefined => {
+      // ลองหลายชื่อ field ที่พบเจอได้บ่อย
+      const s =
+        r?.status ??
+        r?.employeeStatus ??
+        r?.employee?.status ??
+        r?.user?.status ??
+        r?.profile?.status;
+
+      return typeof s === "string" ? s : undefined;
+    };
+
+    // secondary key ให้อ่านง่าย: employeeId (หรือตั้งชื่อคอลัมน์ของคุณ)
+    const getEmpId = (r: any) => r?.employeeId ?? r?.userId ?? r?.empId ?? "";
+
+    // sort ควรเป็น "global ก่อน" แล้วค่อย paginate ใน InstallationSection
+    return [...rawRows].sort((a: any, b: any) => {
+      const sa = (getStatus(a) ?? "").toLowerCase();
+      const sb = (getStatus(b) ?? "").toLowerCase();
+      const pa = pr.get(sa) ?? 999;
+      const pb = pr.get(sb) ?? 999;
+
+      if (pa !== pb) return pa - pb;
+
+      // secondary: employeeId แบบ numeric-aware
+      return String(getEmpId(a)).localeCompare(String(getEmpId(b)), undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
+  }, [rawRows]);
 
   const handleBack = React.useCallback(() => {
     router.back();
@@ -115,29 +152,12 @@ export default function ExceptionsDetail({
         notes: item.notes ?? "",
       },
       onSubmit: async (values) => {
-        // const toISO = (local?: string | null) => (local ? new Date(local).toISOString() : null);
-        // const payload = {
-        //   ...values,
-        //   createdAt: toISO(values.createdAt)!,
-        //   lastUpdated: toISO(values.lastUpdated ?? undefined),
-        //   reviewAt: toISO(values.reviewAt ?? undefined),
-        // };
         console.log("save exception:", values);
       },
       submitLabel: "Confirm",
       cancelLabel: "Cancel",
     }),
-    [
-      item.name,
-
-      item.status,
-
-      item.risk,
-      item.createdAt,
-      item.lastUpdated,
-
-      item.notes,
-    ],
+    [item.name, item.status, item.risk, item.createdAt, item.lastUpdated, item.notes],
   );
 
   return (
@@ -148,7 +168,7 @@ export default function ExceptionsDetail({
       info={{ left: infoLeft, right: infoRight }}
       installationSection={
         <InstallationSection<ExceptionAssignmentRow>
-          rows={rows}
+          rows={sortedRows}
           columns={exceptionAssignmentColumns}
           resetKey={`exception-${item.id}`}
           initialPage={1}

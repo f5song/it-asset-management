@@ -50,6 +50,22 @@ export default function LicenseManagementPage() {
     ],
   });
 
+  // ✅ ตั้ง multi-sort อัตโนมัติให้ Active มาก่อน (เฉพาะ All Status)
+  React.useEffect(() => {
+    const isAll = domainFilters.status == null;
+    if (isAll) {
+      ctl.setSorting([
+        { id: "status_priority", desc: false }, // Active -> Expiring -> Expired
+        { id: "softwareName",    desc: false }, // secondary key
+      ]);
+    } else {
+      ctl.setSorting([{ id: "softwareName", desc: false }]);
+    }
+    // รีเซ็ตกลับหน้าแรกเมื่อกติกา sort เปลี่ยน
+    ctl.setPagination({ pageIndex: 0, pageSize: ctl.pagination.pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [domainFilters.status]);
+
   const serviceFilters = React.useMemo(
     () => toServiceFilters(ctl.simpleFilters),
     [ctl.simpleFilters],
@@ -91,6 +107,7 @@ export default function LicenseManagementPage() {
     (row: LicenseItem) => `/software/license-management/${row.id}`,
     [],
   );
+
   const handleExport = React.useCallback(
     (fmt: ExportFormat) => {
       console.log("Export license format:", fmt);

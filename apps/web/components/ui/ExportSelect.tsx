@@ -22,7 +22,7 @@ export function ExportSelect({ onExport }: { onExport: (format: ExportFormat) =>
           e.currentTarget.selectedIndex = 0; // reset
         }}
       >
-        <option value="">Export As ▾</option>
+        <option value="">Export As</option>
         <option value="csv">CSV</option>
         <option value="xlsx">Excel (.xlsx)</option>
         <option value="pdf">PDF</option>

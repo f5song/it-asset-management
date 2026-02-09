@@ -7,8 +7,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { EmployeeItem } from "@/types";
 import { searchEmployees } from "@/services/employees.service.mock";
-import { assignException } from "@/services/exception.service.mock";
-
+import { assignException } from "@/services/exceptions.service.mock";
+import { fullName } from "@/lib/name";
 
 type Props = {
   exceptionId: string;
@@ -131,7 +131,7 @@ const onSubmit = async (values: AssignFormValues) => {
             {results.map((emp) => (
               <li key={emp.id} className="flex items-center justify-between px-3 py-2">
                 <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{emp.name}</div>
+                  <div className="text-sm font-medium truncate">{fullName(emp)}</div>
                   <div className="text-xs text-gray-500 truncate">
                     {emp.email ?? "-"} {emp.department ? `• ${emp.department}` : ""}
                   </div>
@@ -165,7 +165,7 @@ const onSubmit = async (values: AssignFormValues) => {
                 className="inline-flex items-center gap-2 border rounded-full pl-3 pr-2 py-1 text-sm"
               >
                 <span className="truncate max-w-[200px]">
-                  {emp.name} {emp.email ? `(${emp.email})` : ""}
+                  {fullName(emp)} {emp.email ? `(${emp.email})` : ""}
                 </span>
                 <button
                   type="button"

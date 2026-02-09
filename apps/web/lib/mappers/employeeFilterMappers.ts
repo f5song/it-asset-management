@@ -44,12 +44,36 @@ export function toDomainFilters(
 
 // Simple -> Service
 
+// สมมติชนิด orderBy ที่ service/DB เข้าใจ (คุณอาจมี type ของคุณเองอยู่แล้ว)
+type OrderBy = { field?: string; raw?: string; desc?: boolean };
+
 export function toServiceFilters(
   sf: EmployeesFilterValues,
+  sorting?: { id: string; desc: boolean }[],
 ): Partial<EmployeesListQuery> {
-  return {
-    department: sf.department ?? undefined,
-    status: sf.status ?? undefined,
-    search: sf.search ?? undefined,
+  const params: Partial<EmployeesListQuery> = {
+    status: sf.status,
+    department: sf.department,
+    q: sf.search?.trim() || undefined,
   };
+
+  if (sorting?.length) {
+    const orderBy: OrderBy[] = sorting.map((s) => {
+      if (s.id === "status_priority") {
+        // ✅ ให้ service ใช้ CASE ครอบเพื่อ Active -> Resigned -> อื่น ๆ
+        return {
+          raw: `CASE status
+                  WHEN 'Active'   THEN 0
+                  WHEN 'Resigned' THEN 1
+                  ELSE 999
+                END ${s.desc ? "DESC" : "ASC"}`,
+        };
+      }
+      // กรณี field ปกติ
+      return { field: s.id, desc: s.desc };
+    });
+    (params as any).orderBy = orderBy;
+  }
+
+  return params;
 }

@@ -54,7 +54,7 @@ export function ActionToolbar({
       }
       return undefined;
     },
-    [to, selectedIds, enableDefaultMapping]
+    [to, selectedIds, enableDefaultMapping],
   );
 
   const selectionInvalidFor = React.useCallback(
@@ -68,30 +68,26 @@ export function ActionToolbar({
       }
       return false;
     },
-    [requireSelection, singleSelectionOnly, selectedIds.length]
+    [requireSelection, singleSelectionOnly, selectedIds.length],
   );
 
   const options = React.useMemo<ActionOption[]>(() => {
-    const acts = (visibleActions?.length
+    const acts = visibleActions?.length
       ? visibleActions
-      : (["delete", "add"] as ToolbarAction[])); // default set (ถ้าหน้าไม่ระบุ)
+      : (["delete", "add"] as ToolbarAction[]); // default set (ถ้าหน้าไม่ระบุ)
 
     return acts.map((a) => ({
       value: a,
       label:
-        a === "assign"
-          ? "Assign"
-          : a === "reassign"
+        a === "reassign"
           ? "Reassign"
           : a === "edit"
-          ? "Edit"
-          : a === "delete"
-          ? "Delete"
-          : a === "add"
-          ? "Add"
-          : a === "export"
-          ? "Export"
-          : a,
+            ? "Edit"
+            : a === "delete"
+              ? "Delete"
+              : a === "add"
+                ? "Add"
+                : a,
       disabled: selectionInvalidFor(a) || !buildHref(a), // disable ถ้าไม่ผ่านกติกา หรือไม่มี path
     }));
   }, [visibleActions, selectionInvalidFor, buildHref]);
@@ -109,14 +105,14 @@ export function ActionToolbar({
       if (openInNewTab) window.open(href, "_blank", "noopener,noreferrer");
       else router.push(href);
     },
-    [buildHref, onAction, openInNewTab, router, options]
+    [buildHref, onAction, openInNewTab, router, options],
   );
 
   return (
     <ActionSelect
       onAction={handleAction}
       options={options}
-      placeholder="Action ▾"
+      placeholder="Action"
       disabled={disabled}
       resetAfterSelect={true} // หรือ false ถ้าอยากโชว์รายการที่เลือกค้างไว้
     />

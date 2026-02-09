@@ -17,20 +17,39 @@ import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolba
 import { useExceptionInventory } from "hooks/useExceptionInventory";
 
 export default function ExceptionPage() {
-  // สร้าง domain filters เริ่มต้นจากโดเมน (ไม่ควรมี category ถ้าคุณลบออกแล้ว)
+  // สร้าง domain filters เริ่มต้นจากโดเมน
   const [domainFilters, setDomainFilters] = React.useState(toDomainFilters());
 
-  // ✅ ใช้ฮุคเวอร์ชันใหม่: ไม่ต้องใส่ generics, ส่งฟังก์ชัน mapping ตรง ๆ
+  // Controller
   const ctl = useServerTableController({
     pageSize: 8,
-    defaultSort: { id: "createdAt", desc: true } as const,
+    // ❌ หลีกเลี่ยง createdAt เป็น default เพื่อไม่ให้ครอง sort ตอนรีเฟรช
+    // defaultSort: { id: "createdAt", desc: true } as const,
+    // ✅ ใช้ name เป็นค่าเริ่มต้น (จะถูก override ด้านล่างเมื่อ All Status)
+    defaultSort: { id: "name", desc: false } as const,
     domainFilters,
     setDomainFilters,
-    toSimple: toSimpleFilters, // DF -> SF
-    fromSimple: toDomainFilters, // SF -> DF
-    // ❌ ลบ category ออกจาก resetDeps ถ้าไม่มีแล้วใน DF
+    toSimple: toSimpleFilters,    // DF -> SF
+    fromSimple: toDomainFilters,  // SF -> DF
     resetDeps: [domainFilters.status, domainFilters.search],
   });
+
+  // ✅ บังคับให้ Active มาก่อน เมื่ออยู่ All Status
+  React.useEffect(() => {
+    const isAll = ctl.simpleFilters.status == null; // undefined = All Status
+    if (isAll) {
+      ctl.setSorting([
+        { id: "status_priority", desc: false }, // Active -> Inactive
+        { id: "name",            desc: false }, // secondary
+      ]);
+    } else {
+      // ถ้าเลือกสถานะเฉพาะแล้ว ไม่ต้องบังคับ priority
+      ctl.setSorting([{ id: "name", desc: false }]); // หรือจะเป็น createdAt ก็ได้
+    }
+    // รีเซ็ตหน้าเพื่อ UX ที่ดีเมื่อเกณฑ์เรียงเปลี่ยน
+    ctl.setPagination({ pageIndex: 0, pageSize: ctl.pagination.pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctl.simpleFilters.status]);
 
   // แปลง simpleFilters -> serviceFilters เพื่อยิง API
   const serviceFilters = React.useMemo(
@@ -42,11 +61,8 @@ export default function ExceptionPage() {
   const { rows, totalRows, isLoading, isError, errorMessage } =
     useExceptionInventory(ctl.serverQuery, serviceFilters);
 
-  // ตัวเลือกของสถานะ/ประเภท (ถ้า UI ยังต้องการ dropdown แสดง category ได้ตามเดิม)
-  const statusOptions: readonly PolicyStatus[] = [
-    "Active",
-    "Inactive",
-  ];
+  // ตัวเลือกสถานะ
+  const statusOptions: readonly PolicyStatus[] = ["Active", "Inactive"];
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
   const handleExport = React.useCallback(
@@ -76,15 +92,16 @@ export default function ExceptionPage() {
     <InventoryPageShell<ExceptionDefinition, PolicyStatus>
       title="Exceptions"
       breadcrumbs={[{ label: "Exceptions", href: "/exceptions" }]}
-      // FilterBar
+
+      // {/* FilterBar */}
       filters={ctl.simpleFilters}
       onFiltersChange={ctl.onSimpleFiltersChange}
       statusOptions={statusOptions}
       allStatusLabel="All Statuses"
-      // ⛔️ ไม่ต้องส่ง typeOptions / allTypeLabel
       filterBarRightExtra={rightExtra}
       onExport={handleExport}
-      // DataTable
+
+      // {/* DataTable */}
       columns={exceptionInventoryColumns}
       rows={rows}
       totalRows={totalRows}
@@ -93,10 +110,13 @@ export default function ExceptionPage() {
       sorting={ctl.sorting}
       onSortingChange={ctl.setSorting}
       rowHref={(row) => `/exceptions/${row.id}`}
+
       // States
       isLoading={isLoading}
       isError={isError}
       errorMessage={errorMessage}
+
+      // Selection
       selectedIds={selectedIds}
       onSelectedIdsChange={setSelectedIds}
     />

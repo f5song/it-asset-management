@@ -20,7 +20,64 @@ type UseEmployeesInventoryResult = {
 };
 
 /**
+ * stable sort utility:
+ * - เรียงตาม priority ของ primary key ก่อน (เช่น status: Active -> Resigned)
+ * - แล้วตามด้วย secondary key (เช่น employeeId) แบบ numeric-aware
+ * - คงลำดับเดิม (stable) เมื่อตัวเทียบเท่ากัน
+ */
+function stableSortByPriorityThen<T>(
+  list: readonly T[],
+  getPrimaryKey: (item: T) => string | undefined,
+  priority: readonly string[],
+  getSecondaryKey?: (item: T) => string | number | Date | undefined,
+): T[] {
+  const prIndex = (v?: string) => {
+    const i = priority.indexOf(v ?? "");
+    return i >= 0 ? i : Number.MAX_SAFE_INTEGER;
+  };
+
+  const cmpSecondary = (a: any, b: any) => {
+    if (a == null && b == null) return 0;
+    if (a == null) return -1;
+    if (b == null) return 1;
+
+    if (typeof a === "number" && typeof b === "number") return a - b;
+
+    const da = new Date(a);
+    const db = new Date(b);
+    const aIsDate = !isNaN(da.valueOf());
+    const bIsDate = !isNaN(db.valueOf());
+    if (aIsDate && bIsDate) return da.getTime() - db.getTime();
+
+    return String(a).localeCompare(String(b), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  };
+
+  return [...list]
+    .map((item, idx) => ({ item, idx }))
+    .sort((a, b) => {
+      const pa = prIndex(getPrimaryKey(a.item));
+      const pb = prIndex(getPrimaryKey(b.item));
+      if (pa !== pb) return pa - pb;
+
+      if (getSecondaryKey) {
+        const sa = getSecondaryKey(a.item);
+        const sb = getSecondaryKey(b.item);
+        const s = cmpSecondary(sa, sb);
+        if (s !== 0) return s;
+      }
+
+      return a.idx - b.idx; // stable
+    })
+    .map((x) => x.item);
+}
+
+/**
  * Hook: ดึงรายการพนักงานตาม server-side pagination/sorting + domain filters
+ * - ส่ง sortBy/sortOrder ไป service เหมือนเดิม
+ * - เสริม client-side "priority sort" (ในหน้า) เมื่อ sortBy === 'status_priority' และเป็น All Status
  */
 export function useEmployeesInventory(
   serverQuery: ServerQuery,
@@ -38,29 +95,43 @@ export function useEmployeesInventory(
    * - pageSize -> pageSize
    * - แนบ search/status/department
    * - ส่ง sortBy/sortOrder ถ้ามี
+   * - (ชั่วคราว) แนบ orderByRaw ให้ service mock เห็นรูปแบบที่อยากได้ (ถ้า service รองรับ)
    */
   const serviceQuery = React.useMemo(() => {
     const { pageIndex = 0, pageSize = 10, sortBy, sortOrder } = serverQuery;
 
-    // ✅ status: ใช้ค่าจากฟิลเตอร์ตรง ๆ (คง union type)
     const status = filters.status; // EmployeeStatus | undefined
-
-    // ✅ department/search ค่อย trim
     const department = toUndefTrim(filters.department);
     const search = toUndefTrim(filters.search) ?? "";
 
     const q: EmployeesListQuery & {
       sortBy?: string;
       sortOrder?: "asc" | "desc";
+      // เสริมสำหรับ mock/อนาคต: ให้ backend ใช้ orderByRaw ได้ ถ้ารองรับ
+      orderByRaw?: string[];
     } = {
       page: pageIndex + 1,
       pageSize,
       search,
-      status, // ✅ OK: EmployeeStatus | undefined
+      status,
       department: department ?? undefined,
       ...(sortBy ? { sortBy: String(sortBy) } : {}),
       ...(sortOrder ? { sortOrder } : {}),
     };
+
+    // ❗️ถ้าเป็นการเรียงแบบ priority ที่สถานะ:
+    // พยายามแนบคำสั่ง raw ให้ service (ถ้ารองรับ) เพื่อเรียงถูกตั้งแต่ DB
+    if (sortBy === "status_priority" && !status /* All Status */) {
+      const dir = sortOrder === "desc" ? "DESC" : "ASC";
+      q.orderByRaw = [
+        `CASE status
+           WHEN 'Active'   THEN 0
+           WHEN 'Resigned' THEN 1
+           ELSE 999
+         END ${dir}`,
+        `employeeId ASC`, // secondary
+      ];
+    }
 
     return q;
   }, [
@@ -97,7 +168,30 @@ export function useEmployeesInventory(
           (res as any).total ??
           0;
 
-        setRows(Array.isArray(items) ? (items as EmployeeItem[]) : []);
+        let nextRows: EmployeeItem[] = Array.isArray(items) ? (items as EmployeeItem[]) : [];
+
+        // ✅ เสริม client-side priority sort (ภายใน "หน้านี้") ถ้า backend/mock ยังไม่รองรับ
+        const isAllStatus = !filters.status;
+        const sortBy = (serverQuery as any).sortBy as string | undefined;
+        const sortOrder = (serverQuery as any).sortOrder as "asc" | "desc" | undefined;
+
+        if (isAllStatus && sortBy === "status_priority") {
+          const PRIORITY = ["Active", "Resigned"] as const;
+
+          nextRows = stableSortByPriorityThen(
+            nextRows,
+            (r) => r.status,
+            PRIORITY,
+            (r) => r.id, // secondary
+          );
+
+          // รองรับกรณี desc (กลับลำดับ priority ในหน้า)
+          if (sortOrder === "desc") {
+            nextRows = [...nextRows].reverse();
+          }
+        }
+
+        setRows(nextRows);
         setTotalRows(Number.isFinite(total) ? Number(total) : 0);
       } catch (e: any) {
         if (e?.name === "AbortError") return;
@@ -113,7 +207,7 @@ export function useEmployeesInventory(
       alive = false;
       ac.abort();
     };
-  }, [serviceQuery]);
+  }, [serviceQuery, filters.status, serverQuery.sortBy, serverQuery.sortOrder]);
 
   return { rows, totalRows, isLoading, isError, errorMessage };
 }

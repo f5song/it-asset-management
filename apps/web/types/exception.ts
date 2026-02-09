@@ -94,3 +94,21 @@ export type AssignExceptionsToEmployeesResult = {
   assignedCount: number;       // จำนวนพนักงานที่ได้รับมอบหมาย
   definitionIds: string[];
 };
+
+export type AssignEmployeeInput = {
+  employeeId: string;
+  employeeName?: string;
+  department?: string;
+  notes?: string | null;
+};
+
+export type AssignOptions = {
+  /** ข้ามถ้ามีอยู่แล้ว (default: true) */
+  skipIfExists?: boolean;
+  /** ถ้า record มีอยู่แล้ว ให้อัปเดตชื่อ/แผนก (default: true) */
+  upsertNameAndDept?: boolean;
+  /** กลยุทธ์ note เมื่อ record มีอยู่แล้ว (default: 'keep-existing') */
+  noteStrategy?: "keep-existing" | "replace" | "append";
+  /** ตัวคั่นเวลา append note (default: ' | ') */
+  noteAppendSeparator?: string;
+};

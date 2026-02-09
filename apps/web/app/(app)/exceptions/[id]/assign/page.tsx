@@ -22,9 +22,9 @@ import {
   toDomainFilters,
   toSimpleFilters,
 } from "@/lib/mappers/employeeFilterMappers";
-import { assignExceptionsToEmployees } from "@/services/exception.service.mock";
-import EmployeeFilterBar from "@/components/filters/EmployeeFilterBar";
 import { useActiveExceptionDefinitions } from "@/hooks/useActiveExceptionDefinitions";
+import { assignExceptionsToEmployees } from "@/services/exceptions.service.mock";
+import EmployeeFilterBar from "@/components/filters/EmployeeFilterBar";
 // ถ้ามี hook เดี่ยว ใช้ตัวนี้แทน (แนะนำ)
 // import { useExceptionDefinition } from "@/hooks/useExceptionDefinition";
 
@@ -80,17 +80,20 @@ export default function AssignEmployeeExceptionsPage() {
     useEmployeesInventory(ctl.serverQuery, domainFilters);
 
   /* ------------------------------ Selections ------------------------------ */
-  const [selectedEmployeeIds, setSelectedEmployeeIds] = React.useState<string[]>(
-    [],
-  );
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = React.useState<
+    string[]
+  >([]);
   const selectedIdSet = React.useMemo(
     () => new Set<string | number>(selectedEmployeeIds),
     [selectedEmployeeIds],
   );
 
-  const handleSelectionChange = React.useCallback((next: Set<string | number>) => {
-    setSelectedEmployeeIds(Array.from(next).map(String));
-  }, []);
+  const handleSelectionChange = React.useCallback(
+    (next: Set<string | number>) => {
+      setSelectedEmployeeIds(Array.from(next).map(String));
+    },
+    [],
+  );
 
   /* ----------------- Exception Definition ที่เลือกจาก URL ----------------- */
   // ทางเลือก B: ใช้ hook ที่มีอยู่ แล้วหา def จาก id
@@ -116,39 +119,55 @@ export default function AssignEmployeeExceptionsPage() {
   const [lastMsg, setLastMsg] = React.useState<string | null>(null);
 
   const onAssign = React.useCallback(async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || !exceptionId || selectedEmployeeIds.length === 0) return;
+
     setSubmitting(true);
     setLastMsg(null);
+
     try {
-      const res = await assignExceptionsToEmployees({
-        employeeIds: selectedEmployeeIds,
-        definitionIds: [exceptionId], // ✅ ใช้ id จาก URL เพียงตัวเดียว
-        effectiveDate,
-        notes: note.trim() || undefined,
-      });
+      // เตรียม payload ให้ตรงกับ signature ของ service (ต่อ definition, หลาย employee)
+      const employeesPayload = selectedEmployeeIds.map((id) => ({
+        employeeId: id,
+        // ถ้าต้องการแนบชื่อ/แผนก ส่งเพิ่มตรงนี้ได้ เช่น employeeName, department
+        notes: note.trim() || null,
+      }));
+
+      const res = await assignExceptionsToEmployees(
+        String(exceptionId),
+        employeesPayload,
+        {
+          // พฤติกรรมที่ใช้บ่อย: ถ้ามีอยู่แล้วให้ข้าม (ไม่ error)
+          skipIfExists: true,
+          // อัปเดตชื่อ/แผนกถ้าส่งมา (โค้ดนี้เราไม่ได้ส่ง ก็ไม่กระทบ)
+          upsertNameAndDept: true,
+          // ถ้าพิมพ์ note ใหม่ ให้ append ต่อท้าย (เปลี่ยนเป็น "replace" ได้ถ้าต้องการ)
+          noteStrategy: note.trim() ? "append" : "keep-existing",
+        },
+      );
+
+      const assignedCount = (res?.added ?? 0) + (res?.updated ?? 0);
 
       setLastMsg(
-        res.ok
-          ? `Assigned ${res.assignedCount} employee(s) → [${res.definitionIds.join(", ")}] สำเร็จ`
-          : "Assign ล้มเหลว",
+        `Assigned ${assignedCount} employee(s) → [${String(exceptionId)}] สำเร็จ ` +
+          `(added ${res?.added ?? 0}, updated ${res?.updated ?? 0}, skipped ${res?.skipped ?? 0})`,
       );
+
       setSelectedEmployeeIds([]); // reset selection
     } catch (e: any) {
       setLastMsg(e?.message ?? "Assign ล้มเหลว (unknown error)");
     } finally {
       setSubmitting(false);
     }
-  }, [canSubmit, exceptionId, effectiveDate, note, selectedEmployeeIds]);
+  }, [canSubmit, exceptionId, note, selectedEmployeeIds]);
 
   /* --------------------------------- Render -------------------------------- */
-  const headerTitle =
-    loadingDefs
-      ? "Assign Exception → Employees"
-      : currentDef
-      ? `${currentDef.name} (${currentDef.id})`
+  const headerTitle = loadingDefs
+    ? "Assign Exception → Employees"
+    : currentDef
+      ? `${currentDef.name}`
       : exceptionId
-      ? `Exception ${exceptionId} (ไม่พบในรายการ Active)`
-      : "Assign Exception → Employees";
+        ? `Exception ${exceptionId} (ไม่พบในรายการ Active)`
+        : "Assign Exception → Employees";
 
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -167,8 +186,12 @@ export default function AssignEmployeeExceptionsPage() {
       {/* Summary ⇒ 3 ใบ: Total Employees / Selected Employees / Exception */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <Card title="Total Employees" count={totalRows} compact />
-        <Card title="Selected Employees" count={selectedEmployeeIds.length} compact />
-        <Card title="Exception" count="" compact>
+        <Card
+          title="Selected Employees"
+          count={selectedEmployeeIds.length}
+          compact
+        />
+        {/* <Card title="Exception" count="" compact>
           <p className="text-sm text-slate-600">
             {loadingDefs
               ? "กำลังโหลด..."
@@ -178,7 +201,7 @@ export default function AssignEmployeeExceptionsPage() {
               ? `(${exceptionId}) ไม่พบในรายการ Active`
               : "-"}
           </p>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Filter Bar */}
@@ -189,23 +212,6 @@ export default function AssignEmployeeExceptionsPage() {
         departmentOptions={DEPARTMENT_OPTIONS}
         rightExtra={
           <div className="flex items-center gap-2">
-            {/* Effective date */}
-            <input
-              type="date"
-              className="h-9 rounded border px-2 text-sm"
-              value={effectiveDate}
-              onChange={(e) => setEffectiveDate(e.target.value)}
-              aria-label="Effective date"
-            />
-            {/* Note */}
-            <input
-              type="text"
-              className="h-9 rounded border px-2 text-sm w-56"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="หมายเหตุ (optional)"
-              aria-label="Assign note"
-            />
             {/* Confirm */}
             <button
               className="rounded bg-slate-900 text-white px-4 py-2 text-sm h-9 disabled:opacity-50"

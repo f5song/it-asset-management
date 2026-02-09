@@ -16,9 +16,9 @@ import type {
 
 import { employeeColumns } from "@/lib/tables/employeeInventoryColumns";
 import {
-  toDomainFilters, // (sf?: Partial<EmployeesFilterValues>) => EmployeeDomainFilters
-  toServiceFilters, // (sf: EmployeesFilterValues) => Partial<EmployeesListQuery>
-  toSimpleFilters, // (df: EmployeeDomainFilters) => EmployeesFilterValues
+  toDomainFilters,
+  toServiceFilters, // ✅ ปรับให้รับ sorting เพิ่ม (ดูไฟล์ในข้อ 2)
+  toSimpleFilters,
 } from "lib/mappers/employeeFilterMappers";
 
 export default function EmployeesPage() {
@@ -33,7 +33,7 @@ export default function EmployeesPage() {
     EmployeesFilterValues // SF (UI)
   >({
     pageSize: 8,
-    defaultSort: { id: "id", desc: false },
+    defaultSort: { id: "employeeId", desc: false }, // ค่าเริ่มต้นทั่วไป
     domainFilters,
     setDomainFilters,
     toSimple: (df) => toSimpleFilters(df),
@@ -46,20 +46,37 @@ export default function EmployeesPage() {
     ],
   });
 
-  // ---- Simple -> Service params ----
+  // ✅ เมื่อเป็น "All Status" ให้ตั้ง multi-sort: status_priority -> employeeId
+  React.useEffect(() => {
+    const isAllStatus = ctl.simpleFilters.status == null;
+    if (isAllStatus) {
+      ctl.setSorting([
+        { id: "status_priority", desc: false }, // Active(0) < Resigned(1)
+        { id: "employeeId", desc: false },
+      ]);
+    } else {
+      // เมื่อเลือกสถานะเฉพาะ → เรียงตาม employeeId ไปเลย
+      ctl.setSorting([{ id: "employeeId", desc: false }]);
+    }
+    // กลับหน้า 1 เพราะกติกา sort เปลี่ยน
+    ctl.setPagination({ pageIndex: 1, pageSize: ctl.pagination.pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctl.simpleFilters.status]);
+
+  // ---- Simple -> Service params (✅ ส่ง sorting เข้าไปด้วย) ----
   const serviceFilters = React.useMemo(
-    () => toServiceFilters(ctl.simpleFilters),
-    [ctl.simpleFilters],
+    () => toServiceFilters(ctl.simpleFilters, ctl.sorting),
+    [ctl.simpleFilters, ctl.sorting],
   );
 
   // ---- Fetch rows ----
-  // ผูก query จาก controller + domain filters ให้ hook ไป compose เป็น EmployeesListQuery
+  // ✅ ปรับ hook ให้รับ orderBy/params เพิ่ม (ดูไฟล์ในข้อ 3)
+
   const { rows, totalRows, isLoading, isError, errorMessage } =
     useEmployeesInventory(ctl.serverQuery, domainFilters);
 
   // ---- Options ----
   const statusOptions: readonly EmployeeStatus[] = ["Active", "Resigned"];
-
   const departmentOptions: readonly string[] = [
     "สำนักการตลาด",
     "สำนักข่าว",
@@ -72,9 +89,7 @@ export default function EmployeesPage() {
     "สำนักเทคนิคโทรทัศน์",
     "สำนักการพาณิชย์",
   ];
-
-  // ไม่ใช้ manufacturer ในหน้านี้
-  const manufacturerOptions: readonly string[] = [];
+  const manufacturerOptions: readonly string[] = []; // ไม่ใช้ในหน้านี้
 
   // ---- Selection (ใช้กับ Toolbar) ----
   const [selectedEmployeeIds, setSelectedEmployeeIds] = React.useState<
@@ -83,7 +98,10 @@ export default function EmployeesPage() {
 
   const handleExport = React.useCallback(
     (fmt: ExportFormat) => {
-      console.log("Export employees:", fmt);
+      console.log("Export employees:", fmt, {
+        serverQuery: ctl.serverQuery,
+        serviceFilters,
+      });
       // TODO: exportEmployees(fmt, ctl.serverQuery, serviceFilters);
     },
     [ctl.serverQuery, serviceFilters],
@@ -108,20 +126,19 @@ export default function EmployeesPage() {
       title="Employees"
       breadcrumbs={[{ label: "Employees", href: "/employees" }]}
       // ===== FilterBar =====
-      filters={ctl.simpleFilters} // EmployeesFilterValues (shape: {status?, department?, search?})
+      filters={ctl.simpleFilters}
       onFiltersChange={ctl.onSimpleFiltersChange}
-      statusOptions={statusOptions} // EmployeeStatus[]
-      // ✅ บอกว่าเพจนี้มี type/category filter (department)
+      statusOptions={statusOptions}
       hasType={true}
-      typeOptions={departmentOptions} // department (string[])
-      manufacturerOptions={manufacturerOptions} // ไม่ใช้ในหน้านี้
+      typeOptions={departmentOptions}
+      manufacturerOptions={manufacturerOptions}
       allStatusLabel="All Status"
       allTypeLabel="All Departments"
       allManufacturerLabel="—"
       onExport={handleExport}
       filterBarRightExtra={rightExtra}
       // ===== DataTable =====
-      columns={employeeColumns} // columns map กับ EmployeeItem
+      columns={employeeColumns}
       rows={rows}
       totalRows={totalRows}
       pagination={ctl.pagination}
@@ -134,7 +151,6 @@ export default function EmployeesPage() {
       isError={isError}
       errorMessage={errorMessage}
       // ===== Selection =====
-      // ถ้าต้องการให้มี checkbox selection ในตาราง
       selectedIds={selectedEmployeeIds}
       onSelectedIdsChange={setSelectedEmployeeIds}
     />

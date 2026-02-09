@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { getExceptionDefinitions } from "services/exceptions.service.mock";
+import { getExceptionDefinitions } from "@/services/exceptions.service.mock";
 import type {
   ExceptionDefinition,
   PolicyStatus,
@@ -24,18 +24,18 @@ export function useExceptionInventory(
   const serviceQuery = React.useMemo(() => {
     const { pageIndex = 0, pageSize = 10, sortBy, sortOrder } = serverQuery;
 
-    const search = filters.search ?? "";
+    const search = toUndefTrim(filters.search) ?? "";
     const status = toUndefTrim(filters.status) as PolicyStatus | undefined;
-    const owner = toUndefTrim(filters.owner);
+    // const owner = toUndefTrim(filters.owner); // ถ้า service ไม่มี owner ก็อย่าส่ง
 
     return {
-      page: pageIndex + 1,   // service mock: 1-based
-      limit: pageSize,
-      sortBy,
-      sortOrder,
-      search,
-      statusFilter: status ?? "",
-      ownerFilter: owner ?? "",
+      page: pageIndex + 1,         // ✅ 1-based
+      pageSize,                    // ✅ ใช้ key ที่ service รองรับ
+      sortBy,                      // ✅ ส่งต่อไปตรง ๆ
+      sortOrder,                   // ✅
+      search,                      // ✅
+      status,                      // ✅ undefined = All Status
+      // owner,                    // (เพิ่มภายหลังถ้า service รองรับ)
     };
   }, [
     serverQuery.pageIndex,
@@ -44,7 +44,7 @@ export function useExceptionInventory(
     serverQuery.sortOrder,
     filters.search,
     filters.status,
-    filters.owner,
+    // filters.owner,
   ]);
 
   React.useEffect(() => {
@@ -61,17 +61,17 @@ export function useExceptionInventory(
         if (!alive) return;
 
         const items =
-          (res as any).data ??
           (res as any).items ??
+          (res as any).data ??
           [];
         const total =
-          (res as any).pagination?.total ??
           (res as any).totalCount ??
+          (res as any).pagination?.total ??
           (res as any).total ??
           0;
 
         setRows(Array.isArray(items) ? items : []);
-        setTotalRows(Number.isFinite(total) ? total : 0);
+        setTotalRows(Number.isFinite(total) ? Number(total) : 0);
       } catch (e: any) {
         if (e?.name === "AbortError") return;
         if (!alive) return;

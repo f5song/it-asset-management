@@ -203,8 +203,7 @@ export async function listEmployees(
       includesCI(e.status ?? "", search) ||
       includesCI(e.email ?? "", search) ||
       includesCI(e.position ?? "", search) ||
-      includesCI(e.position ?? "", search) ||
-      includesCI(e.phone ?? "", search) ||
+      includesCI(e.phone ?? "", search) ||   // (เดิมซ้ำ position 2 รอบ —ผมแก้เหลือ 1 รอบ)
       includesCI(e.device ?? "", search) ||
       includesCI(e.empType ?? "", search)
     );
@@ -224,17 +223,57 @@ export async function listEmployees(
   if ((q as any).sortBy) {
     const sortBy = String((q as any).sortBy);
     const dir = (q as any).sortOrder === "desc" ? -1 : 1;
-    filtered.sort((a, b) => {
-      const A = getValue(a as any, sortBy) ?? "";
-      const B = getValue(b as any, sortBy) ?? "";
-      const As = typeof A === "string" ? A : String(A);
-      const Bs = typeof B === "string" ? B : String(B);
-      return As > Bs ? dir : As < Bs ? -dir : 0;
-    });
+
+    if (sortBy === "status_priority" && !q.status /* All Status */) {
+      // ✅ Global: Active -> Resigned -> (else)  แล้ว secondary ด้วย id ASC
+      const priority = new Map<string, number>([
+        ["Active", 0],
+        ["Resigned", 1],
+      ]);
+      filtered.sort((a, b) => {
+        const pa = priority.get(a.status as any) ?? 999;
+        const pb = priority.get(b.status as any) ?? 999;
+        if (pa !== pb) return (pa - pb) * dir;
+
+        return a.id.localeCompare(b.id, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
+      });
+    } else {
+      // generic sort for a field
+      filtered.sort((a, b) => {
+        const A = getValue(a as any, sortBy);
+        const B = getValue(b as any, sortBy);
+
+        if (A == null && B == null) return 0;
+        if (A == null) return -1 * dir;
+        if (B == null) return  1 * dir;
+
+        if (typeof A === "number" && typeof B === "number") {
+          return (A - B) * dir;
+        }
+
+        const da = new Date(A as any);
+        const db = new Date(B as any);
+        const aIsDate = !isNaN(da.valueOf());
+        const bIsDate = !isNaN(db.valueOf());
+        if (aIsDate && bIsDate) return (da.getTime() - db.getTime()) * dir;
+
+        const As = String(A);
+        const Bs = String(B);
+        return As.localeCompare(Bs, undefined, { numeric: true, sensitivity: "base" }) * dir;
+      });
+    }
+  } else {
+    // default: id ASC (numeric-aware)
+    filtered.sort((a, b) =>
+      a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: "base" })
+    );
   }
 
   // ----- Pagination (มาตรฐานใน type: page 1-based, pageSize) -----
-  const page      = Math.max(1, Number((q as any).page ?? 1));      // 1-based
+  const page      = Math.max(1, Number((q as any).page ?? 1)); // 1-based
   const pageSize  = Math.max(1, Number((q as any).pageSize ?? 10));
   const start     = (page - 1) * pageSize;
 

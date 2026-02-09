@@ -23,7 +23,7 @@ import type { SortOrder } from "@/types/common";
 // -------------------------------------------------
 const manufacturers = ["Microsoft", "Adobe", "Autodesk", "JetBrains", "Atlassian"] as const;
 const licenseModels: LicenseModel[] = ["Per-User", "Perpetual", "Subscription", "Per-Device"];
-const statuses: LicenseStatus[] = ["Active", "Expired"]; // หมายเหตุ: mock เดิมมี "Expiring" ด้วย ถ้าต้องการให้เพิ่มที่ type
+const statuses: LicenseStatus[] = ["Active", "Expired"]; // เพิ่ม "Expiring" ใน type ได้ในอนาคต
 
 // สำหรับ compliance: อ้างจากฝั่ง software ถ้าคุณมี enum กลาง ให้ import มาแทน
 const complianceOptions = ["Compliant", "Non-Compliant", "Warning"] as const;
@@ -95,10 +95,9 @@ const MOCK_LICENSES: LicenseItem[] = Array.from({ length: 57 }).map((_, i) => {
     manufacturer: manufacturers[i % manufacturers.length],
     licenseModel: licenseModels[i % licenseModels.length],
     // ฟิลด์อื่น ๆ ตาม LicenseItem ของคุณ:
-    // (ถ้า LicenseItem ในโปรเจกต์คุณต้องการ field เพิ่ม ให้เติม mock ให้ครบ)
     sku: `SKU-${i + 1}`,
     edition: undefined,
-    version: `v${(i % 5) + 1}.0`,
+    version: `v${((i % 5) + 1)}.0`,
     consumptionUnit: "perUser",
     term: "subscription",
 
@@ -155,10 +154,42 @@ export async function getLicenses(q: LicenseListQuery): Promise<LicenseListRespo
         );
       }
 
-      // sort
+      // ✅ sort (global ก่อน paginate)
       const dir = (q.sortOrder as SortOrder) === "desc" ? -1 : 1;
       const key = isSortKey(q.sortBy) ? q.sortBy : undefined;
-      if (key) data.sort((a, b) => compare(key, a, b) * dir);
+
+      if (q.sortBy === "status_priority" && !q.status /* All Status */) {
+        // Priority: Active -> Expiring -> Expired -> else
+        const pr = new Map<string, number>([
+          ["Active",   0],
+          ["Expiring", 1], // ถ้า type ยังไม่มี Expiring ก็จะไม่ match และถูกนับเป็น 999
+          ["Expired",  2],
+        ]);
+
+        data.sort((a, b) => {
+          const pa = pr.get(a.status as string) ?? 999;
+          const pb = pr.get(b.status as string) ?? 999;
+          if (pa !== pb) return (pa - pb) * dir;
+
+          // secondary: ใช้ softwareName (อ่านง่ายและเสถียร)
+          return String(a.softwareName ?? "").localeCompare(
+            String(b.softwareName ?? ""),
+            undefined,
+            { numeric: true, sensitivity: "base" }
+          );
+        });
+      } else if (key) {
+        // generic field sort
+        data.sort((a, b) => compare(key, a, b) * dir);
+      } else {
+        // default: softwareName ASC
+        data.sort((a, b) =>
+          String(a.softwareName ?? "").localeCompare(String(b.softwareName ?? ""), undefined, {
+            numeric: true,
+            sensitivity: "base",
+          })
+        );
+      }
 
       // paginate (1-based)
       const start = (q.page - 1) * q.pageSize;
@@ -275,7 +306,7 @@ export async function getLicenseSummary(
 
     if (it.status === "Active") summary.active += 1;
     else if (it.status === "Expired") summary.expired += 1;
-    // หมายเหตุ: ถ้าคุณอยากรองรับ "Expiring" ใน LicenseStatus ให้เพิ่มใน type แล้วนับที่นี่ด้วย
+    // ถ้าเพิ่ม "Expiring" ใน LicenseStatus: ให้เพิ่มสรุปที่นี่ด้วย
 
     if (it.status === "Active" && (it.inUse ?? 0) === 0) {
       summary.inactive += 1;
