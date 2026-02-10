@@ -11,7 +11,7 @@ export type OffsetPaginationParams = {
   sortBy?: string;
   sortOrder?: SortOrder;
   // เผื่อขยาย key อื่น ๆ แบบปลอดภัย
-  [key: string]: string | number | boolean | undefined;
+  [key: string]: unknown;
 };
 
 /** รูปแบบผลลัพธ์แบบแบ่งหน้า */

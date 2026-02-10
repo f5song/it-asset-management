@@ -80,7 +80,7 @@ export default function ExceptionPage() {
       basePath="/exceptions"
       enableDefaultMapping
       onAction={(act) => {
-        if (act === "delete") {
+        if (act === "Delete") {
           console.log("delete exceptions:", selectedIds);
           // TODO: call delete API
         }

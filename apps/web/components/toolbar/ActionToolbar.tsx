@@ -60,10 +60,10 @@ export function ActionToolbar({
   const selectionInvalidFor = React.useCallback(
     (action: ToolbarAction) => {
       // กติกาเบื้องต้น (ปรับได้): edit => single-only, delete/reassign => require selection
-      if (singleSelectionOnly && action === "edit") {
+      if (singleSelectionOnly && action === "Edit") {
         return selectedIds.length !== 1;
       }
-      if (requireSelection && (action === "delete" || action === "reassign")) {
+      if (requireSelection && (action === "Delete" || action === "Reassign")) {
         return selectedIds.length < 1;
       }
       return false;
@@ -74,18 +74,18 @@ export function ActionToolbar({
   const options = React.useMemo<ActionOption[]>(() => {
     const acts = visibleActions?.length
       ? visibleActions
-      : (["delete", "add"] as ToolbarAction[]); // default set (ถ้าหน้าไม่ระบุ)
+      : (["Delete", "Add"] as ToolbarAction[]); // default set (ถ้าหน้าไม่ระบุ)
 
     return acts.map((a) => ({
       value: a,
       label:
-        a === "reassign"
+        a === "Reassign"
           ? "Reassign"
-          : a === "edit"
+          : a === "Edit"
             ? "Edit"
-            : a === "delete"
+            : a === "Delete"
               ? "Delete"
-              : a === "add"
+              : a === "Add"
                 ? "Add"
                 : a,
       disabled: selectionInvalidFor(a) || !buildHref(a), // disable ถ้าไม่ผ่านกติกา หรือไม่มี path

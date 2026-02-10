@@ -114,7 +114,7 @@ export default function EmployeesPage() {
       basePath="/employees"
       enableDefaultMapping
       onAction={(act) => {
-        if (act === "delete") {
+        if (act === "Delete") {
           console.log("delete employees:", selectedEmployeeIds);
         }
       }}

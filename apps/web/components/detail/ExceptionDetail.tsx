@@ -107,13 +107,13 @@ export default function ExceptionsDetail({
         selectedIds={[item.id]}
         basePath="/exceptions"
         enableDefaultMapping
-        visibleActions={["assignExceptions"]}
+        visibleActions={["Assign Exceptions"]}
         singleSelectionOnly
         toOverride={{
-          assignExceptions: `/exceptions/${item.id}/assign`,
+          "Assign Exceptions": `/exceptions/${item.id}/assign`,
         }}
         onAction={(act) => {
-          if (act === "delete") handleDelete();
+          if (act === "Delete") handleDelete();
         }}
       />
     ),

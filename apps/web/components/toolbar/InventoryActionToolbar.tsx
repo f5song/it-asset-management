@@ -31,8 +31,8 @@ export function InventoryActionToolbar({
   const defaultTo: Partial<Record<ToolbarAction, ActionPathConfig>> =
     entity === "employees"
       ? {
-          add: `${basePath}/add`,
-          edit: ({
+          Add: `${basePath}/add`,
+          Edit: ({
             selectedIds,
           }: {
             action: ToolbarAction;
@@ -41,7 +41,7 @@ export function InventoryActionToolbar({
             selectedIds.length === 1
               ? `${basePath}/${selectedIds[0]}/edit`
               : undefined,
-          delete: ({
+          Delete: ({
             selectedIds,
           }: {
             action: ToolbarAction;
@@ -50,7 +50,7 @@ export function InventoryActionToolbar({
             selectedIds.length > 0
               ? `${basePath}/delete?ids=${encodeURIComponent(selectedIds.join(","))}`
               : undefined,
-          assignExceptions: ({
+          "Assign Exceptions": ({
             selectedIds,
           }: {
             action: ToolbarAction;
@@ -63,8 +63,8 @@ export function InventoryActionToolbar({
       : entity === "licenses"
         ? {
             // ✅ licenses: มี assign ได้เช่นกัน
-            add: `${basePath}/add`,
-            edit: ({
+            Add: `${basePath}/add`,
+            Edit: ({
               selectedIds,
             }: {
               action: ToolbarAction;
@@ -73,7 +73,7 @@ export function InventoryActionToolbar({
               selectedIds.length === 1
                 ? `${basePath}/${selectedIds[0]}/edit`
                 : undefined,
-            delete: ({
+            Delete: ({
               selectedIds,
             }: {
               action: ToolbarAction;
@@ -82,7 +82,7 @@ export function InventoryActionToolbar({
               selectedIds.length > 0
                 ? `${basePath}/delete?ids=${encodeURIComponent(selectedIds.join(","))}`
                 : undefined,
-            assignLicense: ({
+            "Assign License": ({
               selectedIds,
             }: {
               action: ToolbarAction;
@@ -93,8 +93,8 @@ export function InventoryActionToolbar({
                 : undefined,
           }
         : {
-            add: `${basePath}/add`,
-            edit: ({
+            Add: `${basePath}/add`,
+            Edit: ({
               selectedIds,
             }: {
               action: ToolbarAction;
@@ -103,7 +103,7 @@ export function InventoryActionToolbar({
               selectedIds.length === 1
                 ? `${basePath}/${selectedIds[0]}/edit`
                 : undefined,
-            delete: ({
+            Delete: ({
               selectedIds,
             }: {
               action: ToolbarAction;

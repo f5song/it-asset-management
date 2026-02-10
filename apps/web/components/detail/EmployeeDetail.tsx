@@ -81,13 +81,13 @@ export default function EmployeeDetail(props: EmployeeDetailProps) {
         selectedIds={[item.id]}
         basePath="/employees"
         enableDefaultMapping
-        visibleActions={["assignExceptions"]} // แสดงเฉพาะ assign
+        visibleActions={["Assign Exceptions"]} // แสดงเฉพาะ assign
         singleSelectionOnly
         toOverride={{
-          assignExceptions: `/employees/${item.id}/exceptions/assign`,
+          "Assign Exceptions": `/employees/${item.id}/exceptions/assign`,
         }}
         onAction={(act) => {
-          if (act === "assignExceptions") handleAssign();
+          if (act === "Assign Exceptions") handleAssign();
         }}
       />
     ),

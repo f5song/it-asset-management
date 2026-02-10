@@ -99,7 +99,7 @@ export default function DevicesPage() {
       basePath="/devices"
       enableDefaultMapping
       onAction={(act) => {
-        if (act === "delete") {
+        if (act === "Delete") {
           console.log("delete devices:", selectedDeviceIds);
         }
       }}

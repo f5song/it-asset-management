@@ -68,7 +68,7 @@ export default function SoftwarePage() {
       basePath="/software"
       enableDefaultMapping
       onAction={(act) => {
-        if (act === "delete") console.log("delete software:", selectedSoftwareIds);
+        if (act === "Delete") console.log("delete software:", selectedSoftwareIds);
       }}
     />
   );
