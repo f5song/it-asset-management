@@ -84,24 +84,25 @@ export function FilterBar<TStatus extends string, TType extends string>({
       ...(includeAll ? [{ label: allLabel, value: ALL }] : []),
       ...list.map((v) => ({ label: v, value: v })),
     ],
-    []
+    [],
   );
 
   // single-mode options → มี ALL item
   const statusSelectOptions = React.useMemo(
     () => makeOptions(allStatus, statusOptions, !statusSelected),
-    [allStatus, statusOptions, statusSelected, makeOptions]
+    [allStatus, statusOptions, statusSelected, makeOptions],
   );
   const typeSelectOptions = React.useMemo(
     () => makeOptions(allType, typeOptions, !typeSelected),
-    [allType, typeOptions, typeSelected, makeOptions]
+    [allType, typeOptions, typeSelected, makeOptions],
   );
   const manufacturerSelectOptions = React.useMemo(
-    () => makeOptions(allManufacturer, manufacturerOptions, !manufacturerSelected),
-    [allManufacturer, manufacturerOptions, manufacturerSelected, makeOptions]
+    () =>
+      makeOptions(allManufacturer, manufacturerOptions, !manufacturerSelected),
+    [allManufacturer, manufacturerOptions, manufacturerSelected, makeOptions],
   );
 
-  const safeFilters = (filters ?? ({} as FilterValues<TStatus, TType>));
+  const safeFilters = filters ?? ({} as FilterValues<TStatus, TType>);
   const patch = <K extends keyof FilterValues<TStatus, TType>>(
     key: K,
     value: FilterValues<TStatus, TType>[K],
@@ -113,16 +114,18 @@ export function FilterBar<TStatus extends string, TType extends string>({
 
   // type predicate helpers (ปลอดภัย + TS happy)
   const isTStatus = React.useCallback(
-    (s: string): s is TStatus => (statusOptions as readonly string[]).includes(s),
-    [statusOptions]
+    (s: string): s is TStatus =>
+      (statusOptions as readonly string[]).includes(s),
+    [statusOptions],
   );
   const isTType = React.useCallback(
     (s: string): s is TType => (typeOptions as readonly string[]).includes(s),
-    [typeOptions]
+    [typeOptions],
   );
   const isManufacturer = React.useCallback(
-    (s: string): s is string => (manufacturerOptions as readonly string[]).includes(s),
-    [manufacturerOptions]
+    (s: string): s is string =>
+      (manufacturerOptions as readonly string[]).includes(s),
+    [manufacturerOptions],
   );
 
   return (
@@ -136,7 +139,9 @@ export function FilterBar<TStatus extends string, TType extends string>({
               srOnlyLabel
               options={statusOptions.map((s) => ({ label: s, value: s }))}
               value={[...statusSelected]}
-              onChange={(arr) => onStatusSelectedChange?.(arr.filter(isTStatus))}
+              onChange={(arr) =>
+                onStatusSelectedChange?.(arr.filter(isTStatus))
+              }
               placeholder={allStatus}
             />
           ) : (
@@ -194,23 +199,26 @@ export function FilterBar<TStatus extends string, TType extends string>({
               value={manufacturerValue}
               options={manufacturerSelectOptions}
               onChange={(v) =>
-                patch("manufacturer", !v || v === ALL ? undefined : (v as string))
+                patch(
+                  "manufacturer",
+                  !v || v === ALL ? undefined : (v as string),
+                )
               }
             />
           ))}
 
         {extraFilters}
+        {onClearFilters && (
+          <button
+            type="button"
+            className="h-10 rounded border border-slate-300 px-3 text-sm"
+            onClick={onClearFilters}
+          >
+            {clearLabel}
+          </button>
+        )}
 
         <div className="ml-auto flex items-center gap-2">
-          {onClearFilters && (
-            <button
-              type="button"
-              className="h-9 rounded border border-slate-300 px-3 text-sm"
-              onClick={onClearFilters}
-            >
-              {clearLabel}
-            </button>
-          )}
           {onExport && <ExportSelect onExport={onExport} />}
           {rightExtra}
         </div>

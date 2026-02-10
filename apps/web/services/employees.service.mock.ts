@@ -358,7 +358,7 @@ export async function listEmployees(
     filtered = filtered.filter((e) => ci(e.status) === s);
   }
   if (q.department) {
-    const d = ci(q.department);
+    const d = ci(q.type);
     filtered = filtered.filter((e) => ci(e.department) === d);
   }
 
