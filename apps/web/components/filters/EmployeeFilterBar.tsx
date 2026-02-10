@@ -89,11 +89,6 @@ export default function EmployeeFilterBar({
       labels={mergedLabels}
       rightExtra={rightExtra}
       extraFilters={extraFilters}
-      optionOrder={{
-        status: ["Active", "Resigned"],
-        // ถ้าต้องการให้บาง department ขึ้นหัวก่อน ก็เพิ่มตรงนี้ได้:
-        // type: ["Engineering", "HR"],
-      }}
     />
   );
 }

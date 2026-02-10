@@ -17,8 +17,6 @@ import BackButton from "../ui/BackButton";
 import { assignExceptionsToEmployees } from "@/services/exceptions.service.mock";
 import { fullName } from "@/lib/name";
 
-
-
 type ExceptionDomainFilters = { status?: PolicyStatus; search?: string };
 
 function toDomainFilters(ui: ExceptionUIFilters): ExceptionDomainFilters {
@@ -50,6 +48,23 @@ export default function AssignEmployeeToExceptionsClient({
     resetDeps: [domainFilters.status, domainFilters.search],
   });
 
+  // ✅ บังคับ Active มาก่อน เมื่ออยู่ All Status (เหมือน ExceptionPage)
+  React.useEffect(() => {
+    const isAll = ctl.simpleFilters.status == null; // undefined = All
+    if (isAll) {
+      ctl.setSorting([
+        { id: "status_priority", desc: false }, // Active -> Inactive
+        { id: "name", desc: false }, // secondary
+      ]);
+    } else {
+      // เมื่อเลือกสถานะเฉพาะแล้ว ไม่ต้องบังคับ priority
+      ctl.setSorting([{ id: "name", desc: false }]);
+    }
+    // รีเซ็ตหน้าเพื่อ UX ที่ดี เมื่อกติกาเรียงเปลี่ยน
+    ctl.setPagination({ pageIndex: 0, pageSize: ctl.pagination.pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctl.simpleFilters.status]);
+
   const { rows, totalRows, isLoading, isError, errorMessage } =
     useExceptionDefinitionsInventory(ctl.serverQuery, domainFilters);
 
@@ -77,58 +92,54 @@ export default function AssignEmployeeToExceptionsClient({
   const [submitting, setSubmitting] = React.useState(false);
   const [lastMsg, setLastMsg] = React.useState<string | null>(null);
 
-const onAssign = async () => {
-  if (!canSubmit) return;
-  setSubmitting(true);
-  setLastMsg(null);
-  try {
-    // เตรียม payload ให้ตรงกับ signature ปัจจุบันของ service
-    const employeesPayload = [
-      {
-        employeeId: employee.id,
-        // ชื่อ/แผนกถ้าไม่ได้ส่ง จะ auto จาก toDisplayName/“–”
-        // employeeName: employee.name,
-        // department: employee.department,
-        notes: note.trim() || null,
-      },
-    ];
+  const onAssign = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setLastMsg(null);
+    try {
+      // เตรียม payload ให้ตรงกับ signature ปัจจุบันของ service
+      const employeesPayload = [
+        {
+          employeeId: employee.id,
+          // ชื่อ/แผนกถ้าไม่ได้ส่ง จะ auto จาก toDisplayName/“–”
+          // employeeName: employee.name,
+          // department: employee.department,
+          notes: note.trim() || null,
+        },
+      ];
 
-    const defs = selectedDefIds?.map(String) ?? [];
-    if (defs.length === 0) throw new Error("ยังไม่ได้เลือก Exception");
+      const defs = selectedDefIds?.map(String) ?? [];
+      if (defs.length === 0) throw new Error("ยังไม่ได้เลือก Exception");
 
-    // เรียก service แบบต่อ definition แล้วรวมผลลัพธ์
-    const results = await Promise.all(
-      defs.map((defId) =>
-        assignExceptionsToEmployees(
-          defId,
-          employeesPayload,
-          {
+      // เรียก service แบบต่อ definition แล้วรวมผลลัพธ์
+      const results = await Promise.all(
+        defs.map((defId) =>
+          assignExceptionsToEmployees(defId, employeesPayload, {
             // ให้ behavior ใกล้เคียงเดิม: ถ้ามีอยู่แล้วให้ข้าม
             skipIfExists: true,
             // อัปเดตชื่อ/แผนกถ้าส่งมา (เราไม่ได้ส่งใน payload ข้างบนก็ไม่กระทบ)
             upsertNameAndDept: true,
             // ถ้ามี note ใหม่ให้ append ต่อท้าย (หรือเปลี่ยนเป็น "replace" ถ้าต้องการ)
             noteStrategy: note.trim() ? "append" : "keep-existing",
-          }
-        )
-      )
-    );
+          }),
+        ),
+      );
 
-    const addedTotal   = results.reduce((n, r) => n + (r?.added ?? 0), 0);
-    const updatedTotal = results.reduce((n, r) => n + (r?.updated ?? 0), 0);
-    const skippedTotal = results.reduce((n, r) => n + (r?.skipped ?? 0), 0);
+      const addedTotal = results.reduce((n, r) => n + (r?.added ?? 0), 0);
+      const updatedTotal = results.reduce((n, r) => n + (r?.updated ?? 0), 0);
+      const skippedTotal = results.reduce((n, r) => n + (r?.skipped ?? 0), 0);
 
-    setLastMsg(
-      `Assigned ${defs.length} exception(s) ให้ ${fullName(employee)} สำเร็จ ` +
-      `(added ${addedTotal}, updated ${updatedTotal}, skipped ${skippedTotal})`
-    );
-    setSelectedDefIds([]);
-  } catch (e: any) {
-    setLastMsg(e?.message ?? "Assign ล้มเหลว (unknown error)");
-  } finally {
-    setSubmitting(false);
-  }
-};
+      setLastMsg(
+        `Assigned ${defs.length} exception(s) ให้ ${fullName(employee)} สำเร็จ ` +
+          `(added ${addedTotal}, updated ${updatedTotal}, skipped ${skippedTotal})`,
+      );
+      setSelectedDefIds([]);
+    } catch (e: any) {
+      setLastMsg(e?.message ?? "Assign ล้มเหลว (unknown error)");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="p-4 md:p-6 space-y-4">

@@ -59,7 +59,7 @@ export default function ExceptionFilterBar({
     <FilterBar<PolicyStatus, string>
       filters={fbFilters}
       onFiltersChange={handleChange}
-      statusOptions={statusOptions as unknown as readonly string[]}
+      statusOptions={statusOptions}
       // ไม่มี type/manufacturer → ไม่ส่งหรือส่ง [] ก็ได้
       typeOptions={[]}
       manufacturerOptions={[]}

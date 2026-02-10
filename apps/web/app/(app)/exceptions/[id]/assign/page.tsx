@@ -76,6 +76,22 @@ export default function AssignEmployeeExceptionsPage() {
     ],
   });
 
+  // ⭐ เพิ่มตรงนี้ใน AssignEmployeeExceptionsPage
+  React.useEffect(() => {
+    const isAll = ctl.simpleFilters.status == null; // undefined = All Status
+    if (isAll) {
+      ctl.setSorting([
+        { id: "status_priority", desc: false }, // Active -> Resigned
+        { id: "firstNameTh", desc: false }, // secondary sort
+      ]);
+    } else {
+      ctl.setSorting([{ id: "firstNameTh", desc: false }]);
+    }
+
+    ctl.setPagination({ pageIndex: 0, pageSize: ctl.pagination.pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctl.simpleFilters.status]);
+
   const { rows, totalRows, isLoading, isError, errorMessage } =
     useEmployeesInventory(ctl.serverQuery, domainFilters);
 

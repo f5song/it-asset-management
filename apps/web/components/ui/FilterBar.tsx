@@ -38,14 +38,14 @@ export type FilterBarProps<TStatus extends string, TType extends string> = {
   /** ✅ พื้นที่ไว้เสียบฟิลเตอร์เพิ่มเติมแบบ custom */
   extraFilters?: React.ReactNode;
 
-  /** ✅ กำหนด “ลำดับที่ต้องมาก่อน” ต่อฟิลด์ เช่น { status: ["Active", "Inactive"] } */
+  /** เดิมเคยใช้บังคับลำดับ แต่เวอร์ชันเรียบง่ายนี้จะ "รับไว้เฉย ๆ" เพื่อไม่ให้ breaking */
   optionOrder?: Partial<{
     status: readonly string[];
     type: readonly string[];
     manufacturer: readonly string[];
   }>;
 
-  /** ✅ ฟังก์ชัน sort ขั้นสูงต่อฟิลด์ (ถ้ามีจะ override optionOrder) */
+  /** เดิมเคยใช้ sort ขั้นสูง — เวอร์ชันนี้จะไม่ใช้งาน เพื่อความเรียบง่าย */
   optionSort?: Partial<{
     status: (a: string, b: string) => number;
     type: (a: string, b: string) => number;
@@ -62,12 +62,9 @@ export function FilterBar<TStatus extends string, TType extends string>({
 
   labels,
   onExport,
-  onAction,
   rightExtra,
   extraFilters,
 
-  optionOrder,
-  optionSort,
 }: FilterBarProps<TStatus, TType>) {
   const {
     status: statusLabel = "Status",
@@ -84,112 +81,31 @@ export function FilterBar<TStatus extends string, TType extends string>({
   const hasManufacturer =
     Array.isArray(manufacturerOptions) && manufacturerOptions.length > 0;
 
-  // ---------- helpers: order & sort ----------
-  const reorderByPriority = (
-    items: readonly string[],
-    priority?: readonly string[],
-  ) => {
-    if (!priority || priority.length === 0) return [...items];
-    const set = new Set(items);
-    const head: string[] = [];
-    const tail: string[] = [];
+  // --- helpers (เรียบง่าย): สร้าง options และอัปเดต state ---
+  const makeOptions = (allLabel: string, list: readonly string[]) => [
+    { label: allLabel, value: "ALL" },
+    ...list.map((v) => ({ label: v, value: v })),
+  ];
 
-    // ดึงตัวที่อยู่ใน priority มาไว้หัว แต่อยู่เฉพาะที่มีจริงใน items
-    for (const p of priority) {
-      if (set.has(p)) {
-        head.push(p);
-        set.delete(p);
-      }
-    }
-    // ที่เหลือเรียงตามลำดับเดิม
-    for (const it of items) {
-      if (set.has(it)) tail.push(it);
-    }
-    return [...head, ...tail];
-  };
+  const patch = <K extends keyof FilterValues<TStatus, TType>>(
+    key: K,
+    value: FilterValues<TStatus, TType>[K],
+  ) => onFiltersChange({ ...filters, [key]: value });
 
-  const buildSelectOptions = React.useCallback(
-    (
-      raw: readonly string[],
-      allLabel: string,
-      field: "status" | "type" | "manufacturer",
-    ) => {
-      let list = [...raw];
-
-      // 1) ถ้ามี optionSort[field] ใช้เป็น comparator
-      const cmp = optionSort?.[field];
-      if (typeof cmp === "function") {
-        list.sort(cmp);
-      } else {
-        // 2) ถ้าไม่มี comparator ใช้ optionOrder[field] เป็น priority list
-        const priority = optionOrder?.[field];
-        list = reorderByPriority(list, priority);
-      }
-
-      // ใส่ ALL ไว้หัวเสมอ
-      return [
-        { label: allLabel, value: "ALL" },
-        ...list.map((s) => ({ label: s, value: s })),
-      ];
-    },
-    [optionOrder, optionSort],
-  );
-
-  // เตรียม options ให้ SelectField เฉพาะฟิลด์ที่มีข้อมูล
-  const statusSelectOptions = React.useMemo(
-    () =>
-      hasStatus ? buildSelectOptions(statusOptions, allStatus, "status") : [],
-    [hasStatus, statusOptions, allStatus, buildSelectOptions],
-  );
-
-  const typeSelectOptions = React.useMemo(
-    () => (hasType ? buildSelectOptions(typeOptions, allType, "type") : []),
-    [hasType, typeOptions, allType, buildSelectOptions],
-  );
-
-  const manufacturerSelectOptions = React.useMemo(
-    () =>
-      hasManufacturer
-        ? buildSelectOptions(
-            manufacturerOptions,
-            allManufacturer,
-            "manufacturer",
-          )
-        : [],
-    [hasManufacturer, manufacturerOptions, allManufacturer, buildSelectOptions],
-  );
-
-  // map undefined ↔ "ALL"
   const statusValue = (filters?.status ?? "ALL") as string;
   const typeValue = (filters?.type ?? "ALL") as string;
   const manufacturerValue = (filters?.manufacturer ?? "ALL") as string;
 
-  // updater สั้น ๆ
-  const patch = <K extends keyof FilterValues<TStatus, TType>>(
-    k: K,
-    value: FilterValues<TStatus, TType>[K],
-  ) => onFiltersChange({ ...filters, [k]: value });
-
-  // ภายใน FilterBar
-  React.useEffect(() => {
-    if (statusSelectOptions.length) {
-      console.log(
-        "[FilterBar] statusSelectOptions:",
-        statusSelectOptions.map((o) => o.label),
-      );
-    }
-  }, [statusSelectOptions]);
-  
   return (
     <div className="space-y-3">
-      {/* แถวบน: Filters + Export + Action */}
+      {/* แถวบน: Dropdowns + Export + Extra */}
       <div className="flex gap-3 items-center flex-wrap">
         {hasStatus && (
           <SelectField
             label={statusLabel}
             srOnlyLabel
             value={statusValue}
-            options={statusSelectOptions}
+            options={makeOptions(allStatus, statusOptions)}
             onChange={(v) =>
               patch("status", !v || v === "ALL" ? undefined : (v as TStatus))
             }
@@ -201,7 +117,7 @@ export function FilterBar<TStatus extends string, TType extends string>({
             label={typeLabel}
             srOnlyLabel
             value={typeValue}
-            options={typeSelectOptions}
+            options={makeOptions(allType, typeOptions)}
             onChange={(v) =>
               patch("type", !v || v === "ALL" ? undefined : (v as TType))
             }
@@ -213,7 +129,7 @@ export function FilterBar<TStatus extends string, TType extends string>({
             label={manufacturerLabel}
             srOnlyLabel
             value={manufacturerValue}
-            options={manufacturerSelectOptions}
+            options={makeOptions(allManufacturer, manufacturerOptions)}
             onChange={(v) =>
               patch(
                 "manufacturer",
@@ -223,12 +139,12 @@ export function FilterBar<TStatus extends string, TType extends string>({
           />
         )}
 
-        {/* ✅ เสียบฟิลเตอร์พิเศษตามหน้าได้ เช่น <UserSelect /> */}
+        {/* ช่องเสียบฟิลเตอร์เพิ่มเติม */}
         {extraFilters}
 
+        {/* ด้านขวา */}
         <div className="ml-auto flex items-center gap-2">
           {onExport && <ExportSelect onExport={onExport} />}
-          {/* ✅ วางปุ่ม/คอมโพเนนต์พิเศษฝั่งขวา */}
           {rightExtra}
         </div>
       </div>
