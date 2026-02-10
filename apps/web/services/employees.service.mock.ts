@@ -24,11 +24,117 @@ const DEPARTMENTS = [
   "สำนักการพาณิชย์",
 ] as const;
 
-const COMPANIES = ["BEC World", "Channel 3", "BECi"] as const;
-const SECTIONS  = ["Application", "Infrastructure", "Broadcast", "Finance Ops"] as const;
-const UNITS     = ["Core Systems", "Web Platform", "Mobile Apps", "Data Eng"] as const;
+const COMPANIES = ["บจก. บีอีซีไอ คอร์ปอเรชั่น",
+"บริษัท บางกอกเอ็นเตอร์เทนเม้นต์ จำกัด",
+"บริษัท บีอีซี-มัลติมีเดีย จำกัด",
+"บริษัท บีอีซี เวิลด์ จำกัด (มหาชน)"] as const;
+const SECTIONS = [
+  "ฝ่ายการตลาดธุรกิจระหว่างประเทศ",
+  "ฝ่ายจัดการธุรกิจระหว่างประเทศ",
+  "ฝ่ายจัดการสัญญาและทรัพย์สินทางปัญญาระหว่างประเทศ",
+  "ฝ่ายบัญชี",
+  "ฝ่ายBIZ Intelligence and Applications",
+  "ฝ่ายข่าวมัลติมีเดีย",
+  "ฝ่ายสื่อสารองค์กร",
+  "ฝ่ายกิจการองค์กร",
+  "ฝ่ายกฎหมาย",
+  "ฝ่ายเลขานุการบริษัท",
+  "ฝ่ายการขายโฆษณาโทรทัศน์",
+  "ฝ่ายจัดการคอนเทนต์ระหว่างประเทศ",
+  "ฝ่ายDigital & New Media Strategy",
+  "ฝ่าย Creative and Design Center",
+  "ฝ่ายManagement Report",
+  "ฝ่ายHRM & Resource Management",
+  "ฝ่ายผลิตละคร",
+  "ฝ่ายTV Station Marketing",
+  "ฝ่ายSocial and Digital Marketing",
+  "ฝ่ายBroadcast Support",
+  "ฝ่ายพัฒนาธุรกิจและการลงทุน",
+  "ฝ่ายกลยุทธ์การตลาด",
+  "ฝ่ายสนับสนุนการปฏิบัติการ",
+  "ฝ่ายHRBP",
+  "ฝ่ายสนับสนุนการผลิต",
+  "ฝ่ายProject Management Office",
+  "ฝ่ายจัดการผังรายการ",
+  "ฝ่ายสนับสนุนการพาณิชย์",
+  "ฝ่ายผู้ประกาศข่าว",
+  "ฝ่ายจัดการงานขาย",
+  "ฝ่ายศิลปกรรม",
+  "ฝ่ายIT Operation and Infrastructure",
+  "ฝ่ายไฟฟ้ากำลัง",
+  "ฝ่ายการเงิน",
+  "ฝ่ายผลิตรายการ",
+  "ฝ่ายข่าวโทรทัศน์",
+  "ฝ่ายตรวจสอบภายใน",
+  "ฝ่ายสร้างสรรค์กิจกรรมและส่งเสริมการขาย",
+  "ฝ่ายTechnology & Platform Management",
+  "ฝ่ายสนับสนุนเทคนิคการออกอากาศ",
+  "ฝ่ายจัดการผลิตรายการ",
+  "ฝ่ายแต่งเพลงประกอบละครโทรทัศน์",
+  "ฝ่ายออกอากาศ",
+] as const;
+const UNITS = [
+  "แผนกข่าวมัลติมีเดีย",
+  "แผนกงานข่าว",
+  "แผนกIT Operation ",
+  "แผนกAR Accounting",
+  "แผนกผังรายการ",
+  "แผนกไฟล์รายการ",
+  "แผนกการตลาดและสนับสนุนการขาย",
+  "แผนกกฎหมาย.",
+  "แผนกเทคนิคสนับสนุนการผลิตรายการ",
+  "แผนกการขาย-กลุ่มลูกค้า Direct 1",
+  "แผนกผู้ประกาศข่าว",
+  "แผนกPlatform Optimization",
+  "แผนกFinance",
+  "แผนกSpecial Unit2",
+  "แผนก Non-ERP",
+  "แผนก Platform Marketing Strategy",
+  "แผนกBroadcast Management System",
+  "แผนกประชาสัมพันธ์",
+  "แผนกถ่ายทอดนอกสถานที่",
+  "แผนกกำกับออกอากาศ",
+  "แผนกเชื่อมโยงสัญญาณ",
+  "แผนกธุรการและบริหารทรัพย์สิน",
+  "แผนกการขาย- กลุ่มลูกค้า Agency 3",
+  "แผนกกราฟฟิก",
+  "แผนกจัดซื้อและพัสดุ",
+  "แผนกกิจกรรมเพื่อสังคมและความยั่งยืน",
+  "แผนกIT Application and Customer Support",
+  "แผนกProduct Development",
+  "แผนกเทคนิคกราฟฟิกและตัดต่อรายการ",
+  "แผนกDigital Marketing Strategy",
+  "แผนกContent Editorial",
+  "แผนกประสานงานรายการ",
+  "แผนกบริการ",
+  "แผนกจัดการออกอากาศ",
+  "แผนกครอบครัวบันเทิง",
+  "แผนกPlatform Development",
+  "แผนกวิเคราะห์ข้อมูลขาย",
+  "แผนกแสง",
+  "แผนกสตูดิโอ",
+  "แผนกเครื่องปรับอากาศและป้องกันอัคคีภัย",
+  "แผนกสนับสนุนการออกอากาศ",
+  "แผนกผู้ช่วยช่างภาพ",
+  "แผนกการขาย- กลุ่มลูกค้า Agency 2",
+  "แผนกคอนโทรล",
+  "แผนกองค์กรสัมพันธ์",
+  "แผนกIT Service Delivery",
+  "แผนกการขาย-กลุ่มลูกค้า Direct 3",
+  "แผนก TV Rating",
+  "แผนกบริหารคิวโฆษณา",
+  "แผนกข้อมูลภาพและข่าวIngest & Library",
+  "แผนกตรวจสอบเทปโฆษณา",
+  "แผนกการขาย-กลุ่มลูกค้าออนไลน์",
+  "แผนกERP",
+  "แผนกManagement Report",
+  "แผนกช่างภาพ",
+  "แผนกสนับสนุนการขาย",
+  "แผนก Platform Optimization",
+  "แผนกการขาย- กลุ่มลูกค้า Agency 1",
+] as const;
 
-const JOB_TITLES = [
+const POSITION = [
   "Application Developer Specialist",
   "System Analyst",
   "IT Support Engineer",
@@ -39,14 +145,49 @@ const JOB_TITLES = [
 const STATUSES: EmployeeStatus[] = ["Active", "Resigned"];
 
 // ตัวอย่างประเภทพนักงาน (ให้สอดคล้องกับ EmployeeType จริงของคุณ)
-const EMP_TYPES: EmployeeType[] = ["Permanent", "Contractor"] as unknown as EmployeeType[];
+const EMP_TYPES: EmployeeType[] = [
+  "Permanent",
+  "Contractor",
+] as unknown as EmployeeType[];
 
 // ตัวอย่างชื่อ-สกุลภาษาไทย/อังกฤษ (สุ่มผสม)
-const FIRST_TH = ["ภัทรภร", "กิตติ", "ปณิธาน", "มณีรัตน์", "ธนกร", "ชลธิชา", "ศุภชัย", "ณัฐวดี"] as const;
-const LAST_TH  = ["จิตต์ปราณี", "สถาพร", "อรุณสวัสดิ์", "วีรวัฒน์", "ปิ่นมณี", "วรรณศิลป์"] as const;
+const FIRST_TH = [
+  "ภัทรภร",
+  "กิตติ",
+  "ปณิธาน",
+  "มณีรัตน์",
+  "ธนกร",
+  "ชลธิชา",
+  "ศุภชัย",
+  "ณัฐวดี",
+] as const;
+const LAST_TH = [
+  "จิตต์ปราณี",
+  "สถาพร",
+  "อรุณสวัสดิ์",
+  "วีรวัฒน์",
+  "ปิ่นมณี",
+  "วรรณศิลป์",
+] as const;
 
-const FIRST_EN = ["Jane", "John", "Alice", "Bob", "Peter", "Sara", "Emily", "David"] as const;
-const LAST_EN  = ["Doe", "Smith", "Johnson", "Williams", "Brown", "Miller"] as const;
+const FIRST_EN = [
+  "Jane",
+  "John",
+  "Alice",
+  "Bob",
+  "Peter",
+  "Sara",
+  "Emily",
+  "David",
+] as const;
+const LAST_EN = [
+  "Doe",
+  "Smith",
+  "Johnson",
+  "Williams",
+  "Brown",
+  "Miller",
+] as const;
 
 // สร้างพนักงานจำลอง 73 รายการ
 const MOCK_EMPLOYEES: EmployeeItem[] = Array.from({ length: 73 }).map(
@@ -55,20 +196,21 @@ const MOCK_EMPLOYEES: EmployeeItem[] = Array.from({ length: 73 }).map(
 
     // pick แบบวนลูป
     const firstNameTh = FIRST_TH[i % FIRST_TH.length];
-    const lastNameTh  = LAST_TH[i % LAST_TH.length];
+    const lastNameTh = LAST_TH[i % LAST_TH.length];
     const firstNameEn = FIRST_EN[i % FIRST_EN.length];
-    const lastNameEn  = LAST_EN[i % LAST_EN.length];
+    const lastNameEn = LAST_EN[i % LAST_EN.length];
 
-    const department  = DEPARTMENTS[i % DEPARTMENTS.length];
-    const company     = COMPANIES[i % COMPANIES.length];
-    const section     = SECTIONS[i % SECTIONS.length];
-    const unit        = UNITS[i % UNITS.length];
-    const position    = i % 5 === 0 ? "Senior" : i % 3 === 0 ? "Junior" : "Staff";
-    const status      = STATUSES[i % STATUSES.length];
-    const empType     = EMP_TYPES[i % EMP_TYPES.length];
+    const department = DEPARTMENTS[i % DEPARTMENTS.length];
+    const company = COMPANIES[i % COMPANIES.length];
+    const section = SECTIONS[i % SECTIONS.length];
+    const unit = UNITS[i % UNITS.length];
+    const position = POSITION[i % POSITION.length];
+    const status = STATUSES[i % STATUSES.length];
+    const empType = EMP_TYPES[i % EMP_TYPES.length];
 
     // ทำให้บางรายการไม่มี device เพื่อเทส UI
-    const device = i % 7 === 0 ? null : `LAPTOP-${(i + 1).toString().padStart(3, "0")}`;
+    const device =
+      i % 7 === 0 ? null : `LAPTOP-${(i + 1).toString().padStart(3, "0")}`;
 
     // ทำให้เบอร์โทร/อีเมลมี pattern
     const phone = `${(1234 + i).toString()}`; // 10 หลัก
@@ -127,10 +269,9 @@ function getValue(obj: Record<string, unknown>, key: string) {
 
 /** รวมชื่อสำหรับค้นหาแบบเร็ว */
 function nameTokens(e: EmployeeItem) {
-  return [
-    e.firstNameTh, e.lastNameTh,
-    e.firstNameEn, e.lastNameEn,
-  ].filter(Boolean).join(" ");
+  return [e.firstNameTh, e.lastNameTh, e.firstNameEn, e.lastNameEn]
+    .filter(Boolean)
+    .join(" ");
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -145,18 +286,19 @@ export async function searchEmployees(
   const k = q.toLowerCase();
 
   // คืนผลลัพธ์ไม่เกิน 20 รายการพอสำหรับแสดง suggestion
-  return MOCK_EMPLOYEES.filter((e) =>
-    e.id.toLowerCase().includes(k) ||
-    includesCI(nameTokens(e), k) ||
-    includesCI(e.email ?? "", k) ||
-    includesCI(e.department ?? "", k) ||
-    includesCI(e.company ?? "", k) ||
-    includesCI(e.section ?? "", k) ||
-    includesCI(e.unit ?? "", k) ||
-    includesCI(e.position ?? "", k) ||
-    includesCI(e.position ?? "", k) ||
-    includesCI(e.empType ?? "", k) ||
-    includesCI(e.device ?? "", k)
+  return MOCK_EMPLOYEES.filter(
+    (e) =>
+      e.id.toLowerCase().includes(k) ||
+      includesCI(nameTokens(e), k) ||
+      includesCI(e.email ?? "", k) ||
+      includesCI(e.department ?? "", k) ||
+      includesCI(e.company ?? "", k) ||
+      includesCI(e.section ?? "", k) ||
+      includesCI(e.unit ?? "", k) ||
+      includesCI(e.position ?? "", k) ||
+      includesCI(e.position ?? "", k) ||
+      includesCI(e.empType ?? "", k) ||
+      includesCI(e.device ?? "", k),
   ).slice(0, 20);
 }
 
@@ -193,19 +335,20 @@ export async function listEmployees(
   // ----- Search -----
   const search = (q.search ?? "").trim();
   if (search) {
-    filtered = filtered.filter((e) =>
-      includesCI(e.id, search) ||
-      includesCI(nameTokens(e), search) ||
-      includesCI(e.department ?? "", search) ||
-      includesCI(e.company ?? "", search) ||
-      includesCI(e.section ?? "", search) ||
-      includesCI(e.unit ?? "", search) ||
-      includesCI(e.status ?? "", search) ||
-      includesCI(e.email ?? "", search) ||
-      includesCI(e.position ?? "", search) ||
-      includesCI(e.phone ?? "", search) ||   // (เดิมซ้ำ position 2 รอบ —ผมแก้เหลือ 1 รอบ)
-      includesCI(e.device ?? "", search) ||
-      includesCI(e.empType ?? "", search)
+    filtered = filtered.filter(
+      (e) =>
+        includesCI(e.id, search) ||
+        includesCI(nameTokens(e), search) ||
+        includesCI(e.department ?? "", search) ||
+        includesCI(e.company ?? "", search) ||
+        includesCI(e.section ?? "", search) ||
+        includesCI(e.unit ?? "", search) ||
+        includesCI(e.status ?? "", search) ||
+        includesCI(e.email ?? "", search) ||
+        includesCI(e.position ?? "", search) ||
+        includesCI(e.phone ?? "", search) || // (เดิมซ้ำ position 2 รอบ —ผมแก้เหลือ 1 รอบ)
+        includesCI(e.device ?? "", search) ||
+        includesCI(e.empType ?? "", search),
     );
   }
 
@@ -248,7 +391,7 @@ export async function listEmployees(
 
         if (A == null && B == null) return 0;
         if (A == null) return -1 * dir;
-        if (B == null) return  1 * dir;
+        if (B == null) return 1 * dir;
 
         if (typeof A === "number" && typeof B === "number") {
           return (A - B) * dir;
@@ -262,25 +405,33 @@ export async function listEmployees(
 
         const As = String(A);
         const Bs = String(B);
-        return As.localeCompare(Bs, undefined, { numeric: true, sensitivity: "base" }) * dir;
+        return (
+          As.localeCompare(Bs, undefined, {
+            numeric: true,
+            sensitivity: "base",
+          }) * dir
+        );
       });
     }
   } else {
     // default: id ASC (numeric-aware)
     filtered.sort((a, b) =>
-      a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: "base" })
+      a.id.localeCompare(b.id, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }),
     );
   }
 
   // ----- Pagination (มาตรฐานใน type: page 1-based, pageSize) -----
-  const page      = Math.max(1, Number((q as any).page ?? 1)); // 1-based
-  const pageSize  = Math.max(1, Number((q as any).pageSize ?? 10));
-  const start     = (page - 1) * pageSize;
+  const page = Math.max(1, Number((q as any).page ?? 1)); // 1-based
+  const pageSize = Math.max(1, Number((q as any).pageSize ?? 10));
+  const start = (page - 1) * pageSize;
 
   const totalCount = filtered.length;
-  const items      = filtered.slice(start, start + pageSize);
-  const hasPrev    = page > 1;
-  const hasNext    = start + items.length < totalCount;
+  const items = filtered.slice(start, start + pageSize);
+  const hasPrev = page > 1;
+  const hasNext = start + items.length < totalCount;
 
   return {
     items,

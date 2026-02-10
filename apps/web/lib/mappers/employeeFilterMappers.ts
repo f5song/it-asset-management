@@ -14,7 +14,7 @@ const normStatus = normalizeByMap({
   intern: "Intern",
 });
 
-const normalizeDepartment = (d?: string): string => (d ? d.trim() : "");
+const normalizetype = (d?: string): string => (d ? d.trim() : "");
 
 // Domain -> Simple
 
@@ -22,7 +22,7 @@ export function toSimpleFilters(
   df: EmployeeDomainFilters,
 ): EmployeesFilterValues {
   return {
-    department: df.department ?? undefined,
+    type: df.type ?? undefined,
     status: df.status ?? undefined,
     search: df.search ?? undefined,
   };
@@ -35,7 +35,7 @@ export function toDomainFilters(
   sf?: Partial<EmployeesFilterValues>,
 ): EmployeeDomainFilters {
   return {
-    department: sf?.department ?? undefined,
+    type: sf?.type ?? undefined,
     status: sf?.status ?? undefined,
     search: sf?.search ?? undefined,
   };
@@ -53,7 +53,7 @@ export function toServiceFilters(
 ): Partial<EmployeesListQuery> {
   const params: Partial<EmployeesListQuery> = {
     status: sf.status,
-    department: sf.department,
+    type: sf.type,
     q: sf.search?.trim() || undefined,
   };
 

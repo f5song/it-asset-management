@@ -192,33 +192,6 @@ export default function AssignEmployeeToExceptionsClient({
             {submitting ? "Assigning..." : "Confirm Assign"}
           </button>
         }
-        extraFilters={
-          <div className="flex flex-wrap gap-4 items-center">
-            {/* Status already handled by ExceptionFilterBar */}
-
-            {/* Effective date */}
-            <label className="flex items-center gap-2 text-sm whitespace-nowrap">
-              <span>Effective date:</span>
-              <input
-                type="date"
-                className="rounded border border-slate-300 px-2 py-1 h-9"
-                value={effectiveDate}
-                onChange={(e) => setEffectiveDate(e.target.value)}
-              />
-            </label>
-
-            {/* Expires at */}
-            <label className="flex items-center gap-2 text-sm whitespace-nowrap">
-              <span>Expires at:</span>
-              <input
-                type="date"
-                className="rounded border border-slate-300 px-2 py-1 h-9"
-                value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
-              />
-            </label>
-          </div>
-        }
       />
 
       {/* ตาราง Exception Definitions */}

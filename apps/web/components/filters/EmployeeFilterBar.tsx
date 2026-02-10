@@ -39,18 +39,18 @@ export default function EmployeeFilterBar({
   const fbFilters: FilterValues<EmployeeStatus, string> = React.useMemo(
     () => ({
       status: filters.status,                    // undefined = All
-      type: filters.department ?? undefined,     // map department -> type
+      type: filters.type ?? undefined,     // map department -> type
       manufacturer: undefined,
       search: filters.search ?? "",
     }),
-    [filters.status, filters.department, filters.search]
+    [filters.status, filters.type, filters.search]
   );
 
   const handleChange = React.useCallback(
     (next: FilterValues<EmployeeStatus, string>) => {
       onFiltersChange({
         status: next.status ?? undefined,
-        department: (next.type as string | undefined) ?? undefined,
+        type: (next.type as string | undefined) ?? undefined,
         search: next.search ?? "",
       });
     },

@@ -93,7 +93,7 @@ export function useEmployeesInventory(
    * ประกอบ query สำหรับ service (object เสถียร)
    * - pageIndex (0-based) -> page (1-based)
    * - pageSize -> pageSize
-   * - แนบ search/status/department
+   * - แนบ search/status/type
    * - ส่ง sortBy/sortOrder ถ้ามี
    * - (ชั่วคราว) แนบ orderByRaw ให้ service mock เห็นรูปแบบที่อยากได้ (ถ้า service รองรับ)
    */
@@ -101,7 +101,7 @@ export function useEmployeesInventory(
     const { pageIndex = 0, pageSize = 10, sortBy, sortOrder } = serverQuery;
 
     const status = filters.status; // EmployeeStatus | undefined
-    const department = toUndefTrim(filters.department);
+    const type = toUndefTrim(filters.type);
     const search = toUndefTrim(filters.search) ?? "";
 
     const q: EmployeesListQuery & {
@@ -114,7 +114,7 @@ export function useEmployeesInventory(
       pageSize,
       search,
       status,
-      department: department ?? undefined,
+      type: type ?? undefined,
       ...(sortBy ? { sortBy: String(sortBy) } : {}),
       ...(sortOrder ? { sortOrder } : {}),
     };
@@ -140,7 +140,7 @@ export function useEmployeesInventory(
     serverQuery.sortBy,
     serverQuery.sortOrder,
     filters.status,
-    filters.department,
+    filters.type,
     filters.search,
   ]);
 

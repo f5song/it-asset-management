@@ -40,7 +40,7 @@ export default function EmployeesPage() {
     fromSimple: (sf) => toDomainFilters(sf),
     // รีเซ็ตหน้าเมื่อฟิลเตอร์สำคัญเปลี่ยน
     resetDeps: [
-      domainFilters.department,
+      domainFilters.type,
       domainFilters.status,
       domainFilters.search,
     ],
@@ -121,6 +121,8 @@ export default function EmployeesPage() {
     />
   );
 
+  const [deptSelected, setDeptSelected] = React.useState<readonly string[]>([]);
+
   return (
     <InventoryPageShell<EmployeeItem, EmployeeStatus, string>
       title="Employees"
@@ -131,11 +133,11 @@ export default function EmployeesPage() {
       statusOptions={statusOptions}
       hasType={true}
       typeOptions={departmentOptions}
-      manufacturerOptions={manufacturerOptions}
       allStatusLabel="All Status"
       allTypeLabel="All Departments"
-      allManufacturerLabel="—"
       onExport={handleExport}
+      // ⭐ เพิ่มบรรทัดนี้ เพื่อให้ Shell รู้ว่าหลังเคลียร์ควรกลับไป sort อะไร
+      defaultSort={[{ id: "employeeId", desc: false }]}
       filterBarRightExtra={rightExtra}
       // ===== DataTable =====
       columns={employeeColumns}
@@ -153,6 +155,7 @@ export default function EmployeesPage() {
       // ===== Selection =====
       selectedIds={selectedEmployeeIds}
       onSelectedIdsChange={setSelectedEmployeeIds}
+      
     />
   );
 }

@@ -7,13 +7,12 @@ export type EmployeeStatus = "Active" | "Resigned";
 
 /** ฟิลเตอร์ของโดเมน Employees (ให้รูปแบบเหมือน device) */
 export type EmployeeDomainFilters = {
-  department?: string;
+  type?: string;
   status?: EmployeeStatus;
   search?: string;
+  
 };
-export type EmployeeType =
-  | "Contract"
-  | "Permanent";
+export type EmployeeType = "Contract" | "Permanent";
 
 export interface EmployeeItem {
   /** Primary key (อ้างอิงในระบบ) */
@@ -27,10 +26,10 @@ export interface EmployeeItem {
 
   /** ===== ข้อมูลสถานะ/งาน/ติดต่อ ===== */
   status: EmployeeStatus;
-  empType?: EmployeeType;          // Employee Type
+  empType?: EmployeeType; // Employee Type
   email?: string;
-  phone?: string;             
-  position?: string;               // ตำแหน่ง/ระดับ (อีกชื่อหนึ่ง ถ้าแยกใช้)
+  phone?: string;
+  position?: string; // ตำแหน่ง/ระดับ (อีกชื่อหนึ่ง ถ้าแยกใช้)
   company?: string;
   department?: string;
   section?: string;
@@ -47,8 +46,7 @@ export interface EmployeeItem {
  * - search: Searchable
  * - filters: EmployeeDomainFilters
  */
-export type EmployeesListQuery =
-  OffsetPaginationParams &
+export type EmployeesListQuery = OffsetPaginationParams &
   Searchable &
   EmployeeDomainFilters;
 
@@ -58,7 +56,8 @@ export type EmployeesListResponse = OffsetPage<EmployeeItem>;
 /** ฟิลเตอร์แบบ UI (FilterBar) — ตั้งให้เหมือน device (custom shape) */
 export type EmployeesFilterValues = {
   status?: EmployeeStatus;
-  department?: string;
+  /** ใช้กับ FilterBar: ใช้ type เป็น department ใน UI */
+  type?: string;
   search?: string;
 };
 
@@ -70,9 +69,9 @@ export interface EmployeesEditValues {
 
   /** ===== ข้อมูลสถานะ/งาน/ติดต่อ ===== */
   status: EmployeeStatus;
-  empType?: EmployeeType;          // Employee Type
-  phone?: string;            // ตำแหน่งงาน (text)
-  position?: string;               // ตำแหน่ง/ระดับ (อีกชื่อหนึ่ง ถ้าแยกใช้)
+  empType?: EmployeeType; // Employee Type
+  phone?: string; // ตำแหน่งงาน (text)
+  position?: string; // ตำแหน่ง/ระดับ (อีกชื่อหนึ่ง ถ้าแยกใช้)
   company?: string;
   department?: string;
   section?: string;

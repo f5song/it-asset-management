@@ -1,29 +1,16 @@
+// src/components/inventory/InventoryPageShell.tsx
 "use client";
-
 import React from "react";
-
 import { DataTable } from "components/table";
 import { FilterBar } from "components/ui/FilterBar";
 import { PageHeader } from "components/ui/PageHeader";
 import { Card } from "components/ui/Card";
-
 import type { AppColumnDef } from "types/ui-table";
 import type { ExportFormat, FilterValues, ToolbarAction } from "types";
 
-// แถวพื้นฐาน
 type RowBase = { id?: string | number };
+export type SummaryCardItem = { id?: string; title: string; count: number | string; className?: string; };
 
-// ✅ โครงข้อมูลการ์ดแบบเบาๆ
-export type SummaryCardItem = {
-  id?: string;
-  title: string;
-  count: number | string;
-  className?: string;
-};
-
-/**
- * Base props ที่ทุกโดเมนใช้ร่วมกัน
- */
 type BaseShellProps<
   TRow extends RowBase,
   TStatus extends string,
@@ -32,27 +19,20 @@ type BaseShellProps<
   title: string;
   breadcrumbs: { label: string; href: string }[];
 
-  // ===== Summary cards =====
   summaryCards?: SummaryCardItem[];
   summaryRender?: React.ReactNode;
 
-  // FilterBar props
-  /** ใช้ FilterValues<TStatus, TType> ให้สอดคล้องกับโดเมน */
   filters?: FilterValues<TStatus, TType>;
   onFiltersChange: (next: FilterValues<TStatus, TType>) => void;
 
-  /** สถานะ (ทำเป็น generic TStatus) */
   statusOptions?: readonly TStatus[];
   allStatusLabel?: string;
 
-  /** ผู้ผลิต (ถ้าโดเมนมี) */
   manufacturerOptions?: readonly string[];
   allManufacturerLabel?: string;
 
-  /** ช่องพิเศษทางขวาของ FilterBar (เช่นปุ่ม Bulk/Assign) */
   filterBarRightExtra?: React.ReactNode;
 
-  // DataTable
   columns: AppColumnDef<TRow>[];
   rows: readonly TRow[];
   totalRows: number;
@@ -62,66 +42,51 @@ type BaseShellProps<
   onSortingChange: (s: { id: string; desc: boolean }[]) => void;
   rowHref?: (row: TRow) => string;
 
-  // States
   emptyMessage?: string;
   isLoading?: boolean;
   isError?: boolean;
   errorMessage?: string;
   maxBodyHeight?: number;
 
-  // Toolbar
   onExport?: (fmt: ExportFormat) => void;
   onAction?: (act: ToolbarAction) => void;
 
-  // ===== Selection (optional / backward-compatible) =====
-  /** เปิด/ปิด checkbox selection ที่ตาราง */
   selectable?: boolean;
-
-  /** ids ที่ถูกเลือก (controlled) */
   selectedIds?: string[];
   onSelectedIdsChange?: (ids: string[]) => void;
-
-  /** ถ้า id ไม่ได้อยู่ใน field 'id' ให้ส่งฟังก์ชันอ่านค่า id ของแถว */
   getRowId?: (row: TRow) => string | number;
-
-  /** 'page' = เลือกเฉพาะในหน้านี้ | 'all' = ทั้ง dataset (ถ้า backend รองรับ) */
   selectionScope?: "page" | "all";
+
+  onClearFilters?: () => void;
+  defaultSort?: { id: string; desc: boolean }[];
+
+  // multi forwards
+  statusSelected?: readonly TStatus[];
+  onStatusSelectedChange?: (values: readonly TStatus[]) => void;
+
+  hasType?: boolean;
+  typeOptions?: readonly TType[];
+  allTypeLabel?: string;
+  typeSelected?: readonly TType[];
+  onTypeSelectedChange?: (values: readonly TType[]) => void;
+
+  manufacturerSelected?: readonly string[];
+  onManufacturerSelectedChange?: (values: readonly string[]) => void;
 };
 
-/**
- * โหมดที่ "มี" type/category filter
- * - ต้องส่ง hasType = true และส่ง typeOptions/allTypeLabel ได้
- */
 type WithTypeFilter<TType extends string> = {
   hasType: true;
   typeOptions?: readonly TType[];
   allTypeLabel?: string;
 };
+type WithoutTypeFilter = { hasType?: false; typeOptions?: never; allTypeLabel?: never; };
 
-/**
- * โหมดที่ "ไม่มี" type/category filter
- * - ห้ามส่ง typeOptions/allTypeLabel
- */
-type WithoutTypeFilter = {
-  hasType?: false;
-  typeOptions?: never;
-  allTypeLabel?: never;
-};
-
-/**
- * Props หลัก = Base + (WithTypeFilter | WithoutTypeFilter)
- */
 type ShellProps<
   TRow extends RowBase,
   TStatus extends string,
   TType extends string
-> = BaseShellProps<TRow, TStatus, TType> &
-  (WithTypeFilter<TType> | WithoutTypeFilter);
+> = BaseShellProps<TRow, TStatus, TType> & (WithTypeFilter<TType> | WithoutTypeFilter);
 
-/**
- * InventoryPageShell
- * - ใส่ default generics: ถ้าเพจไม่มี status/type ให้ใช้ never แล้วไม่ต้องส่ง options
- */
 export function InventoryPageShell<
   TRow extends RowBase,
   TStatus extends string = never,
@@ -131,22 +96,18 @@ export function InventoryPageShell<
     title,
     breadcrumbs,
 
-    // Summary
     summaryCards,
     summaryRender,
 
-    // FilterBar
     filters,
     onFiltersChange,
     statusOptions,
     allStatusLabel,
 
-    // manufacturer
     manufacturerOptions,
     allManufacturerLabel,
     filterBarRightExtra,
 
-    // DataTable
     columns,
     rows,
     totalRows,
@@ -156,26 +117,32 @@ export function InventoryPageShell<
     onSortingChange,
     rowHref,
 
-    // States
     emptyMessage = "ไม่พบรายการ",
     isLoading = false,
     isError = false,
     errorMessage,
     maxBodyHeight = 420,
 
-    // Toolbar
     onExport,
     onAction,
 
-    // Selection
     selectable = false,
     selectedIds,
     onSelectedIdsChange,
     getRowId,
     selectionScope = "page",
+
+    onClearFilters,
+    defaultSort,
+
+    statusSelected,
+    onStatusSelectedChange,
+    typeSelected,
+    onTypeSelectedChange,
+    manufacturerSelected,
+    onManufacturerSelectedChange,
   } = props;
 
-  // ✅ แปลง array <-> Set สำหรับ DataTable
   const selectedIdSet = React.useMemo(
     () =>
       selectedIds && Array.isArray(selectedIds)
@@ -192,11 +159,9 @@ export function InventoryPageShell<
     [onSelectedIdsChange]
   );
 
-  // ✅ สร้าง UI ของ summary (ถ้ามี)
   const summaryArea = React.useMemo(() => {
     if (summaryRender) return summaryRender;
     if (!summaryCards || summaryCards.length === 0) return null;
-
     return (
       <div className="mb-4">
         <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -214,23 +179,40 @@ export function InventoryPageShell<
     );
   }, [summaryCards, summaryRender]);
 
-  // ✅ แยก hasType ออกมาเพื่อช่วย render แบบ type-safe
   const hasType = "hasType" in props && props.hasType === true;
+
+  const clearAll = React.useCallback(() => {
+    onFiltersChange({
+      status: undefined,
+      type: undefined,
+      manufacturer: undefined,
+      search: "",
+    } as FilterValues<any, any>);
+
+    if (defaultSort && defaultSort.length > 0) {
+      onSortingChange(defaultSort);
+    }
+
+    onPaginationChange({ pageIndex: 0, pageSize: pagination.pageSize });
+  }, [onFiltersChange, onSortingChange, onPaginationChange, defaultSort, pagination.pageSize]);
+
+  // ⭐ ถ้ามี onClearFilters จากเพจ → เรียกก่อน แล้วค่อยเคลียร์ของ Shell ต่อ
+  const handleClearClick = React.useCallback(() => {
+    onClearFilters?.();
+    clearAll();
+  }, [onClearFilters, clearAll]);
 
   return (
     <div>
       <PageHeader title={title} breadcrumbs={breadcrumbs} />
 
-      {/* Summary Cards */}
       {summaryArea}
 
       <FilterBar
         filters={filters}
         onFiltersChange={onFiltersChange}
         statusOptions={statusOptions as readonly string[] | undefined}
-        typeOptions={
-          hasType ? (props.typeOptions as readonly string[]) : undefined
-        }
+        typeOptions={hasType ? (props.typeOptions as readonly string[]) : undefined}
         manufacturerOptions={manufacturerOptions}
         onExport={onExport}
         onAction={onAction}
@@ -238,8 +220,16 @@ export function InventoryPageShell<
           allStatus: allStatusLabel,
           allType: hasType ? props.allTypeLabel : undefined,
           allManufacturer: allManufacturerLabel,
+          clear: "Clear",
         }}
         rightExtra={filterBarRightExtra}
+        onClearFilters={handleClearClick}
+        statusSelected={statusSelected}
+        onStatusSelectedChange={onStatusSelectedChange}
+        typeSelected={typeSelected}
+        onTypeSelectedChange={onTypeSelectedChange}
+        manufacturerSelected={manufacturerSelected}
+        onManufacturerSelectedChange={onManufacturerSelectedChange}
       />
 
       <DataTable
@@ -257,7 +247,6 @@ export function InventoryPageShell<
         errorMessage={errorMessage}
         maxBodyHeight={maxBodyHeight}
         rowHref={rowHref}
-        // Selection (optional)
         selectable={selectable}
         selectedIds={selectedIdSet}
         onSelectionChange={handleSelectionChange}

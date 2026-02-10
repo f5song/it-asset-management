@@ -71,7 +71,7 @@ export default function AssignEmployeeExceptionsPage() {
     fromSimple: (sf) => toDomainFilters(sf),
     resetDeps: [
       domainFilters.status,
-      domainFilters.department,
+      domainFilters.type,
       domainFilters.search,
     ],
   });

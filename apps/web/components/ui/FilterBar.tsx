@@ -1,23 +1,20 @@
+// src/components/ui/FilterBar.tsx
 "use client";
-
 import React from "react";
 import { ExportSelect } from "./ExportSelect";
 import { SelectField } from "./SelectField";
+import { MultiSelectField } from "./MultiSelectField";
 import { SearchInput } from "./SearchInput";
-import { ExportFormat, FilterValues, ToolbarAction } from "types";
+import type { ExportFormat, FilterValues, ToolbarAction } from "types";
 
 export type FilterBarProps<TStatus extends string, TType extends string> = {
-  /** state เดียว รวมทุกฟิลด์ */
   filters?: FilterValues<TStatus, TType>;
-  /** อัปเดตฟิลเตอร์ */
   onFiltersChange: (next: FilterValues<TStatus, TType>) => void;
 
-  /** 🔁 ปรับ options ให้เป็น string[] เพื่อรับจากทุกหน้าได้ง่าย */
   statusOptions?: readonly string[];
   typeOptions?: readonly string[];
   manufacturerOptions?: readonly string[];
 
-  /** ปรับข้อความ label รายฟิลด์ */
   labels?: {
     status?: string;
     type?: string;
@@ -26,45 +23,45 @@ export type FilterBarProps<TStatus extends string, TType extends string> = {
     allStatus?: string;
     allType?: string;
     allManufacturer?: string;
+    clear?: string;
   };
 
-  /** action เสริม */
   onExport?: (fmt: ExportFormat) => void;
   onAction?: (act: ToolbarAction) => void;
-
-  /** ✅ ช่องทางขวาพิเศษ (เช่น ActionToolbar) */
   rightExtra?: React.ReactNode;
-
-  /** ✅ พื้นที่ไว้เสียบฟิลเตอร์เพิ่มเติมแบบ custom */
   extraFilters?: React.ReactNode;
+  onClearFilters?: () => void;
 
-  /** เดิมเคยใช้บังคับลำดับ แต่เวอร์ชันเรียบง่ายนี้จะ "รับไว้เฉย ๆ" เพื่อไม่ให้ breaking */
-  optionOrder?: Partial<{
-    status: readonly string[];
-    type: readonly string[];
-    manufacturer: readonly string[];
-  }>;
+  // Multi (optional)
+  statusSelected?: readonly TStatus[];
+  onStatusSelectedChange?: (values: readonly TStatus[]) => void;
 
-  /** เดิมเคยใช้ sort ขั้นสูง — เวอร์ชันนี้จะไม่ใช้งาน เพื่อความเรียบง่าย */
-  optionSort?: Partial<{
-    status: (a: string, b: string) => number;
-    type: (a: string, b: string) => number;
-    manufacturer: (a: string, b: string) => number;
-  }>;
+  typeSelected?: readonly TType[];
+  onTypeSelectedChange?: (values: readonly TType[]) => void;
+
+  manufacturerSelected?: readonly string[];
+  onManufacturerSelectedChange?: (values: readonly string[]) => void;
 };
 
 export function FilterBar<TStatus extends string, TType extends string>({
   filters,
   onFiltersChange,
-  statusOptions = [] as readonly string[],
-  typeOptions = [] as readonly string[],
-  manufacturerOptions = [] as readonly string[],
+  statusOptions = [],
+  typeOptions = [],
+  manufacturerOptions = [],
 
   labels,
   onExport,
   rightExtra,
   extraFilters,
+  onClearFilters,
 
+  statusSelected,
+  onStatusSelectedChange,
+  typeSelected,
+  onTypeSelectedChange,
+  manufacturerSelected,
+  onManufacturerSelectedChange,
 }: FilterBarProps<TStatus, TType>) {
   const {
     status: statusLabel = "Status",
@@ -74,85 +71,154 @@ export function FilterBar<TStatus extends string, TType extends string>({
     allStatus = "All Statuses",
     allType = "All Types",
     allManufacturer = "All Manufacturers",
+    clear: clearLabel = "Clear",
   } = labels ?? {};
 
-  const hasStatus = Array.isArray(statusOptions) && statusOptions.length > 0;
-  const hasType = Array.isArray(typeOptions) && typeOptions.length > 0;
-  const hasManufacturer =
-    Array.isArray(manufacturerOptions) && manufacturerOptions.length > 0;
+  const hasStatus = statusOptions.length > 0;
+  const hasType = typeOptions.length > 0;
+  const hasManufacturer = manufacturerOptions.length > 0;
 
-  // --- helpers (เรียบง่าย): สร้าง options และอัปเดต state ---
-  const makeOptions = (allLabel: string, list: readonly string[]) => [
-    { label: allLabel, value: "ALL" },
-    ...list.map((v) => ({ label: v, value: v })),
-  ];
+  const ALL = "__ALL__" as const;
+  const makeOptions = React.useCallback(
+    (allLabel: string, list: readonly string[], includeAll = true) => [
+      ...(includeAll ? [{ label: allLabel, value: ALL }] : []),
+      ...list.map((v) => ({ label: v, value: v })),
+    ],
+    []
+  );
 
+  // single-mode options → มี ALL item
+  const statusSelectOptions = React.useMemo(
+    () => makeOptions(allStatus, statusOptions, !statusSelected),
+    [allStatus, statusOptions, statusSelected, makeOptions]
+  );
+  const typeSelectOptions = React.useMemo(
+    () => makeOptions(allType, typeOptions, !typeSelected),
+    [allType, typeOptions, typeSelected, makeOptions]
+  );
+  const manufacturerSelectOptions = React.useMemo(
+    () => makeOptions(allManufacturer, manufacturerOptions, !manufacturerSelected),
+    [allManufacturer, manufacturerOptions, manufacturerSelected, makeOptions]
+  );
+
+  const safeFilters = (filters ?? ({} as FilterValues<TStatus, TType>));
   const patch = <K extends keyof FilterValues<TStatus, TType>>(
     key: K,
     value: FilterValues<TStatus, TType>[K],
-  ) => onFiltersChange({ ...filters, [key]: value });
+  ) => onFiltersChange({ ...safeFilters, [key]: value });
 
-  const statusValue = (filters?.status ?? "ALL") as string;
-  const typeValue = (filters?.type ?? "ALL") as string;
-  const manufacturerValue = (filters?.manufacturer ?? "ALL") as string;
+  const statusValue = (filters?.status ?? ALL) as string;
+  const typeValue = (filters?.type ?? ALL) as string;
+  const manufacturerValue = (filters?.manufacturer ?? ALL) as string;
+
+  // type predicate helpers (ปลอดภัย + TS happy)
+  const isTStatus = React.useCallback(
+    (s: string): s is TStatus => (statusOptions as readonly string[]).includes(s),
+    [statusOptions]
+  );
+  const isTType = React.useCallback(
+    (s: string): s is TType => (typeOptions as readonly string[]).includes(s),
+    [typeOptions]
+  );
+  const isManufacturer = React.useCallback(
+    (s: string): s is string => (manufacturerOptions as readonly string[]).includes(s),
+    [manufacturerOptions]
+  );
 
   return (
     <div className="space-y-3">
-      {/* แถวบน: Dropdowns + Export + Extra */}
       <div className="flex gap-3 items-center flex-wrap">
-        {hasStatus && (
-          <SelectField
-            label={statusLabel}
-            srOnlyLabel
-            value={statusValue}
-            options={makeOptions(allStatus, statusOptions)}
-            onChange={(v) =>
-              patch("status", !v || v === "ALL" ? undefined : (v as TStatus))
-            }
-          />
-        )}
+        {/* Status */}
+        {hasStatus &&
+          (Array.isArray(statusSelected) ? (
+            <MultiSelectField
+              label={statusLabel}
+              srOnlyLabel
+              options={statusOptions.map((s) => ({ label: s, value: s }))}
+              value={[...statusSelected]}
+              onChange={(arr) => onStatusSelectedChange?.(arr.filter(isTStatus))}
+              placeholder={allStatus}
+            />
+          ) : (
+            <SelectField
+              label={statusLabel}
+              srOnlyLabel
+              value={statusValue}
+              options={statusSelectOptions}
+              onChange={(v) =>
+                patch("status", !v || v === ALL ? undefined : (v as TStatus))
+              }
+            />
+          ))}
 
-        {hasType && (
-          <SelectField
-            label={typeLabel}
-            srOnlyLabel
-            value={typeValue}
-            options={makeOptions(allType, typeOptions)}
-            onChange={(v) =>
-              patch("type", !v || v === "ALL" ? undefined : (v as TType))
-            }
-          />
-        )}
+        {/* Type / Department */}
+        {hasType &&
+          (Array.isArray(typeSelected) ? (
+            <MultiSelectField
+              label={typeLabel}
+              srOnlyLabel
+              options={typeOptions.map((s) => ({ label: s, value: s }))}
+              value={[...typeSelected]}
+              onChange={(arr) => onTypeSelectedChange?.(arr.filter(isTType))}
+              placeholder={allType}
+            />
+          ) : (
+            <SelectField
+              label={typeLabel}
+              srOnlyLabel
+              value={typeValue}
+              options={typeSelectOptions}
+              onChange={(v) =>
+                patch("type", !v || v === ALL ? undefined : (v as TType))
+              }
+            />
+          ))}
 
-        {hasManufacturer && (
-          <SelectField
-            label={manufacturerLabel}
-            srOnlyLabel
-            value={manufacturerValue}
-            options={makeOptions(allManufacturer, manufacturerOptions)}
-            onChange={(v) =>
-              patch(
-                "manufacturer",
-                !v || v === "ALL" ? undefined : (v as string),
-              )
-            }
-          />
-        )}
+        {/* Manufacturer */}
+        {hasManufacturer &&
+          (Array.isArray(manufacturerSelected) ? (
+            <MultiSelectField
+              label={manufacturerLabel}
+              srOnlyLabel
+              options={manufacturerOptions.map((s) => ({ label: s, value: s }))}
+              value={[...manufacturerSelected]}
+              onChange={(arr) =>
+                onManufacturerSelectedChange?.(arr.filter(isManufacturer))
+              }
+              placeholder={allManufacturer}
+            />
+          ) : (
+            <SelectField
+              label={manufacturerLabel}
+              srOnlyLabel
+              value={manufacturerValue}
+              options={manufacturerSelectOptions}
+              onChange={(v) =>
+                patch("manufacturer", !v || v === ALL ? undefined : (v as string))
+              }
+            />
+          ))}
 
-        {/* ช่องเสียบฟิลเตอร์เพิ่มเติม */}
         {extraFilters}
 
-        {/* ด้านขวา */}
         <div className="ml-auto flex items-center gap-2">
+          {onClearFilters && (
+            <button
+              type="button"
+              className="h-9 rounded border border-slate-300 px-3 text-sm"
+              onClick={onClearFilters}
+            >
+              {clearLabel}
+            </button>
+          )}
           {onExport && <ExportSelect onExport={onExport} />}
           {rightExtra}
         </div>
       </div>
 
-      {/* Search */}
       <SearchInput
         value={filters?.search ?? ""}
-        onChange={(q) => onFiltersChange({ ...filters, search: q })}
+        onChange={(q) => onFiltersChange({ ...safeFilters, search: q })}
         placeholder={searchPlaceholder}
       />
     </div>
