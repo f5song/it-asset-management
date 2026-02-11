@@ -13,7 +13,7 @@ import { SortingState } from "@tanstack/react-table";
 import { InventoryActionToolbar } from "../toolbar/InventoryActionToolbar";
 
 type TStatus = string; // Site
-type TType = string; // Risk
+type TType = string;   // Risk
 
 type Props = {
   statusOptions: readonly string[];
@@ -49,13 +49,14 @@ export default function RequestsView(props: Props) {
   });
 
   // table states
-
   const [sorting, setSorting] = React.useState<SortingState>([]);
-
   const [loading, setLoading] = React.useState(false);
-  const [selectedIds, setSelectedIds] = React.useState<Set<string | number>>(
-    new Set(),
-  );
+
+  // NOTE: DataTable ใช้ได้ทั้ง string | number
+  const [selectedIds, setSelectedIds] = React.useState<Set<string | number>>(new Set());
+
+  // ✅ แปลงเป็น string[] เฉพาะตอนส่งให้ InventoryActionToolbar (แก้ปัญหา type)
+  const selectedIdStrings = React.useMemo(() => Array.from(selectedIds, String), [selectedIds]);
 
   // debounce เฉพาะ search
   const debouncedSearch = useDebounce(filters.search ?? "", 350);
@@ -162,20 +163,23 @@ export default function RequestsView(props: Props) {
   );
 
   const filterBarRightExtra = React.useMemo<React.ReactNode>(() => {
-    // ตัวอย่าง: ใส่ InventoryActionToolbar ของคุณตรงนี้ (memo ไว้)
     return (
       <InventoryActionToolbar
         entity="licenses"
-        selectedIds={Array.from(selectedIds)}
+        selectedIds={selectedIdStrings}
         basePath="/software/license-management"
         enableDefaultMapping
         onAction={(act) => {
-          if (act === 'Add') {/* ... */ }
-          if (act === 'Delete') {/* ... */ }
+          if (act === "Add") {
+            // ...
+          }
+          if (act === "Delete") {
+            // ...
+          }
         }}
       />
     );
-  }, [selectedIds]);
+  }, [selectedIdStrings]);
 
   return (
     <div className="space-y-4">
@@ -183,9 +187,7 @@ export default function RequestsView(props: Props) {
         filters={filters}
         onFiltersChange={onFiltersChange}
         statusOptions={props.statusOptions as readonly string[] | undefined}
-        typeOptions={
-          hasType ? (props.typeOptions as readonly string[]) : undefined
-        }
+        typeOptions={hasType ? (props.typeOptions as readonly string[]) : undefined}
         manufacturerOptions={props.manufacturerOptions}
         onExport={onExport}
         onAction={onAction}
@@ -210,9 +212,9 @@ export default function RequestsView(props: Props) {
           // table options
           variant="default"
           size="xs"
-          maxBodyHeight={480} // body สูงสุด (px)
+          maxBodyHeight={480}
           defaultColMinWidth={96}
-          // sorting: ใช้ client-side (mock) → เรียงในหน้า
+          // sorting
           sorting={sorting}
           onSortingChange={setSorting}
           clientSideSort
@@ -224,11 +226,9 @@ export default function RequestsView(props: Props) {
           getRowId={(r) => r.id}
           // navigation (คลิกแถว)
           onRowClick={(row) => {
-            // ถ้ามีหน้า detail: router.push(`/requests/${row.id}`)
-            // ตอนนี้ขอ log ไว้
             console.log("open request id:", (row as any)?.id);
           }}
-          // pagination (ฝังใน DataTablePaginationBar)
+          // pagination
           pagination={pagination}
           onPaginationChange={setPagination}
           // states
