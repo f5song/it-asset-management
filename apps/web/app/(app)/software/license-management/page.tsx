@@ -122,7 +122,7 @@ export default function LicenseManagementPage() {
       basePath="/software/license-management"
       enableDefaultMapping
       onAction={(act) => {
-        if (act === "delete")
+        if (act === "Delete")
           console.log("delete selected license ids:", selectedLicenseIds);
       }}
     />

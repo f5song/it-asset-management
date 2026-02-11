@@ -19,7 +19,7 @@ services:
 
   backend:
     build:
-      context: .                # root repo
+      context: .
       dockerfile: ./apps/api/Dockerfile
     container_name: it_backend
     env_file:
@@ -33,7 +33,7 @@ services:
 
   frontend:
     build:
-      context: .                # root repo
+      context: .
       dockerfile: ./apps/web/Dockerfile
     container_name: it_frontend
     env_file:
@@ -44,5 +44,22 @@ services:
       - "3000:3000"
     restart: unless-stopped
 
+  # ⭐ Postgres UI: pgAdmin 4
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: it_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com   # ← เปลี่ยนเป็นอีเมลของคุณ
+      PGADMIN_DEFAULT_PASSWORD: postgres         # ← เปลี่ยนรหัสผ่าน!
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "5050:80"        # เข้า UI ที่ http://localhost:5050
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+
 volumes:
   db_data:
+  pgadmin_data:

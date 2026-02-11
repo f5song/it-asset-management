@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -13,12 +12,7 @@ import type {
   DeviceItem,
   HistoryEvent,
   BreadcrumbItem,
-  ActionPathConfig,
-  ToolbarAction,
 } from "types";
-
-// Form
-
 
 // Hooks
 import { useDeviceBundledSoftware } from "hooks/useDeviceBundledSoftware";
@@ -27,21 +21,22 @@ import { useDeviceBundledSoftware } from "hooks/useDeviceBundledSoftware";
 import { show } from "lib/show";
 import { deviceInstallationColumns } from "lib/tables/deviceInstallationColumns";
 import { mapDeviceItemToForm } from "lib/mappers/mapDeviceItemToForm";
-import { demoDeviceSoftwareRows, demoHistory } from "lib/demo/deviceDetailDemoData";
+import {
+  demoDeviceSoftwareRows,
+  demoHistory,
+} from "lib/demo/deviceDetailDemoData";
 import { deviceEditFields } from "@/config/forms/deviceEditFields";
 
-// ---------------------------------------------
-// Props
-// ---------------------------------------------
+// Components
+import { DetailInfoGrid } from "./DetailInfo";
+import { HistoryList } from "components/detail/HistoryList";
+
 interface DeviceDetailProps {
   item: DeviceItem;
   history?: HistoryEvent[];
   breadcrumbs?: BreadcrumbItem[];
 }
 
-// ---------------------------------------------
-// Component
-// ---------------------------------------------
 export default function DeviceDetail({
   item,
   history,
@@ -53,7 +48,7 @@ export default function DeviceDetail({
     console.log("Delete device:", item.id);
   }, [item.id]);
 
-  // Load bundled software list (API)
+  // Load Bundled Software via API
   const { rows: apiRows } = useDeviceBundledSoftware(item.id, {
     pageIndex: 0,
     pageSize: 1000,
@@ -62,67 +57,77 @@ export default function DeviceDetail({
     search: "",
   });
 
-  // If API empty → fallback to demo
-  const rows = React.useMemo(
+  // fallback demo
+  const bundledRows = React.useMemo(
     () => (apiRows?.length ? apiRows : demoDeviceSoftwareRows),
-    [apiRows],
+    [apiRows]
   );
 
-  // History tab (fallback)
   const historyRows = React.useMemo(
     () => (history?.length ? history : demoHistory),
-    [history],
+    [history]
   );
 
-  // Initial form values
   const initialValues = React.useMemo(
     () => mapDeviceItemToForm(item),
-    [item],
+    [item]
   );
 
-  // Toolbar config
-  // const toolbarTo: Partial<Record<ToolbarAction, ActionPathConfig>> = {
-  //   assign: `/devices/${item.id}/assign`,
-  // };
-
+  // Toolbar (right side)
   const toolbar = (
     <ActionToolbar
       selectedIds={[]}
-      // to={toolbarTo}
-      onAction={(act) => console.log("toolbar:", act)}
-      openInNewTab={false}
+      onAction={(act) => console.log("toolbar action:", act)}
       enableDefaultMapping={false}
+      openInNewTab={false}
     />
   );
 
   return (
     <DetailView
-      title={show(item.name)}
+      title={item.name}
       compliance={item.compliance}
-      breadcrumbs={breadcrumbs ?? []}
-      installationTabLabel="Bundled Software"
-      info={{
-        left: [
-          { label: "Device Name", value: show(item.name) },
-          { label: "Type", value: show(item.type) },
-          { label: "Assigned To", value: show(item.assignedTo) },
-          { label: "OS", value: show(item.os) },
-        ],
-        right: [
-          { label: "Compliance", value: show(item.compliance) },
-          { label: "Last Scan", value: show(item.lastScan) },
-        ],
-      }}
-      installationSection={
-        <InstallationSection
-          rows={rows}
-          columns={deviceInstallationColumns}
-          resetKey={`device-${item.id}`}
-          initialPage={1}
-          pageSize={10}
-        />
-      }
-      history={historyRows}
+      breadcrumbs={breadcrumbs}
+      headerRightExtra={toolbar}
+      defaultTabKey="bundled"
+      tabs={[
+        {
+          key: "detail",
+          label: "Detail",
+          content: (
+            <DetailInfoGrid
+              left={[
+                { label: "Device Name", value: show(item.name) },
+                { label: "Type", value: show(item.type) },
+                { label: "Assigned To", value: show(item.assignedTo) },
+                { label: "OS", value: show(item.os) },
+              ]}
+              right={[
+                { label: "Compliance", value: show(item.compliance) },
+                { label: "Last Scan", value: show(item.lastScan) },
+              ]}
+            />
+          ),
+        },
+        {
+          key: "bundled",
+          label: "Bundled Software",
+          content: (
+            <InstallationSection
+              rows={bundledRows}
+              columns={deviceInstallationColumns}
+              resetKey={`device-${item.id}-bundled`}
+              initialPage={1}
+              pageSize={8}
+            />
+          ),
+        },
+        {
+          key: "history",
+          label: "History",
+          content: <HistoryList history={historyRows} />,
+        },
+      ]}
       onBack={onBack}
       onDelete={onDelete}
       editConfig={{
@@ -135,7 +140,6 @@ export default function DeviceDetail({
         submitLabel: "Confirm",
         cancelLabel: "Cancel",
       }}
-      headerRightExtra={toolbar}
     />
   );
 }

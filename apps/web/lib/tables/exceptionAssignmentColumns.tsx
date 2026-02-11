@@ -1,5 +1,5 @@
 // src/lib/tables/exceptionAssignmentColumns.tsx
-import type { ReactNode } from "react";
+import type { AppColumnDef } from "types/ui-table";
 import { StatusBadge } from "components/ui/StatusBadge";
 import { show } from "lib/show";
 import { formatDateTH } from "lib/date";
@@ -8,41 +8,54 @@ import type { ExceptionAssignmentRow } from "types/exception";
 /**
  * Columns สำหรับแท็บ Assignments ของ Exception (User-only)
  */
-export const exceptionAssignmentColumns = [
+export const exceptionAssignmentColumns: AppColumnDef<ExceptionAssignmentRow>[] = [
   {
+    id: "employeeId",
     header: "Employee ID",
-    accessor: (r: ExceptionAssignmentRow): ReactNode => show(r.employeeId),
+    accessorKey: "employeeId",
+    cell: (value) => show(value),
   },
   {
+    id: "employeeName",
     header: "Name",
-    accessor: (r: ExceptionAssignmentRow): ReactNode => show(r.employeeName),
+    accessorKey: "employeeName",
+    cell: (value) => show(value),
   },
   {
+    id: "department",
     header: "Department",
-    accessor: (r: ExceptionAssignmentRow): ReactNode => show(r.department),
+    accessorKey: "department",
+    cell: (value) => show(value),
   },
   {
+    id: "assignedBy",
     header: "Assigned By",
-    accessor: (r: ExceptionAssignmentRow): ReactNode => show(r.assignedBy),
+    accessorKey: "assignedBy",
+    cell: (value) => show(value),
   },
   {
+    id: "assignedAt",
     header: "Assigned At",
-    accessor: (r: ExceptionAssignmentRow): ReactNode =>
-      show(formatDateTH(r.assignedAt)),
+    accessorKey: "assignedAt",
+    cell: (value) => show(formatDateTH(value as string | Date | undefined)),
   },
   {
+    id: "expiresAt",
     header: "Expires At",
-    accessor: (r: ExceptionAssignmentRow): ReactNode =>
-      show(formatDateTH(r.expiresAt)),
+    accessorKey: "expiresAt",
+    cell: (value) => show(formatDateTH(value as string | Date | undefined)),
   },
   {
+    id: "status",
     header: "Status",
-    accessor: (r: ExceptionAssignmentRow): ReactNode => (
-      <StatusBadge label={show(r.status)} variant="exception" />
-    ),
+    accessorKey: "status",
+    // ใช้ value จาก accessorKey โดยตรง หรือจะอ้างจาก row ก็ได้
+    cell: (value, _row) => <StatusBadge label={show(value)} variant="exception" />,
   },
   {
+    id: "notes",
     header: "Notes",
-    accessor: (r: ExceptionAssignmentRow): ReactNode => show(r.notes),
+    accessorKey: "notes",
+    cell: (value) => show(value),
   },
 ];

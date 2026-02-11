@@ -22,10 +22,9 @@ import {
 import { employeeAssignmentColumns } from "@/lib/tables/employeeAssignmentColumns";
 import { employeesEditFields } from "@/config/forms/employeeEditFields";
 import { fullName } from "@/lib/name";
+import { DetailInfoGrid } from "components/detail/DetailInfo";
+import { HistoryList } from "components/detail/HistoryList";
 
-/* -------------------------------------------------------
- *  TYPES
- * ------------------------------------------------------- */
 type EmployeeDetailProps = {
   item: EmployeeItem;
   history?: HistoryEvent[];
@@ -33,16 +32,11 @@ type EmployeeDetailProps = {
   breadcrumbs?: BreadcrumbItem[];
 };
 
-/* -------------------------------------------------------
- *  COMPONENT
- * ------------------------------------------------------- */
 export default function EmployeeDetail(props: EmployeeDetailProps) {
   const { item, history, assignments, breadcrumbs } = props;
   const router = useRouter();
 
-  /* -------------------------------------------------------
-   *  MEMOIZED DATA
-   * ------------------------------------------------------- */
+  /* ---------------- Memoized Data ---------------- */
   const rows = React.useMemo<EmployeeAssignmentRow[]>(
     () => (assignments?.length ? assignments : demoAssignments),
     [assignments],
@@ -53,11 +47,8 @@ export default function EmployeeDetail(props: EmployeeDetailProps) {
     [history],
   );
 
-  /* -------------------------------------------------------
-   *  CALLBACKS
-   * ------------------------------------------------------- */
+  /* ---------------- Callbacks ---------------- */
   const handleBack = React.useCallback(() => {
-    // ใช้ router.back() ปลอดภัยกว่า window.history.back()
     router.back();
   }, [router]);
 
@@ -67,13 +58,11 @@ export default function EmployeeDetail(props: EmployeeDetailProps) {
   }, [item.id]);
 
   const handleAssign = React.useCallback(() => {
-    console.log("Assign license to", item.id);
+    console.log("Assign exception to", item.id);
     // TODO: navigate to assign page or open modal
   }, [item.id]);
 
-  /* -------------------------------------------------------
-   *  TOOLBAR
-   * ------------------------------------------------------- */
+  /* ---------------- Toolbar ---------------- */
   const toolbar = React.useMemo(
     () => (
       <InventoryActionToolbar
@@ -94,9 +83,7 @@ export default function EmployeeDetail(props: EmployeeDetailProps) {
     [item.id, handleAssign],
   );
 
-  /* -------------------------------------------------------
-   *  EDIT CONFIG
-   * ------------------------------------------------------- */
+  /* ---------------- Edit config ---------------- */
   const editConfig = React.useMemo(
     () => ({
       title: "Edit Employee",
@@ -122,63 +109,80 @@ export default function EmployeeDetail(props: EmployeeDetailProps) {
       cancelLabel: "Cancel",
     }),
     [
-      item.device,
+      item.company,
       item.department,
-      item.position,
+      item.device,
+      item.empType,
       item.firstNameTh,
       item.lastNameTh,
       item.phone,
+      item.position,
+      item.section,
       item.status,
+      item.unit,
     ],
   );
 
-  /* -------------------------------------------------------
-   *  RENDER
-   * ------------------------------------------------------- */
+  /* ---------------- Tabs (ยืดหยุ่น) ---------------- */
+  const tabs = React.useMemo(
+    () => [
+      {
+        key: "detail",
+        label: "Detail",
+        content: (
+          <DetailInfoGrid
+            left={[
+              { label: "Employee ID", value: show(item.id) },
+              { label: "Name", value: fullName(item) },
+              { label: "Email", value: show(item.email) },
+              { label: "Employee Type", value: show(item.empType) },
+              { label: "Phone", value: show(item.phone) },
+            ]}
+            right={[
+              { label: "Company", value: show(item.company) },
+              { label: "Department", value: show(item.department) },
+              { label: "Section", value: show(item.section) },
+              { label: "Unit", value: show(item.unit) },
+              { label: "Status", value: show(item.status) },
+              { label: "Position", value: show(item.position) },
+              { label: "Device", value: show(item.device) },
+            ]}
+          />
+        ),
+      },
+      {
+        key: "assignments",
+        label: "Assignments",
+        content: (
+          <InstallationSection<EmployeeAssignmentRow>
+            rows={rows}
+            columns={employeeAssignmentColumns}
+            resetKey={`employee-${item.id}`}
+            initialPage={1}
+            pageSize={8}
+          />
+        ),
+      },
+      {
+        key: "history",
+        label: "History",
+        content: <HistoryList history={historyData} />,
+      },
+    ],
+    [item, rows, historyData],
+  );
+
   return (
     <DetailView
-      title={show(`${item.firstNameTh} ${item.lastNameTh}`)}
+      title={show(`${item.firstNameTh ?? ""} ${item.lastNameTh ?? ""}`)}
       compliance={undefined}
-      installationTabLabel="Assignments"
-      info={{
-        left: [
-          { label: "Employee ID", value: show(item.id) },
-          // ===== เฉพาะภาษาไทย =====
-          // { label: "ชื่อ (ไทย)", value: show(item.firstNameTh) },
-          // { label: "นามสกุล (ไทย)", value: show(item.lastNameTh) },
-
-          // ===== เฉพาะภาษาอังกฤษ =====
-          { label: "Name", value: fullName(item) },
-
-          { label: "Email", value: show(item.email) },
-          { label: "Employee Type", value: show(item.empType) },
-          { label: "Phone", value: show(item.phone) },
-        ],
-        right: [
-          { label: "Company", value: show(item.company) },
-          { label: "Department", value: show(item.department) },
-          { label: "Section", value: show(item.section) },
-          { label: "Unit", value: show(item.unit) },
-          { label: "Status", value: show(item.status) },
-          { label: "Position", value: show(item.position || item.position) },
-          { label: "Device", value: show(item.device) },
-        ],
-      }}
-      installationSection={
-        <InstallationSection<EmployeeAssignmentRow>
-          rows={rows}
-          columns={employeeAssignmentColumns}
-          resetKey={`employee-${item.id}`}
-          initialPage={1}
-          pageSize={8}
-        />
-      }
-      history={historyData}
+      breadcrumbs={breadcrumbs}
+      headerRightExtra={toolbar}
+      tabs={tabs}
+      defaultTabKey="assignments"
       onBack={handleBack}
       onDelete={handleDelete}
       editConfig={editConfig}
-      breadcrumbs={breadcrumbs}
-      headerRightExtra={toolbar}
     />
   );
 }

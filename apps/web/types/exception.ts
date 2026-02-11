@@ -112,3 +112,32 @@ export type AssignOptions = {
   /** ตัวคั่นเวลา append note (default: ' | ') */
   noteAppendSeparator?: string;
 };
+
+export type RequestRisk = 'Low' | 'Medium' | 'High';
+
+export type RequestItem = {
+  id: number;
+  title: string;
+  requester: string;
+  department: string;
+  site: string;
+  risk: RequestRisk;
+  exception: string;
+  dueAt: string; // ISO
+};
+
+export type RequestQuery = {
+  pageIndex: number;  // 0-based
+  pageSize: number;
+  filters?: {
+    site?: string;
+    risk?: RequestRisk | string;
+    exception?: string;
+    search?: string;
+  };
+};
+
+export type RequestListResponse = {
+  items: RequestItem[];
+  total: number;
+};

@@ -1,13 +1,43 @@
 // src/lib/tables/employeeAssignmentColumns.ts
-import type { ReactNode } from "react";
+import type { AppColumnDef } from "types/ui-table";
 import { show } from "lib/show";
-import { EmployeeAssignmentRow } from "@/types";
+import type { EmployeeAssignmentRow } from "@/types";
 
-export const employeeAssignmentColumns = [
-  { header: "Device", accessor: (r: EmployeeAssignmentRow): ReactNode => show(r.deviceName) },
-  { header: "User", accessor: (r: EmployeeAssignmentRow): ReactNode => show(r.userName) },
-  { header: "License Status", accessor: (r: EmployeeAssignmentRow): ReactNode => show(r.licenseStatus) },
-  { header: "License Key", accessor: (r: EmployeeAssignmentRow): ReactNode => show(r.licenseKey) },
-  { header: "Scanned License", accessor: (r: EmployeeAssignmentRow): ReactNode => show(r.scannedLicenseKey) },
-  { header: "Workstation", accessor: (r: EmployeeAssignmentRow): ReactNode => show(r.workStation) },
+export const employeeAssignmentColumns: AppColumnDef<EmployeeAssignmentRow>[] = [
+  {
+    id: "deviceName",
+    header: "Device",
+    accessorKey: "deviceName",
+    cell: (value) => show(value),
+  },
+  {
+    id: "userName",
+    header: "User",
+    accessorKey: "userName",
+    cell: (value) => show(value),
+  },
+  {
+    id: "licenseStatus",
+    header: "License Status",
+    accessorKey: "licenseStatus",
+    cell: (value) => show(value ?? "—"),
+  },
+  {
+    id: "licenseKey",
+    header: "License Key",
+    accessorKey: "licenseKey",
+    cell: (value) => show(value ?? "—"),
+  },
+  {
+    id: "scannedLicenseKey",
+    header: "Scanned License",
+    accessorKey: "scannedLicenseKey",
+    cell: (value) => show(value ?? "—"),
+  },
+  {
+    id: "workStation",
+    header: "Workstation",
+    accessorKey: "workStation",
+    cell: (value) => show(value ?? "—"),
+  },
 ];

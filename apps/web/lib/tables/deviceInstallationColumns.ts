@@ -1,13 +1,37 @@
 import { show } from "lib/show";
-import { DeviceInstallationRow } from "types";
+import type { DeviceInstallationRow } from "types";
+import type { AppColumnDef } from "types/ui-table";
 
-export const deviceInstallationColumns = [
-  { header: "Software", accessor: (r) => show(r.softwareName) },
-  { header: "Manufacturer", accessor: (r) => show(r.manufacturer) },
-  { header: "Version", accessor: (r) => show(r.version) },
-  { header: "Category", accessor: (r) => show(r.category) },
-  { header: "Status", accessor: (r) => show(r.status ?? "Active") },
-] satisfies {
-  header: string;
-  accessor: (r: DeviceInstallationRow) => React.ReactNode;
-}[];
+export const deviceInstallationColumns: AppColumnDef<DeviceInstallationRow>[] = [
+  {
+    id: "softwareName",
+    header: "Software",
+    accessorKey: "softwareName",
+    cell: (value) => show(value),
+  },
+  {
+    id: "manufacturer",
+    header: "Manufacturer",
+    accessorKey: "manufacturer",
+    cell: (value) => show(value),
+  },
+  {
+    id: "version",
+    header: "Version",
+    accessorKey: "version",
+    cell: (value) => show(value),
+  },
+  {
+    id: "category",
+    header: "Category",
+    accessorKey: "category",
+    cell: (value) => show(value),
+  },
+  {
+    id: "status",
+    header: "Status",
+    accessorKey: "status",
+    // ถ้าไม่มีค่า ให้ fallback เป็น "Active" ตามเดิม
+    cell: (value) => show((value as string) ?? "Active"),
+  },
+];

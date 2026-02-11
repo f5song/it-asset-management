@@ -1,33 +1,46 @@
-
+// lib/tables/licenseInstallationColumns.ts
 import { show } from "lib/show";
 import type { LicenseInstallationRow } from "types";
+import type { AppColumnDef } from "types/ui-table";
 
-export const installationColumns = [
+// ถ้าต้องการ format วันที่ อาจประกาศ formatter เหมือนอีกไฟล์:
+// const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleDateString() : "—");
+
+export const installationColumns: AppColumnDef<LicenseInstallationRow>[] = [
   {
+    id: "deviceName",
     header: "Device",
-    accessor: (r) => show(r.deviceName),
+    accessorKey: "deviceName",
+    cell: (value) => show(value),
   },
   {
+    id: "userName",
     header: "User",
-    accessor: (r) => show(r.userName),
+    accessorKey: "userName",
+    cell: (value) => show(value),
   },
   {
+    id: "licenseStatus",
     header: "License Status",
-    accessor: (r) => show(r.licenseStatus ?? "Active"),
+    accessorKey: "licenseStatus",
+    cell: (value, row) => show(value ?? (row as LicenseInstallationRow).licenseStatus ?? "Active"),
   },
   {
+    id: "licenseKey",
     header: "License Key",
-    accessor: (r) => show(r.licenseKey),
+    accessorKey: "licenseKey",
+    cell: (value) => show(value ?? "—"),
   },
   {
+    id: "scannedLicenseKey",
     header: "Scanned License",
-    accessor: (r) => show(r.scannedLicenseKey),
+    accessorKey: "scannedLicenseKey",
+    cell: (value) => show(value ?? "—"),
   },
   {
+    id: "workStation",
     header: "Workstation",
-    accessor: (r) => show(r.workStation),
+    accessorKey: "workStation",
+    cell: (value) => show(value ?? "—"),
   },
-] satisfies {
-  header: string;
-  accessor: (r: LicenseInstallationRow) => React.ReactNode;
-}[];
+];

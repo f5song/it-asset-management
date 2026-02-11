@@ -1,4 +1,4 @@
-// app/.../LicenseDetail.tsx (ไฟล์เดียวกับที่ส่งมา)
+// app/.../LicenseDetail.tsx
 "use client";
 
 import * as React from "react";
@@ -77,7 +77,7 @@ export default function LicenseDetail({
     <DetailView
       title={item.softwareName}
       compliance={item.compliance}
-      installationTabLabel="Installations"
+      defaultTabKey="Installations"
       info={{
         left: [
           { label: "Manufacturer", value: show(item.manufacturer) },

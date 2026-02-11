@@ -24,6 +24,8 @@ import {
 import { formatDateSafe } from "@/lib/date";
 import { toLocalInput } from "@/lib/date-input";
 import { exceptionEditFields } from "@/config/forms/exceptionEditFields";
+import { DetailInfoGrid } from "components/detail/DetailInfo";
+import { HistoryList } from "components/detail/HistoryList";
 
 type ExceptionsDetailProps = {
   item: ExceptionDefinition;
@@ -51,31 +53,25 @@ export default function ExceptionsDetail({
     [assignments],
   );
 
-  // ✅ อ่าน "สถานะพนักงาน" จากหลายชื่อฟิลด์ที่อาจต่างกัน แล้วเรียง Active -> Resigned
+  // ✅ เรียง Active -> Resigned; ถ้าไม่มีสถานะ ให้ไปท้าย
   const sortedRows = React.useMemo<ExceptionAssignmentRow[]>(() => {
-    // priority: Active (0) ก่อน Resigned (1) อื่น ๆ ไปท้าย
     const pr = new Map<string, number>([
       ["active", 0],
       ["resigned", 1],
     ]);
 
-    // ฟังก์ชันอ่าน status ให้ครอบคลุมกรณี schema ต่าง ๆ
     const getStatus = (r: any): string | undefined => {
-      // ลองหลายชื่อ field ที่พบเจอได้บ่อย
       const s =
         r?.status ??
         r?.employeeStatus ??
         r?.employee?.status ??
         r?.user?.status ??
         r?.profile?.status;
-
       return typeof s === "string" ? s : undefined;
     };
 
-    // secondary key ให้อ่านง่าย: employeeId (หรือตั้งชื่อคอลัมน์ของคุณ)
     const getEmpId = (r: any) => r?.employeeId ?? r?.userId ?? r?.empId ?? "";
 
-    // sort ควรเป็น "global ก่อน" แล้วค่อย paginate ใน InstallationSection
     return [...rawRows].sort((a: any, b: any) => {
       const sa = (getStatus(a) ?? "").toLowerCase();
       const sb = (getStatus(b) ?? "").toLowerCase();
@@ -83,8 +79,6 @@ export default function ExceptionsDetail({
       const pb = pr.get(sb) ?? 999;
 
       if (pa !== pb) return pa - pb;
-
-      // secondary: employeeId แบบ numeric-aware
       return String(getEmpId(a)).localeCompare(String(getEmpId(b)), undefined, {
         numeric: true,
         sensitivity: "base",
@@ -100,6 +94,11 @@ export default function ExceptionsDetail({
     console.log("Delete exception:", item.id);
   }, [item.id]);
 
+  const handleAssign = React.useCallback(() => {
+    console.log("Assign exception:", item.id);
+    // TODO: route ไปหน้า assign หรือเปิด modal
+  }, [item.id]);
+
   const toolbar = React.useMemo(
     () => (
       <InventoryActionToolbar
@@ -113,11 +112,12 @@ export default function ExceptionsDetail({
           "Assign Exceptions": `/exceptions/${item.id}/assign`,
         }}
         onAction={(act) => {
-          if (act === "Delete") handleDelete();
+          if (act === "Assign Exceptions") handleAssign();
+          // ถ้าต้องการ Delete ด้วย ให้ใส่ปุ่ม Delete ใน visibleActions และ handle ที่นี่
         }}
       />
     ),
-    [item.id, handleDelete],
+    [item.id, handleAssign],
   );
 
   // Info panels (Definition-level)
@@ -160,27 +160,46 @@ export default function ExceptionsDetail({
     [item.name, item.status, item.risk, item.createdAt, item.lastUpdated, item.notes],
   );
 
+  const tabs = React.useMemo(
+    () => [
+      {
+        key: "detail",
+        label: "Detail",
+        content: <DetailInfoGrid left={infoLeft} right={infoRight} />,
+      },
+      {
+        key: "assignments",
+        label: "Assignments",
+        content: (
+          <InstallationSection<ExceptionAssignmentRow>
+            rows={sortedRows}
+            columns={exceptionAssignmentColumns}
+            resetKey={`exception-${item.id}`}
+            initialPage={1}
+            pageSize={8}
+          />
+        ),
+      },
+      {
+        key: "history",
+        label: "History",
+        content: <HistoryList history={historyData} />,
+      },
+    ],
+    [infoLeft, infoRight, sortedRows, item.id, historyData],
+  );
+
   return (
     <DetailView
       title={show(item.name)}
       compliance={undefined}
-      installationTabLabel="Assignments"
-      info={{ left: infoLeft, right: infoRight }}
-      installationSection={
-        <InstallationSection<ExceptionAssignmentRow>
-          rows={sortedRows}
-          columns={exceptionAssignmentColumns}
-          resetKey={`exception-${item.id}`}
-          initialPage={1}
-          pageSize={8}
-        />
-      }
-      history={historyData}
+      breadcrumbs={breadcrumbs}
+      headerRightExtra={toolbar}
+      tabs={tabs}
+      defaultTabKey="assignments"
       onBack={handleBack}
       onDelete={handleDelete}
       editConfig={editConfig}
-      breadcrumbs={breadcrumbs}
-      headerRightExtra={toolbar}
     />
   );
 }
