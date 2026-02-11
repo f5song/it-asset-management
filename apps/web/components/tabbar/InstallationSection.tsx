@@ -1,17 +1,20 @@
-// InstallationSection.tsx (generalized)
+// components/tabbar/InstallationSection.tsx (generalized)
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import {
   InstallationTable,
-  AppColumnDef,
   InstallationFilters,
 } from "./InstallationTable";
+
+// ✅ ใช้ AppColumnDef ตัวเดียวกับ InstallationTable (จาก ui-table)
+import type { AppColumnDef } from "../../types/ui-table";
 import type { ExportFormat } from "types";
+
 import { SearchInput } from "../ui/SearchInput";
 import { ExportSelect } from "../ui/ExportSelect";
 
-type Props<R> = {
+type Props<R extends { id?: string | number }> = {
   rows: R[];
   columns: AppColumnDef<R>[];
   resetKey?: string;
@@ -55,7 +58,6 @@ export function InstallationSection<R extends { id?: string | number }>({
     if (typeof n === "string" || typeof n === "number") return String(n);
     if (Array.isArray(n)) return n.map(nodeToText).join(" ");
     // กรณีเป็น React element/fragment: ดึง children เป็นข้อความแบบง่าย ๆ
-    // (ถ้า cell เป็น component ซับซ้อน แนะนำปรับ accessor ให้คืน text/plain)
     // @ts-ignore
     const props = (n as any)?.props;
     if (props?.children) return nodeToText(props.children);
@@ -66,12 +68,46 @@ export function InstallationSection<R extends { id?: string | number }>({
     }
   };
 
+  /**
+   * แปลง dataset ให้เป็น headers + rows (plain text) สำหรับ export
+   * รองรับทั้ง 3 รูปแบบของคอลัมน์:
+   *  - accessor?: (row) => ReactNode
+   *  - cell?: (value, row) => ReactNode
+   *  - accessorKey?: string
+   */
   const buildFlatRows = (dataset: R[]) => {
-    // ใช้ headers จาก columns พร้อมดึงค่าจาก accessor
-    const headers = columns.map((c) => c.header);
+    const headers = columns.map((c) => (c as any).header ?? "");
+
     const data = dataset.map((r) =>
-      columns.map((c) => nodeToText(c.accessor(r)))
+      columns.map((c) => {
+        const anyC = c as any;
+
+        // 1) ถ้ามี accessor(row)
+        if (typeof anyC.accessor === "function") {
+          return nodeToText(anyC.accessor(r));
+        }
+
+        // 2) ถ้ามี cell(value, row)
+        if (typeof anyC.cell === "function") {
+          let value: unknown = undefined;
+          if (typeof anyC.accessorKey === "string") {
+            const key = anyC.accessorKey as keyof R;
+            value = (r as any)?.[key];
+          }
+          return nodeToText(anyC.cell(value, r));
+        }
+
+        // 3) ถ้ามี accessorKey
+        if (typeof anyC.accessorKey === "string") {
+          const key = anyC.accessorKey as keyof R;
+          return nodeToText((r as any)?.[key]);
+        }
+
+        // 4) ไม่เข้าเงื่อนไขใด ๆ
+        return "";
+      })
     );
+
     return { headers, data };
   };
 
@@ -99,7 +135,10 @@ export function InstallationSection<R extends { id?: string | number }>({
       ...data.map((row) => row.map((v) => escapeCSV(String(v ?? ""))).join(",")),
     ];
     const csv = lines.join("\n");
-    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `${filenameBase}.csv`);
+    downloadBlob(
+      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+      `${filenameBase}.csv`
+    );
   };
 
   const exportXLSX = async (dataset: R[], filenameBase: string) => {
@@ -110,7 +149,9 @@ export function InstallationSection<R extends { id?: string | number }>({
     // const wb = XLSX.utils.book_new();
     // XLSX.utils.book_append_sheet(wb, ws, "Data");
     // XLSX.writeFile(wb, `${filenameBase}.xlsx`);
-    console.warn("TODO: โปรดติดตั้งและเชื่อมต่อไลบรารี xlsx ก่อนใช้งาน export เป็น .xlsx");
+    console.warn(
+      "TODO: โปรดติดตั้งและเชื่อมต่อไลบรารี xlsx ก่อนใช้งาน export เป็น .xlsx"
+    );
     // ชั่วคราว: export CSV แทน
     exportCSV(dataset, filenameBase);
   };
@@ -124,7 +165,9 @@ export function InstallationSection<R extends { id?: string | number }>({
     // const { headers, data } = buildFlatRows(dataset);
     // autoTable(doc, { head: [headers], body: data });
     // doc.save(`${filenameBase}.pdf`);
-    console.warn("TODO: โปรดเชื่อมต่อ jsPDF + autotable ก่อนใช้งาน export เป็น PDF");
+    console.warn(
+      "TODO: โปรดเชื่อมต่อ jsPDF + autotable ก่อนใช้งาน export เป็น PDF"
+    );
     // ชั่วคราว: export CSV แทน
     exportCSV(dataset, filenameBase);
   };
@@ -135,8 +178,6 @@ export function InstallationSection<R extends { id?: string | number }>({
       exportScope === "page" ? pageRowsRef.current : filteredRef.current;
 
     if (!dataset || dataset.length === 0) {
-      // ไม่มีข้อมูลให้ export
-      // คุณอาจจะแจ้ง toast/notification แทนได้
       console.warn("No data to export.");
       return;
     }

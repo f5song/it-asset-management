@@ -74,7 +74,7 @@ export function ActionToolbar({
   const options = React.useMemo<ActionOption[]>(() => {
     const acts = visibleActions?.length
       ? visibleActions
-      : (["Delete", "Add"] as ToolbarAction[]); // default set (ถ้าหน้าไม่ระบุ)
+      : (["Add"] as ToolbarAction[]); // default set (ถ้าหน้าไม่ระบุ)
 
     return acts.map((a) => ({
       value: a,

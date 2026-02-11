@@ -47,3 +47,4 @@ export type ButtonControl = BaseControl & {
 
 /** union ของ control ที่รองรับทั้งหมด */
 export type ToolbarControl = SelectControl | SearchControl | ButtonControl;
+

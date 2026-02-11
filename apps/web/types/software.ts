@@ -9,15 +9,15 @@ export type ClientServer = "Client" | "Server";
 
 /** ===== ฟิลเตอร์หน้า Software (UI-level เบา ๆ) ===== */
 export type SoftwareFilters = {
-  manufacturer?: string;       // single
-  type?: SoftwareType;         // single
+  manufacturer?: string; // single
+  type?: SoftwareType; // single
   search?: string;
 };
 
 /** ===== ฟิลเตอร์ฝั่งโดเมน/Service (superset ของ SoftwareFilters) ===== */
 export type SoftwareDomainFilters = {
-  manufacturer?: string;       // single
-  manufacturers?: string[];    // multi
+  manufacturer?: string; // single
+  manufacturers?: string[]; // multi
   type?: SoftwareType;
   compliance?: Compliance;
   clientServer?: ClientServer;
@@ -65,9 +65,10 @@ export interface InstallationRow {
   id: string;
   deviceName?: string;
   userName?: string;
-  licenseStatus?: string;
-  licenseKey?: string;
-  scannedLicenseKey?: string;
+  department?: string;
+  version?: string;
+  installDate?: string;
+  lastSeen?: string;
   workStation?: string;
 }
 

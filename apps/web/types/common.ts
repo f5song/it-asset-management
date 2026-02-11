@@ -56,3 +56,20 @@ export type Searchable = {
   /** คำค้นหาทั่วไป (เช่น ค้นหา name/manufacturer) */
   search?: string;
 };
+
+export type DetailTab = {
+  /** คีย์ไม่ซ้ำ ใช้ควบคุม state */
+  key: string;
+  /** ป้ายแท็บ */
+  label: React.ReactNode;
+  /** เนื้อหาในแท็บ (เรนเดอร์ทันทีหรือแบบฟังก์ชันก็ได้) */
+  content: React.ReactNode | (() => React.ReactNode);
+  /** ปิดการใช้งาน (keyboard และ mouse) */
+  disabled?: boolean;
+  /** ซ่อนแท็บ (จะไม่แสดงใน header และไม่เรนเดอร์ panel) */
+  hidden?: boolean;
+  /** แสดง badge/นับจำนวน/ไอคอนเล็ก ๆ */
+  badge?: React.ReactNode;
+  /** คำอธิบายเพื่อ a11y */
+  ariaLabel?: string;
+};

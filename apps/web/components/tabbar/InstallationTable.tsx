@@ -1,13 +1,12 @@
-// InstallationTable.tsx
+// components/tabbar/InstallationTable.tsx
 "use client";
-import React, { useMemo, useEffect } from "react";
-import type { AppColumnDef as CoreAppColumnDef, DataTableProps } from "../../types/ui-table";
-import { DataTable } from "components/table";
 
-export type AppColumnDef<R> = {
-  header: string;
-  accessor: (r: R) => React.ReactNode;
-};
+import React, { useMemo, useEffect } from "react";
+import type {
+  AppColumnDef,
+  DataTableProps,
+} from "../../types/ui-table";
+import { DataTable } from "components/table";
 
 export type InstallationFilters = {
   query: string;
@@ -39,7 +38,7 @@ export function InstallationTable<R extends { id?: string | number }>({
     totalRows: number;
     filteredRows: R[];
     pageRows: R[];
-    pageIndex: number;    // เริ่ม 1
+    pageIndex: number; // เริ่ม 1
     totalPages: number;
   }) => void;
 }) {
@@ -69,16 +68,54 @@ export function InstallationTable<R extends { id?: string | number }>({
     });
   }, [onAfterFilter, totalRows, filtered, pageRows, safePage, totalPages]);
 
-  // 3) map columns -> Core columns
-  const mappedColumns: CoreAppColumnDef<R>[] = columns.map((c, idx) => {
-    const id = String(idx);
-    return {
-      id,
-      header: c.header,
-      accessorKey: id,
-      cell: (_value, row) => c.accessor(row as R),
-    } as CoreAppColumnDef<R>;
-  });
+  /**
+   * 3) Map columns ให้เป็นรูปแบบที่ DataTable คาดหวัง
+   *
+   * เราไม่รู้แน่ชัดว่า AppColumnDef<R> (จาก types/ui-table) ที่ผู้ใช้ส่งมาจะมี key ไหน
+   * จึงทำ adapter รองรับ 3 รูปแบบ:
+   *  - c.cell?(value, row)            → ใช้เลย
+   *  - c.accessor?(row)               → wrap เป็น cell
+   *  - c.accessorKey?                 → ดึงค่าจาก row[key] แล้วส่งให้ cell
+   * ถ้าไม่มีอะไรเลย จะ fallback เป็นค่าว่าง
+   */
+  const mappedColumns = useMemo(() => {
+    return columns.map((c, idx) => {
+      const anyC = c as any;
+
+      // header
+      const header = anyC.header;
+
+      // id / accessorKey
+      const id: string = anyC.id ?? String(idx);
+      const accessorKey: string =
+        typeof anyC.accessorKey === "string" ? anyC.accessorKey : id;
+
+      // สร้าง cell จากตัวเลือกที่มี
+      const cell =
+        typeof anyC.cell === "function"
+          ? (value: unknown, row: R) => anyC.cell(value, row)
+          : typeof anyC.accessor === "function"
+          ? (_value: unknown, row: R) => anyC.accessor(row)
+          : anyC.accessorKey
+          ? (_value: unknown, row: R) => {
+              const k = anyC.accessorKey as keyof R;
+              // คืนค่าดิบเพื่อให้ DataTable/renderer จัดการแสดงผลตามปกติ
+              return (row as any)?.[k] ?? "";
+            }
+          : (_value: unknown, _row: R) => "";
+
+      // คืนคอลัมน์ตาม spec ของ DataTable (ชนิดเดียวกับ AppColumnDef จาก types/ui-table)
+      const coreCol: AppColumnDef<R> = {
+        ...anyC,
+        id,
+        header,
+        accessorKey,
+        cell,
+      };
+
+      return coreCol;
+    });
+  }, [columns]);
 
   // 4) props ให้ DataTable
   const dataTableProps: DataTableProps<R> = {
@@ -98,7 +135,10 @@ export function InstallationTable<R extends { id?: string | number }>({
       pageSize,
     },
     onPaginationChange: (next) => {
-      if (next?.pageIndex && next.pageIndex !== safePage) {
+      if (
+        typeof next?.pageIndex === "number" &&
+        next.pageIndex !== safePage
+      ) {
         onPageChange(next.pageIndex);
       }
     },

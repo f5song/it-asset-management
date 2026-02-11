@@ -27,7 +27,7 @@ const MODEL = [
 // ชุดหลัก "ALL" (คงไว้ตามเดิม)
 const ALL: SoftwareItem[] = Array.from({ length: 57 }).map((_, i) => ({
   id: `soft-${i + 1}`,
-  softwareName: `Tool ${i + 1}`,
+  softwareName: `Adobe Creative Cloud for Teams ${i + 1}`,
   manufacturer: ["Microsoft", "Adobe", "JetBrains", "Autodesk"][i % 4],
   version: `v${Math.floor(i / 10)}.${i % 10}`,
   category: ["IDE", "Security", "Design", "CAD"][i % 4],
