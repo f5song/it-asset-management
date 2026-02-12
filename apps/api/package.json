@@ -3,12 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "main": "dist/index.js",
-  "scripts": {
-    "dev": "ts-node-dev --respawn src/index.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js"
+
+"scripts": {
+  "dev": "ts-node-dev -r dotenv/config --respawn src/index.ts",
+  "build": "tsc -p tsconfig.json",
+  "start": "node -r dotenv/config dist/index.js"
+
   },
   "dependencies": {
+    "dotenv": "^17.2.4",
     "express": "^4.22.1",
     "pg": "^8.18.0"
   },
