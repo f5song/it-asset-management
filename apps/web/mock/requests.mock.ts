@@ -2,9 +2,16 @@ import { RequestItem, RequestRisk } from "@/types/exception";
 
 
 export const FILTER_OPTIONS = {
-  sites: ['HQ', 'Bangkok', 'Rayong', 'Remote'] as const,
+  sites: ["บริษัท บีอีซี แอสเซท จำกัด",
+"บริษัท บีอีซี-มัลติมีเดีย จำกัด",
+"บจก. บีอีซี ไอที โซลูชั่น",
+"บจก. บีอีซีไอ คอร์ปอเรชั่น",
+"บริษัท บางกอกเอ็นเตอร์เทนเม้นต์ จำกัด",
+"บริษัท บีอีซี บรอดคาสติ้ง เซ็นเตอร์ จำกัด",
+"บริษัท สำนักข่าว บีอีซี จำกัด",
+"บริษัท บีอีซี เวิลด์ จำกัด (มหาชน)"] as const,
   risks: ['Low', 'Medium', 'High'] as const,
-  exceptions: ['None', 'Policy A', 'Policy B', 'Policy C'] as const,
+  exceptions: ['AD 90 : Password Policy', 'LINE', 'USB', 'Generative AI'] as const,
 };
 
 function pick<T>(arr: readonly T[]) {
@@ -12,7 +19,7 @@ function pick<T>(arr: readonly T[]) {
 }
 
 function makeTitle(i: number) {
-  const apps = ['Microsoft Word', 'Outlook', 'Excel', 'Power BI', 'Teams', 'OneDrive'];
+  const apps = ['AD 90 : Password Policy', 'LINE', 'USB', 'Generative AI'];
   const acts = ['ขออนุมัติใช้งาน', 'ขอเพิ่มสิทธิ์', 'ขอติดตั้ง', 'ขอเปลี่ยนเวอร์ชัน', 'ขอยกเลิกสิทธิ์'];
   return `${pick(apps)} - ${pick(acts)}`;
 }
@@ -28,7 +35,23 @@ export const MOCK_REQUESTS: RequestItem[] = Array.from({ length: 1250 }).map((_,
     id: 7300 + i,
     title: makeTitle(i),
     requester: 'Puttaraporn Jitpranee',
-    department: pick(['IT', 'HR', 'Finance', 'Operations', 'Security']),
+    department: pick(["สำนักข่าว",
+"สำนักออกอากาศ",
+"สำนักตรวจสอบภายใน",
+"สำนักไฟฟ้ากำลัง",
+"สำนักเทคโนโลยีสารสนเทศ",
+"สำนักเทคนิคโทรทัศน์",
+"สำนักผังรายการ",
+"สำนักกรรมการบริหาร",
+"สำนักธุรกิจระหว่างประเทศ",
+"สำนักการพาณิชย์",
+"สำนักกิจการและสื่อสารองค์กร",
+"สำนักบริหาร",
+"สำนักดิจิทัลและกลยุทธ์สื่อใหม่",
+"สำนักการตลาด",
+"สำนักการเงินและบัญชี",
+"สำนักบริหารทรัพยากร",
+"สำนักผลิตรายการ"]),
     site,
     risk,
     exception,
