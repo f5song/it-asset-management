@@ -5,7 +5,8 @@ import {
   getExceptionById,
   listAssigneesByException,
   assignExceptionToEmployees,
-  revokeAssignments
+  revokeAssignments,
+  listExceptionsSimple
 } from './exceptions.service';
 
 export async function getExceptions(req: Request, res: Response) {
@@ -56,4 +57,18 @@ export async function postRevoke(req: Request, res: Response) {
   }
   const out = await revokeAssignments(id, body.empCodes, body.revokedBy, body.reason);
   res.json(out);
+}
+
+
+export async function getExceptionsSimple(req: Request, res: Response) {
+  // ป้องกันค่า limit เพี้ยน ๆ และกันยิงหนักเกินไป
+  const raw = Number(req.query.limit);
+  const limit = Number.isFinite(raw) ? Math.max(1, Math.min(100, raw)) : 10;
+
+  try {
+    const items = await listExceptionsSimple(limit);
+    res.json({ items, count: items.length });
+  } catch (e: any) {
+    res.status(500).json({ error: 'failed to fetch simple exceptions', detail: e?.message });
+  }
 }

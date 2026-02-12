@@ -1,9 +1,9 @@
-import { pool } from '../../db/pool';
-import { whereBuilder } from '../../utils/sql';
+import { pool } from "../../db/pool";
+import { whereBuilder } from "../../utils/sql";
 
 export type ListExceptionsParams = {
   search?: string;
-  risk?: 'Low'|'Medium'|'High';
+  risk?: "Low" | "Medium" | "High";
   categoryId?: number;
   isActive?: boolean;
   sort?: { col: string; desc: boolean };
@@ -19,13 +19,13 @@ export async function listExceptions(p: ListExceptionsParams) {
   }
   if (p.risk) w.add(`e.risk_level = $1`, p.risk);
   if (p.categoryId) w.add(`e.category_id = $1`, p.categoryId);
-  if (typeof p.isActive === 'boolean') w.add(`e.is_active = $1`, p.isActive);
+  if (typeof p.isActive === "boolean") w.add(`e.is_active = $1`, p.isActive);
 
   const where = w.build();
 
   // อนุญาตให้ sort เฉพาะคอลัมน์ที่กำหนด
-  const col = p.sort?.col ?? 'exception_id';
-  const dir = p.sort?.desc ? 'DESC' : 'ASC';
+  const col = p.sort?.col ?? "exception_id";
+  const dir = p.sort?.desc ? "DESC" : "ASC";
   const orderBy = `ORDER BY ${col} ${dir}`;
 
   const base = `
@@ -61,8 +61,12 @@ export async function listExceptions(p: ListExceptionsParams) {
   const client = await pool.connect();
   try {
     const [itemsRes, countRes] = await Promise.all([
-      client.query(sqlItems, [...where.params, p.pageSize, p.pageIndex * p.pageSize]),
-      client.query(sqlCount, where.params)
+      client.query(sqlItems, [
+        ...where.params,
+        p.pageSize,
+        p.pageIndex * p.pageSize,
+      ]),
+      client.query(sqlCount, where.params),
     ]);
     return { items: itemsRes.rows, total: countRes.rows[0].total as number };
   } finally {
@@ -94,7 +98,11 @@ export async function getExceptionById(exceptionId: number) {
   return res.rows[0] ?? null;
 }
 
-export async function listAssigneesByException(exceptionId: number, pageIndex: number, pageSize: number) {
+export async function listAssigneesByException(
+  exceptionId: number,
+  pageIndex: number,
+  pageSize: number,
+) {
   const sqlItems = `
     SELECT x.assignment_id, x.emp_code, x.status, x.valid_from, x.valid_to,
            x.assigned_at, x.assigned_by, x.revoked_at, x.revoked_by,
@@ -112,7 +120,7 @@ export async function listAssigneesByException(exceptionId: number, pageIndex: n
   `;
   const [itemsRes, countRes] = await Promise.all([
     pool.query(sqlItems, [exceptionId, pageSize, pageIndex * pageSize]),
-    pool.query(sqlCount, [exceptionId])
+    pool.query(sqlCount, [exceptionId]),
   ]);
   return { items: itemsRes.rows, total: countRes.rows[0].total as number };
 }
@@ -120,24 +128,33 @@ export async function listAssigneesByException(exceptionId: number, pageIndex: n
 export async function assignExceptionToEmployees(
   exceptionId: number,
   empCodes: string[],
-  assignedBy?: string
+  assignedBy?: string,
 ) {
   if (!empCodes.length) return { inserted: 0 };
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
     // ใช้ ON CONFLICT (unique partial index: uq_exception_assignment_active) กันซ้ำ active
     const sql = `
-      INSERT INTO public.exception_assignment (exception_id, emp_code, status, assigned_by)
-      SELECT $1, unnest($2::varchar[]), 'active', $3
-      ON CONFLICT ON CONSTRAINT uq_exception_assignment_active DO NOTHING
-      RETURNING assignment_id
+     
+INSERT INTO public.exception_assignment (exception_id, emp_code, status, assigned_by)
+  SELECT $1, unnest($2::varchar[]), 'active', $3
+  ON CONFLICT (exception_id, emp_code, status) DO NOTHING
+  RETURNING assignment_id
+
     `;
-    const res = await client.query(sql, [exceptionId, empCodes, assignedBy ?? null]);
-    await client.query('COMMIT');
-    return { inserted: res.rowCount ?? 0, assignmentIds: res.rows.map(r => r.assignment_id) };
+    const res = await client.query(sql, [
+      exceptionId,
+      empCodes,
+      assignedBy ?? null,
+    ]);
+    await client.query("COMMIT");
+    return {
+      inserted: res.rowCount ?? 0,
+      assignmentIds: res.rows.map((r) => r.assignment_id),
+    };
   } catch (e) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw e;
   } finally {
     client.release();
@@ -148,7 +165,7 @@ export async function revokeAssignments(
   exceptionId: number,
   empCodes: string[],
   revokedBy?: string,
-  reason?: string
+  reason?: string,
 ) {
   if (!empCodes.length) return { updated: 0 };
   const sql = `
@@ -161,6 +178,22 @@ export async function revokeAssignments(
       AND emp_code = ANY($2::varchar[])
       AND status = 'active'
   `;
-  const res = await pool.query(sql, [exceptionId, empCodes, revokedBy ?? null, reason ?? null]);
+  const res = await pool.query(sql, [
+    exceptionId,
+    empCodes,
+    revokedBy ?? null,
+    reason ?? null,
+  ]);
   return { updated: res.rowCount ?? 0 };
+}
+
+export async function listExceptionsSimple(limit = 10) {
+  const sql = `
+    SELECT exception_id, code, name, risk_level, is_active
+    FROM public.exception_list
+    ORDER BY exception_id DESC
+    LIMIT $1
+  `;
+  const res = await pool.query(sql, [limit]);
+  return res.rows;
 }

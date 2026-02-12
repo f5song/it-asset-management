@@ -4,13 +4,17 @@ import {
   getException,
   getExceptionAssignees,
   postAssign,
-  postRevoke
+  postRevoke,
+  getExceptionsSimple, // 👈 นำเข้าใหม่
 } from './exceptions.controller';
 
 export const exceptionsRouter = Router();
 
 // List + search + pagination + sorting
 exceptionsRouter.get('/', getExceptions);
+
+// ✅ Simple list สำหรับ test (ต้องมาก่อน /:id)
+exceptionsRouter.get('/simple', getExceptionsSimple);
 
 // Detail
 exceptionsRouter.get('/:id', getException);
