@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-
+import { getExceptionDefinitions } from "@/services/exceptions.service.mock";
 import type {
   ExceptionDefinition,
   PolicyStatus,

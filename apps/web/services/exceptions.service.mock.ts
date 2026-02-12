@@ -1,7 +1,14 @@
 // src/services/exceptions.service.mock.ts
-// Mock service สำหรับรายการคำขอ (Requests)
 
-import { RequestItem, RequestRisk } from "@/types/exception";
+import {
+  ExceptionAssignmentRow,
+  ExceptionDefinition,
+  PolicyStatus,
+  ExceptionDefinitionListQuery,
+  ExceptionDefinitionListResponse,
+  AssignEmployeeInput,
+  AssignOptions,
+} from "@/types/exception";
 
 /* ─────────────────────────────────────────────────────────────────────────────
  * Utilities
@@ -23,219 +30,197 @@ function sleep(ms: number, signal?: AbortSignal) {
   });
 }
 
-function pick<T>(arr: readonly T[]) {
-  return arr[Math.floor(Math.random() * arr.length)];
+function pad(n: number, len = 3) {
+  return n.toString().padStart(len, "0");
+}
+function iso(date: Date) {
+  return date.toISOString();
+}
+function addDays(d: Date, days: number) {
+  return new Date(d.getTime() + days * 24 * 60 * 60 * 1000);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
- * Filter options (ตามสเปคที่ให้มา)
+ * Mock Data
  * ────────────────────────────────────────────────────────────────────────────*/
+const STATUSES = ["Active", "Inactive"] as const satisfies readonly PolicyStatus[];
+const USER_PREFIX = ["jirawee", "qa", "dev", "ops", "hr", "fin"] as const;
 
-export const FILTER_OPTIONS = {
-  sites: [
-    "บริษัท บีอีซี แอสเซท จำกัด",
-    "บริษัท บีอีซี-มัลติมีเดีย จำกัด",
-    "บจก. บีอีซี ไอที โซลูชั่น",
-    "บจก. บีอีซีไอ คอร์ปอเรชั่น",
-    "บริษัท บางกอกเอ็นเตอร์เทนเม้นต์ จำกัด",
-    "บริษัท บีอีซี บรอดคาสติ้ง เซ็นเตอร์ จำกัด",
-    "บริษัท สำนักข่าว บีอีซี จำกัด",
-    "บริษัท บีอีซี เวิลด์ จำกัด (มหาชน)",
-  ] as const,
-  risks: ["Low", "Medium", "High"] as const,
-  exceptions: ["AD 90 : Password Policy", "LINE", "USB", "Generative AI"] as const,
-};
+const NAMES = [
+'AD 90 : Password Policy', 'LINE', 'USB', 'Generative AI'
+] as const;
 
-/* ─────────────────────────────────────────────────────────────────────────────
- * Mock data generators
- * ────────────────────────────────────────────────────────────────────────────*/
-
-function makeTitle(i: number) {
-  const apps = ["AD 90 : Password Policy", "LINE", "USB", "Generative AI"];
-  const acts = ["ขออนุมัติใช้งาน", "ขอเพิ่มสิทธิ์", "ขอติดตั้ง", "ขอเปลี่ยนเวอร์ชัน", "ขอยกเลิกสิทธิ์"];
-  return `${pick(apps)} - ${pick(acts)}`;
+function makeDates(idx: number) {
+  const created = addDays(new Date("2025-11-01T08:00:00Z"), idx);
+  const lastUpdated = addDays(created, idx % 5);
+  const reviewAt = addDays(created, ((idx % 3) + 1) * 30);
+  return { createdAt: iso(created), lastUpdated: iso(lastUpdated), reviewAt: iso(reviewAt) };
 }
 
-/** ชุดข้อมูล MOCK_REQUESTS ตามที่กำหนด (exception มีแค่ 4 ค่า ไม่ loop เพิ่มอย่างอื่น) */
-export const MOCK_REQUESTS: RequestItem[] = Array.from({ length: 1250 }).map((_, i) => {
-  const risk: RequestRisk = pick(["Low", "Medium", "High"]);
-  const site = pick(FILTER_OPTIONS.sites);
-  const exception = pick(FILTER_OPTIONS.exceptions);
-  const dueAt = new Date(Date.now() + (i % 30) * 24 * 60 * 60 * 1000).toISOString();
+/** แปลง employeeId เป็นชื่อโชว์แบบง่าย ๆ เช่น "dev.012" -> "Dev 012" */
+function toDisplayName(employeeId: string): string {
+  const [p1, p2] = employeeId.split(".");
+  return `${p1?.charAt(0).toUpperCase()}${p1?.slice(1)} ${p2}`;
+}
+
+/** Definitions (Catalog) — only 4 items (no loop 24) */
+const MOCK_DEFINITIONS: ExceptionDefinition[] = NAMES.map((name, i) => {
+  const idNum = i + 1;
+  const id = `EXC-${pad(idNum)}`;
+  const status = STATUSES[i % STATUSES.length];
+  const { createdAt, lastUpdated } = makeDates(i);
+  const total = (i % 7) + 3; // หรือจะ fix เลยก็ได้ เช่น total = 5;
 
   return {
-    id: 7300 + i,
-    title: makeTitle(i),
-    requester: "Puttaraporn Jitpranee",
-    department: pick([
-      "สำนักข่าว",
-      "สำนักออกอากาศ",
-      "สำนักตรวจสอบภายใน",
-      "สำนักไฟฟ้ากำลัง",
-      "สำนักเทคโนโลยีสารสนเทศ",
-      "สำนักเทคนิคโทรทัศน์",
-      "สำนักผังรายการ",
-      "สำนักกรรมการบริหาร",
-      "สำนักธุรกิจระหว่างประเทศ",
-      "สำนักการพาณิชย์",
-      "สำนักกิจการและสื่อสารองค์กร",
-      "สำนักบริหาร",
-      "สำนักดิจิทัลและกลยุทธ์สื่อใหม่",
-      "สำนักการตลาด",
-      "สำนักการเงินและบัญชี",
-      "สำนักบริหารทรัพยากร",
-      "สำนักผลิตรายการ",
-    ]),
-    site,
-    risk,
-    exception,
-    dueAt,
+    id,
+    name,
+    status,
+    risk: (["Low", "Medium", "High"] as const)[i % 3],
+    createdAt,
+    lastUpdated,
+    notes: "",
+    totalAssignments: total,
   };
 });
 
-/* ─────────────────────────────────────────────────────────────────────────────
- * Types: Query/Response สำหรับ list
- * ────────────────────────────────────────────────────────────────────────────*/
+/** Assignments per definition */
+const MOCK_ASSIGNMENTS: Record<string, ExceptionAssignmentRow[]> = {};
+for (const def of MOCK_DEFINITIONS) {
+  const total = def.totalAssignments ?? 0;
+  const rows: ExceptionAssignmentRow[] = [];
+  for (let i = 0; i < total; i++) {
+    const employeeId = `${USER_PREFIX[i % USER_PREFIX.length]}.${pad((i % 20) + 1)}`;
+    const employeeName = toDisplayName(employeeId);
+    const assignedAt = addDays(new Date(def.createdAt), i).toISOString();
 
-export type RequestListQuery = {
-  /** คีย์เวิร์ดค้นหา (title/requester/department/site/exception/id) */
-  search?: string;
-  /** กรองไซต์ */
-  site?: (typeof FILTER_OPTIONS.sites)[number];
-  /** กรองความเสี่ยง */
-  risk?: RequestRisk;
-  /** กรองประเภท exception (จำกัดที่ 4 ค่าเท่านั้น) */
-  exception?: (typeof FILTER_OPTIONS.exceptions)[number];
-
-  /** เรียงลำดับ */
-  sortBy?:
-    | "id"
-    | "title"
-    | "requester"
-    | "department"
-    | "site"
-    | "exception"
-    | "risk"
-    | "risk_priority"
-    | "dueAt";
-  sortOrder?: "asc" | "desc";
-
-  /** แบ่งหน้าแบบ 1-based */
-  page?: number; // default 1
-  pageSize?: number; // default 10
-};
-
-export type RequestListResponse = {
-  items: RequestItem[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-  totalPages: number;
-};
-
-/* ─────────────────────────────────────────────────────────────────────────────
- * Service APIs
- * ────────────────────────────────────────────────────────────────────────────*/
-
-/** GET /requests/:id */
-export async function getRequestById(id: string | number, signal?: AbortSignal): Promise<RequestItem | null> {
-  await sleep(80, signal);
-  const n = Number(id);
-  if (Number.isFinite(n)) {
-    return MOCK_REQUESTS.find((r) => r.id === n) ?? null;
+    rows.push({
+      id: `${def.id}-U-${pad(i + 1)}`,
+      definitionId: def.id,
+      employeeId,
+      employeeName,
+      department: ["IT", "HR", "FIN", "OPS"][i % 4],
+      notes: i % 2 === 0 ? "Demo assignment note" : null,
+      // assignedAt: assignedAt, // ถ้า type ของคุณมี field นี้สามารถเติมได้
+    });
   }
-  // ถ้าเป็น string อื่น ๆ ลองค้นใน title
-  const s = String(id);
-  return (
-    MOCK_REQUESTS.find((r) => r.title === s || String(r.id) === s) ?? null
-  );
+  MOCK_ASSIGNMENTS[def.id] = rows;
 }
 
-/** GET /requests (paged list with search/filter/sort) */
-export async function getRequests(q: RequestListQuery, signal?: AbortSignal): Promise<RequestListResponse> {
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Helpers (internal for assignment ops)
+ * ────────────────────────────────────────────────────────────────────────────*/
+function getDefinitionByIdLocal(definitionId: string | number): ExceptionDefinition | undefined {
+  return MOCK_DEFINITIONS.find((d) => String(d.id) === String(definitionId));
+}
+
+function nextAssignmentId(definitionId: string): string {
+  const rows = MOCK_ASSIGNMENTS[definitionId] ?? [];
+  // หาเลข running สูงสุดที่ท้าย id รูปแบบ "EXC-001-U-005" แล้ว +1
+  const maxIdx = rows.reduce((mx, r) => {
+    const m = /-U-(\d+)$/.exec(r.id);
+    const n = m ? parseInt(m[1], 10) : 0;
+    return Math.max(mx, n);
+  }, 0);
+  return `${definitionId}-U-${pad(maxIdx + 1)}`;
+}
+
+function updateDefinitionTotal(definitionId: string) {
+  const def = getDefinitionByIdLocal(definitionId);
+  if (def) {
+    def.totalAssignments = (MOCK_ASSIGNMENTS[definitionId] ?? []).length;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Service APIs (Definitions)
+ * ────────────────────────────────────────────────────────────────────────────*/
+
+/** GET /exceptions/:id */
+export async function getExceptionDefinitionById(
+  id: string | number,
+  signal?: AbortSignal,
+): Promise<ExceptionDefinition | null> {
+  await sleep(80, signal);
+  return MOCK_DEFINITIONS.find((e) => String(e.id) === String(id)) ?? null;
+}
+
+/** GET /exceptions (paged list with search/filter/sort) */
+export async function getExceptionDefinitions(
+  q: ExceptionDefinitionListQuery,
+  signal?: AbortSignal,
+): Promise<ExceptionDefinitionListResponse> {
   await sleep(150, signal);
 
-  let filtered = [...MOCK_REQUESTS];
+  let filtered = [...MOCK_DEFINITIONS];
 
-  // ----- search -----
+  // search
   const search = (q.search ?? "").trim();
   if (search) {
     filtered = filtered.filter(
-      (r) =>
-        includesCI(r.title, search) ||
-        includesCI(r.requester, search) ||
-        includesCI(r.department, search) ||
-        includesCI(r.site, search) ||
-        includesCI(r.exception, search) ||
-        includesCI(String(r.id), search),
+      (e) =>
+        includesCI(e.id, search) ||
+        includesCI(e.name, search) ||
+        includesCI(String(e.status), search),
     );
   }
 
-  // ----- filters -----
-  if (q.site) {
-    const s = String(q.site);
-    filtered = filtered.filter((r) => r.site === s);
-  }
-  if (q.risk) {
-    const s = String(q.risk);
-    filtered = filtered.filter((r) => r.risk === s);
-  }
-  if (q.exception) {
-    const s = String(q.exception);
-    filtered = filtered.filter((r) => r.exception === s);
+  // filters
+  if (q.status) {
+    const s = ci(q.status);
+    filtered = filtered.filter((e) => ci(e.status) === s);
   }
 
-  // ----- sort (global ก่อน paginate) -----
-  const dir = q.sortOrder === "desc" ? -1 : 1;
-  const sortBy = q.sortBy ?? "dueAt";
-
-  if (sortBy === "risk_priority") {
-    // เรียงตามความเสี่ยง: High -> Medium -> Low (สำหรับ desc)
-    const pr = new Map<RequestRisk, number>([
-      ["High", 0],
-      ["Medium", 1],
-      ["Low", 2],
+// ----- sort (GLOBAL ก่อน paginate) -----
+  if (q.sortBy === "status_priority" && !q.status /* All Status */) {
+    // Active -> Inactive -> else
+    const dir = q.sortOrder === "desc" ? -1 : 1;
+    const pr = new Map<string, number>([
+      ["active",   0],
+      ["inactive", 1],
     ]);
+
     filtered.sort((a, b) => {
-      const pa = pr.get(a.risk) ?? 999;
-      const pb = pr.get(b.risk) ?? 999;
+      const pa = pr.get(String(a.status).toLowerCase()) ?? 999;
+      const pb = pr.get(String(b.status).toLowerCase()) ?? 999;
       if (pa !== pb) return (pa - pb) * dir;
 
-      // secondary: dueAt asc
-      const da = new Date(a.dueAt).getTime();
-      const db = new Date(b.dueAt).getTime();
-      if (da !== db) return (da - db) * dir;
-
-      // tertiary: id asc
-      return (a.id - b.id) * dir;
+      // secondary: name asc ให้ลำดับอ่านง่ายและเสถียร
+      return String(a.name ?? "").localeCompare(String(b.name ?? ""), undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
     });
-  } else {
+  } else if (q.sortBy) {
+    const dir = q.sortOrder === "desc" ? -1 : 1;
+    const key = q.sortBy as keyof ExceptionDefinition;
+
     filtered.sort((a, b) => {
-      const A = (a as any)[sortBy];
-      const B = (b as any)[sortBy];
+      const A = (a[key] as any) ?? "";
+      const B = (b[key] as any) ?? "";
 
-      // number-aware
+      // เพิ่มความฉลาดเล็กน้อย: number/date-aware
       if (typeof A === "number" && typeof B === "number") return (A - B) * dir;
-
-      // date-aware (dueAt)
-      const da = new Date(A as any);
-      const db = new Date(B as any);
-      const aIsDate = !isNaN(da.valueOf());
-      const bIsDate = !isNaN(db.valueOf());
+      const da = new Date(A as any), db = new Date(B as any);
+      const aIsDate = !isNaN(da.valueOf()), bIsDate = !isNaN(db.valueOf());
       if (aIsDate && bIsDate) return (da.getTime() - db.getTime()) * dir;
 
-      // string compare
       return String(A).localeCompare(String(B), undefined, { numeric: true, sensitivity: "base" }) * dir;
     });
+  } else {
+    // default: name asc (ลดความสับสนจากการ default เป็น createdAt)
+    filtered.sort((a, b) =>
+      String(a.name ?? "").localeCompare(String(b.name ?? ""), undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }),
+    );
   }
 
-  // ----- pagination (1-based) -----
+  // pagination (OffsetPage<T>)
   const totalCount = filtered.length;
   const page = Math.max(1, Number(q.page ?? 1));
   const pageSize = Math.max(1, Number(q.pageSize ?? 10));
-  const start = (page - 1) * pageSize; // offset 0-based
+  const start = (page - 1) * pageSize;
   const items = filtered.slice(start, start + pageSize);
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
@@ -250,48 +235,210 @@ export async function getRequests(q: RequestListQuery, signal?: AbortSignal): Pr
   };
 }
 
-/** alias สำหรับสะดวกเรียกชื่ออื่นได้ */
-export async function listRequests(q: RequestListQuery, signal?: AbortSignal): Promise<RequestListResponse> {
-  return getRequests(q, signal);
-}
-
-/** helper: ดึง options (เช่นไปเติม dropdown) */
-export async function getRequestFilterOptions(signal?: AbortSignal) {
-  await sleep(60, signal);
-  return {
-    ...FILTER_OPTIONS,
-  };
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
- * Backward‑compatible aliases (สำหรับโค้ดเดิมที่ยังเรียกชื่อฟังก์ชันเก่า)
- * ────────────────────────────────────────────────────────────────────────────*/
-
-// ให้ type เดิมชี้ไปหา type ใหม่ (เพื่อให้ที่อื่น ๆ compile ผ่าน)
-export type ExceptionDefinitionListQuery = RequestListQuery;
-export type ExceptionDefinitionListResponse = RequestListResponse;
-
-// ถ้าโค้ดเดิมเรียกหา definition รายตัว
-export async function getExceptionDefinitionById(
-  id: string | number,
-  signal?: AbortSignal,
-) {
-  // map ไปใช้ request ตัวเดียวกัน
-  return getRequestById(id, signal);
-}
-
-// ฟังก์ชัน list เดิม → map ไปหา getRequests
-export async function getExceptionDefinitions(
-  q: ExceptionDefinitionListQuery,
-  signal?: AbortSignal,
-): Promise<ExceptionDefinitionListResponse> {
-  return getRequests(q, signal);
-}
-
-// alias ชื่อ listExceptionDefinitions (ถ้าโค้ดเดิมอ้างอิงชื่อนี้)
+/** alias ให้ฮุค/ส่วนที่เรียกชื่อ listExceptionDefinitions ใช้ต่อได้ */
 export async function listExceptionDefinitions(
   q: ExceptionDefinitionListQuery,
   signal?: AbortSignal,
 ): Promise<ExceptionDefinitionListResponse> {
-  return getRequests(q, signal);
+  return getExceptionDefinitions(q, signal);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Service APIs (Assignments per definition)
+ * ────────────────────────────────────────────────────────────────────────────*/
+
+/** GET /exceptions/:id/assignments */
+export async function getExceptionAssignmentsByDefinitionId(
+  id: string,
+  signal?: AbortSignal,
+): Promise<ExceptionAssignmentRow[]> {
+  await sleep(120, signal);
+  return [...(MOCK_ASSIGNMENTS[id] ?? [])];
+}
+
+/**
+ * POST /exceptions/:definitionId/assign
+ * เพิ่ม assignment ให้ definition ตามรายการ employee ที่ส่งมา
+ * - กันซ้ำด้วย employeeId
+ * - อัปเดต totalAssignments ใน definition
+ * - รองรับตัวเลือกการ merge notes / อัปเดตชื่อ‑แผนก
+ */
+export async function assignExceptionsToEmployees(
+  definitionId: string,
+  employees: AssignEmployeeInput[],
+  options?: AssignOptions,
+  signal?: AbortSignal,
+): Promise<{
+  added: number;
+  updated: number;
+  skipped: number;
+  rows: ExceptionAssignmentRow[];
+}> {
+  await sleep(150, signal);
+
+  const rows = (MOCK_ASSIGNMENTS[definitionId] ??= []);
+  const byEmp = new Map<string, ExceptionAssignmentRow>(rows.map((r) => [r.employeeId, r]));
+
+  const opt: Required<AssignOptions> = {
+    skipIfExists: options?.skipIfExists ?? true,
+    upsertNameAndDept: options?.upsertNameAndDept ?? true,
+    noteStrategy: options?.noteStrategy ?? "keep-existing",
+    noteAppendSeparator: options?.noteAppendSeparator ?? " | ",
+  };
+
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const emp of employees) {
+    if (!emp?.employeeId) continue;
+
+    const exists = byEmp.get(emp.employeeId);
+    if (exists) {
+      if (opt.skipIfExists) {
+        skipped += 1;
+        continue;
+      }
+      // อัปเดตข้อมูลเดิม
+      if (opt.upsertNameAndDept) {
+        if (emp.employeeName) exists.employeeName = emp.employeeName;
+        if (emp.department) exists.department = emp.department;
+      }
+      if (emp.notes != null) {
+        if (opt.noteStrategy === "replace") {
+          exists.notes = emp.notes;
+        } else if (opt.noteStrategy === "append") {
+          const cur = exists.notes ?? "";
+          exists.notes = cur ? `${cur}${opt.noteAppendSeparator}${emp.notes}` : emp.notes;
+        }
+        // keep-existing -> ไม่ทำอะไร
+      }
+      updated += 1;
+      continue;
+    }
+
+    // เพิ่มใหม่
+    const id = nextAssignmentId(definitionId);
+    const row: ExceptionAssignmentRow = {
+      id,
+      definitionId,
+      employeeId: emp.employeeId,
+      employeeName: emp.employeeName ?? toDisplayName(emp.employeeId),
+      department: emp.department ?? "-",
+      notes: emp.notes ?? null,
+    };
+    rows.push(row);
+    byEmp.set(emp.employeeId, row);
+    added += 1;
+  }
+
+  // อัปเดต totalAssignments ของ definition นี้
+  updateDefinitionTotal(definitionId);
+
+  return {
+    added,
+    updated,
+    skipped,
+    rows: [...rows],
+  };
+}
+
+/**
+ * DELETE /exceptions/:definitionId/assign
+ * เอา assignment ออกตาม employeeId ที่ระบุ
+ * - อัปเดต totalAssignments
+ */
+export async function unassignExceptionsFromEmployees(
+  definitionId: string,
+  employeeIds: string[],
+  signal?: AbortSignal,
+): Promise<{ removed: number; rows: ExceptionAssignmentRow[] }> {
+  await sleep(120, signal);
+
+  const before = MOCK_ASSIGNMENTS[definitionId] ?? [];
+  const removeSet = new Set(employeeIds.map(String));
+  const after = before.filter((r) => !removeSet.has(String(r.employeeId)));
+
+  MOCK_ASSIGNMENTS[definitionId] = after;
+  updateDefinitionTotal(definitionId);
+
+  return { removed: before.length - after.length, rows: [...after] };
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Extra helper: active definitions for checkbox/list
+ * ────────────────────────────────────────────────────────────────────────────*/
+
+/** ดึง ExceptionDefinitions ทั้งหมดที่สถานะ Active (เรียงตามชื่อ) */
+export async function getActiveExceptionDefinitions(
+  signal?: AbortSignal,
+): Promise<ExceptionDefinition[]> {
+  await sleep(80, signal); // mock latency
+
+  // กรอง Active แล้วเรียงชื่อ
+  const active = MOCK_DEFINITIONS
+    .filter((d) => String(d.status).toLowerCase() === "active")
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+
+  // คืนสำเนาเพื่อกัน mutate จากภายนอก
+  return active.map((d) => ({ ...d }));
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Wrap สำหรับหน้า Form: assignException({ definitionId, employeeIds, ... })
+ * ────────────────────────────────────────────────────────────────────────────*/
+
+/**
+ * assignException: สำหรับหน้าแบบฟอร์มที่ส่ง definitionId + employeeIds
+ * - ไม่แตะ service เดิม แค่ wrap ไปที่ assignExceptionsToEmployees
+ * - เก็บ signature effectiveDate/expiresAt ไว้ เผื่อ backend จริงใช้งาน
+ */
+export async function assignException(
+  args: {
+    definitionId: string | number;
+    employeeIds: string[];
+    effectiveDate?: string;
+    expiresAt?: string;
+    notes?: string;
+  },
+  signal?: AbortSignal,
+): Promise<{
+  ok: boolean;
+  assignedCount: number; // added + updated
+  definitionId: string;
+  added: number;
+  updated: number;
+  skipped: number;
+}> {
+  const { definitionId, employeeIds, notes } = args ?? {};
+  if (!definitionId) throw new Error("definitionId is required");
+  if (!Array.isArray(employeeIds) || employeeIds.length === 0) {
+    throw new Error("employeeIds is required");
+  }
+
+  // map employeeIds -> payload ตาม signature เดิม
+  const employeesPayload: AssignEmployeeInput[] = employeeIds.map((id) => ({
+    employeeId: String(id),
+    notes: (notes?.trim() || null) ?? null,
+  }));
+
+  const res = await assignExceptionsToEmployees(
+    String(definitionId),
+    employeesPayload,
+    {
+      skipIfExists: true,                        // ถ้ามีแล้วให้ข้าม
+      upsertNameAndDept: true,                   // อัปเดตชื่อ/แผนกถ้าส่งมา (ตอนนี้ไม่ได้ส่ง)
+      noteStrategy: notes?.trim() ? "append" : "keep-existing",
+    },
+    signal,
+  );
+
+  return {
+    ok: true,
+    assignedCount: (res.added ?? 0) + (res.updated ?? 0),
+    definitionId: String(definitionId),
+    added: res.added ?? 0,
+    updated: res.updated ?? 0,
+    skipped: res.skipped ?? 0,
+  };
 }
