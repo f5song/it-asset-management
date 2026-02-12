@@ -130,28 +130,56 @@ export async function assignExceptionToEmployees(
   empCodes: string[],
   assignedBy?: string,
 ) {
-  if (!empCodes.length) return { inserted: 0 };
+  if (!empCodes.length) return { inserted: 0, reactivated: 0 };
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    // ใช้ ON CONFLICT (unique partial index: uq_exception_assignment_active) กันซ้ำ active
-    const sql = `
-     
-INSERT INTO public.exception_assignment (exception_id, emp_code, status, assigned_by)
-  SELECT $1, unnest($2::varchar[]), 'active', $3
-  ON CONFLICT (exception_id, emp_code, status) DO NOTHING
-  RETURNING assignment_id
 
+    // 1) Reactivate กรณีเคย revoke มาก่อน
+    const sqlReactivate = `
+      UPDATE public.exception_assignment
+      SET status = 'active',
+          assigned_at = now(),
+          assigned_by = COALESCE($3, assigned_by),
+          revoked_at = NULL,
+          revoked_by = NULL,
+          revoke_reason = NULL
+      WHERE exception_id = $1
+        AND emp_code = ANY($2::varchar[])
+        AND status = 'revoked'
+      RETURNING assignment_id;
     `;
-    const res = await client.query(sql, [
+    const reactRes = await client.query(sqlReactivate, [
       exceptionId,
       empCodes,
       assignedBy ?? null,
     ]);
+
+    // 2) Insert ใหม่เฉพาะคนที่ยังไม่เคยมีแถวมาก่อน
+    const sqlInsert = `
+      INSERT INTO public.exception_assignment
+        (exception_id, emp_code, status, assigned_by)
+      SELECT $1, unnest($2::varchar[]), 'active', $3
+      ON CONFLICT (exception_id, emp_code, status)
+      DO NOTHING
+      RETURNING assignment_id;
+    `;
+    const insertRes = await client.query(sqlInsert, [
+      exceptionId,
+      empCodes,
+      assignedBy ?? null,
+    ]);
+
     await client.query("COMMIT");
+
     return {
-      inserted: res.rowCount ?? 0,
-      assignmentIds: res.rows.map((r) => r.assignment_id),
+      inserted: insertRes.rowCount ?? 0,
+      reactivated: reactRes.rowCount ?? 0,
+      assignmentIds: [
+        ...reactRes.rows.map((r) => r.assignment_id),
+        ...insertRes.rows.map((r) => r.assignment_id),
+      ],
     };
   } catch (e) {
     await client.query("ROLLBACK");
@@ -168,6 +196,7 @@ export async function revokeAssignments(
   reason?: string,
 ) {
   if (!empCodes.length) return { updated: 0 };
+
   const sql = `
     UPDATE public.exception_assignment
     SET status = 'revoked',
@@ -178,12 +207,14 @@ export async function revokeAssignments(
       AND emp_code = ANY($2::varchar[])
       AND status = 'active'
   `;
+
   const res = await pool.query(sql, [
     exceptionId,
     empCodes,
     revokedBy ?? null,
     reason ?? null,
   ]);
+
   return { updated: res.rowCount ?? 0 };
 }
 
