@@ -219,7 +219,6 @@ export default function RequestsView(props: Props) {
           onSortingChange={setSorting}
           clientSideSort
           // selection (checkbox หน้า/แถว)
-          selectable
           selectedIds={selectedIds}
           onSelectionChange={setSelectedIds}
           selectionScope="page"
