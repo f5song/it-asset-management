@@ -1,25 +1,17 @@
 import 'dotenv/config';
 
-const pick = (a?: string, b?: string) => a ?? b;
-
 export const env = {
+  PORT: +(process.env.PORT ?? 3000),
   NODE_ENV: process.env.NODE_ENV ?? 'development',
-  PORT: Number(process.env.PORT ?? '4000'),
 
-  // รองรับทั้ง PG_* และ DB_* เพื่อความยืดหยุ่น
-  PGHOST: pick(process.env.PGHOST, process.env.DB_HOST),
-  PGPORT: Number(pick(process.env.PGPORT, process.env.DB_PORT) ?? '5432'),
-  PGDATABASE: pick(process.env.PGDATABASE, process.env.DB_NAME),
-  PGUSER: pick(process.env.PGUSER, process.env.DB_USER),
-  PGPASSWORD: pick(process.env.PGPASSWORD, process.env.DB_PASSWORD),
+  DB_HOST: process.env.DB_HOST ?? 'localhost',
+  DB_PORT: +(process.env.DB_PORT ?? 5432),
+  DB_USER: process.env.DB_USER ?? 'postgres',
+  DB_PASSWORD: process.env.DB_PASSWORD ?? '',
+  DB_NAME: process.env.DB_NAME ?? 'app_db',
 
-  // รองรับ DATABASE_URL (สำหรับไลบรารีที่อ่าน connection string ได้)
-  DATABASE_URL: process.env.DATABASE_URL,
+  DB_POOL_MAX: +(process.env.DB_POOL_MAX ?? 10),
+  DB_SSL: (process.env.DB_SSL ?? 'false') === 'true',
+
+  TZ: process.env.TZ ?? '+07:00',
 };
-
-// ถ้าไม่มี DATABASE_URL ให้บังคับว่าชุดค่าต้องครบ
-if (!env.DATABASE_URL) {
-  ['PGHOST', 'PGDATABASE', 'PGUSER', 'PGPASSWORD'].forEach((k) => {
-    if (!(env as any)[k]) throw new Error(`Missing env: ${k}`);
-  });
-}
