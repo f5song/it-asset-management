@@ -1,48 +1,20 @@
-/** @type {import('next').NextConfig} */
-const isDev = process.env.NODE_ENV !== 'production';
+// next.config.mjs
+const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 const nextConfig = {
-  reactStrictMode: true,
+  output: 'standalone',
+  // (แนะนำ) ลองตัดการตั้งค่า turbopack ออกชั่วคราวให้เรียบที่สุดก่อน
+  // turbopack: { root: path.resolve(__dirname, '../../') },
 
   async rewrites() {
-    if (!isDev) {
-      // ไม่เปิด proxy ใน production ตามที่คุณต้องการ
-      return [];
-    }
-
-    const prefix = process.env.NEXT_PUBLIC_API_PREFIX || '/backend';
-    const target = process.env.BACKEND_BASE_URL;
-
-    if (!target) {
-      console.warn('BACKEND_BASE_URL not set – dev proxy rewrites disabled.');
-      return [];
-    }
-
-    return [
-      // /backend/* → http://localhost:8000/*
-      {
-        source: `${prefix}/:path*`,
-        destination: `${target}/:path*`,
-      },
-    ];
-  },
-
-  async headers() {
-    // หากต้องการ CORS header ใน dev (ส่วนใหญ่ไม่จำเป็นเพราะใช้ proxy)
-    // คุณสามารถเปิดด้านล่างได้
-    // const prefix = process.env.NEXT_PUBLIC_API_PREFIX || '/backend';
-    // return [
-    //   {
-    //     source: `${prefix}/:path*`,
-    //     headers: [
-    //       { key: 'Access-Control-Allow-Origin', value: '*' },
-    //       { key: 'Access-Control-Allow-Headers', value: 'Authorization, Content-Type' },
-    //       { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE,OPTIONS' },
-    //     ],
-    //   },
-    // ];
-    return [];
+    return {
+      beforeFiles: [
+        { source: '/backend/:path*', destination: `${base}/:path*` },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
