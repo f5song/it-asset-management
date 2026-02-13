@@ -9,7 +9,7 @@ import type {
 } from "@/types/exception";
 import type { ServerQuery } from "@/types/server-query";
 import { toUndefTrim } from "@/lib/filters";
-import { listExceptionDefinitions } from "@/services/exceptions.service.mock";
+import { listExceptionDefinitions } from "@/services/exceptions.service";
 
 
 type Result = {

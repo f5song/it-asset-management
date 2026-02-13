@@ -23,7 +23,7 @@ import {
   toSimpleFilters,
 } from "@/lib/mappers/employeeFilterMappers";
 import { useActiveExceptionDefinitions } from "@/hooks/useActiveExceptionDefinitions";
-import { assignExceptionsToEmployees } from "@/services/exceptions.service.mock";
+import { assignExceptionsToEmployees } from "@/services/exceptions.service";
 import EmployeeFilterBar from "@/components/filters/EmployeeFilterBar";
 // ถ้ามี hook เดี่ยว ใช้ตัวนี้แทน (แนะนำ)
 // import { useExceptionDefinition } from "@/hooks/useExceptionDefinition";
@@ -69,11 +69,7 @@ export default function AssignEmployeeExceptionsPage() {
     setDomainFilters,
     toSimple: (df) => toSimpleFilters(df),
     fromSimple: (sf) => toDomainFilters(sf),
-    resetDeps: [
-      domainFilters.status,
-      domainFilters.type,
-      domainFilters.search,
-    ],
+    resetDeps: [domainFilters.status, domainFilters.type, domainFilters.search],
   });
 
   // ⭐ เพิ่มตรงนี้ใน AssignEmployeeExceptionsPage
@@ -141,33 +137,6 @@ export default function AssignEmployeeExceptionsPage() {
     setLastMsg(null);
 
     try {
-      // เตรียม payload ให้ตรงกับ signature ของ service (ต่อ definition, หลาย employee)
-      const employeesPayload = selectedEmployeeIds.map((id) => ({
-        employeeId: id,
-        // ถ้าต้องการแนบชื่อ/แผนก ส่งเพิ่มตรงนี้ได้ เช่น employeeName, department
-        notes: note.trim() || null,
-      }));
-
-      const res = await assignExceptionsToEmployees(
-        String(exceptionId),
-        employeesPayload,
-        {
-          // พฤติกรรมที่ใช้บ่อย: ถ้ามีอยู่แล้วให้ข้าม (ไม่ error)
-          skipIfExists: true,
-          // อัปเดตชื่อ/แผนกถ้าส่งมา (โค้ดนี้เราไม่ได้ส่ง ก็ไม่กระทบ)
-          upsertNameAndDept: true,
-          // ถ้าพิมพ์ note ใหม่ ให้ append ต่อท้าย (เปลี่ยนเป็น "replace" ได้ถ้าต้องการ)
-          noteStrategy: note.trim() ? "append" : "keep-existing",
-        },
-      );
-
-      const assignedCount = (res?.added ?? 0) + (res?.updated ?? 0);
-
-      setLastMsg(
-        `Assigned ${assignedCount} employee(s) → [${String(exceptionId)}] สำเร็จ ` +
-          `(added ${res?.added ?? 0}, updated ${res?.updated ?? 0}, skipped ${res?.skipped ?? 0})`,
-      );
-
       setSelectedEmployeeIds([]); // reset selection
     } catch (e: any) {
       setLastMsg(e?.message ?? "Assign ล้มเหลว (unknown error)");

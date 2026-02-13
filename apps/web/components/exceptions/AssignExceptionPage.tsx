@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { EmployeeItem } from "@/types";
 import { searchEmployees } from "@/services/employees.service.mock";
-import { assignException } from "@/services/exceptions.service.mock";
+import { assignException } from "@/services/exceptions.service";
 import { fullName } from "@/lib/name";
 
 type Props = {

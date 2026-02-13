@@ -1,5 +1,5 @@
 // src/services/exceptions.service.ts
-// Service จริง: เรียก Express API ตาม routes ที่ให้มา
+// Frontend service (Next.js) เรียก Backend Express ตามเส้นทางจริง
 
 import {
   ExceptionAssignmentRow,
@@ -8,10 +8,19 @@ import {
   ExceptionDefinitionListQuery,
   ExceptionDefinitionListResponse,
   AssignEmployeeInput,
-  AssignOptions,
+  // AssignOptions, // ไม่ใช้แล้วใน payload ส่งไป backend
 } from "@/types/exception";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
+/**
+ * ตั้งค่า base URL ของ API
+ * - ใส่ใน .env.local: NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+ * - จากนั้นเราจะต่อท้ายด้วย /exceptions เอง
+ */
+
+// ✅ ใช้ relative path ภายใต้ prefix ที่ rewrite ไว้
+const EXC_BASE = '/backend/exceptions';
+
+// ตัวอย่าง
 
 /* ─────────────────────────────────────────────────────────────────────────────
  * Utilities
@@ -28,10 +37,10 @@ function qs(params: Record<string, any>) {
 
 async function http<T>(
   input: RequestInfo,
-  init?: RequestInit & { parse?: "json" | "text" | "void" }
+  init?: RequestInit & { parse?: "json" | "text" | "void" },
 ): Promise<T> {
   const res = await fetch(input, {
-    credentials: "include", // ถ้ามี session/cookie ให้คงไว้
+    credentials: "include",
     headers: {
       Accept: "application/json",
       ...(init?.headers || {}),
@@ -39,7 +48,6 @@ async function http<T>(
     ...init,
   });
   if (!res.ok) {
-    // พยายามดึงข้อความผิดพลาดเพื่อ debuggable
     let msg = `HTTP ${res.status}`;
     try {
       const text = await res.text();
@@ -48,8 +56,8 @@ async function http<T>(
     throw new Error(msg);
   }
   const parse = init?.parse ?? "json";
-  if (parse === "json") return (res.json() as unknown) as T;
-  if (parse === "text") return (res.text() as unknown) as T;
+  if (parse === "json") return res.json() as unknown as T;
+  if (parse === "text") return res.text() as unknown as T;
   return undefined as unknown as T;
 }
 
@@ -57,29 +65,29 @@ async function http<T>(
  * Service APIs (Definitions)
  * ────────────────────────────────────────────────────────────────────────────*/
 
-/** GET /exceptions/:id */
+/** GET /exceptions/:id  (รองรับมี/ไม่มี trailing slash) */
 export async function getExceptionDefinitionById(
   id: string | number,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<ExceptionDefinition | null> {
-  const url = `${API_BASE_URL}/exceptions/${encodeURIComponent(String(id))}`;
+  const url = `${EXC_BASE}/${encodeURIComponent(String(id))}`;
   const data = await http<ExceptionDefinition>(url, { signal });
   return data ?? null;
 }
 
 /**
  * GET /exceptions (paged list with search/filter/sort)
- * - รับ query เดียวกับ mock: page(1-based), pageSize, sortBy, sortOrder, search, status
- * - รองรับ response ได้หลายรูปแบบ (items/data + totalCount/total/pagination.total)
+ * - Backend ใช้ 1-based: pageIndex, pageSize
+ * - sort ใช้รูปแบบ: ?sort=exception_id:desc
+ * - isActive=true/false
  */
-
 export async function getExceptionDefinitions(
   q: ExceptionDefinitionListQuery,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<ExceptionDefinitionListResponse> {
-  // 🔁 Map เป็น query ที่ backend ต้องการจริง
+  // map → query ที่ backend ต้องการ (1‑based)
   const query = {
-    pageIndex: Math.max(0, (q.page ?? 1) - 1),                // 0-based
+    pageIndex: q.page ?? 1, // 1-based
     pageSize: q.pageSize ?? 10,
     sort: q.sortBy ? `${q.sortBy}:${q.sortOrder ?? "asc"}` : undefined,
     isActive:
@@ -89,34 +97,37 @@ export async function getExceptionDefinitions(
     search: q.search,
   };
 
-  const url = `${API_BASE_URL}/exceptions${qs(query)}`;
+  const url = `${EXC_BASE}${qs(query)}`;
   const res = await http<any>(url, { signal });
 
-  // 🌐 Map กลับเป็น format เดิมที่ Hook ใช้ได้
+  // รองรับ response shape หลายแบบ
   const items: ExceptionDefinition[] = res.items ?? res.data ?? [];
   const totalCount =
-    res.totalCount ?? res.pagination?.total ?? res.total ?? items.length;
+    res.total ?? res.totalCount ?? res.pagination?.total ?? items.length;
 
-  const page = (res.pageIndex ?? query.pageIndex ?? 0) + 1; // convert กลับเป็น 1-based
-  const pageSize = res.pageSize ?? query.pageSize ?? 10;
-  const totalPages = Math.max(1, Math.ceil(Number(totalCount) / Number(pageSize)));
+  // เมทาดาต้า — backend เราส่ง 1‑based กลับมาแล้ว (ถ้ามี)
+  const page = Number(res.pageIndex ?? query.pageIndex ?? 1);
+  const pageSize = Number(res.pageSize ?? query.pageSize ?? 10);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(Number(totalCount) / Math.max(1, Number(pageSize))),
+  );
 
   return {
     items,
     totalCount: Number(totalCount),
-    page: Number(page),
-    pageSize: Number(pageSize),
+    page,
+    pageSize,
     hasNext: page < totalPages,
     hasPrev: page > 1,
     totalPages,
   };
 }
 
-
-/** alias (คงไว้ให้ส่วนอื่นที่เรียกชื่อ list... ใช้ต่อได้) */
+/** alias (คงชื่อเดิมให้ส่วนอื่นเรียกต่อได้) */
 export async function listExceptionDefinitions(
   q: ExceptionDefinitionListQuery,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<ExceptionDefinitionListResponse> {
   return getExceptionDefinitions(q, signal);
 }
@@ -126,65 +137,94 @@ export async function listExceptionDefinitions(
  * ────────────────────────────────────────────────────────────────────────────*/
 
 /**
- * GET /exceptions/:id/assignees
- * หมายเหตุ: mock ใช้คำว่า "assignments" แต่ backend ใช้ "assignees"
+ * GET /exceptions/:id/assignees?pageIndex=1&pageSize=10
+ * - Backend คืนแบบ paged ({ items, total, pageIndex, pageSize, ... })
+ * - ฟังก์ชันนี้ยังคงคืนเป็น array (backward-compatible)
+ * - ถ้าต้องการ metadata ให้ใช้ getExceptionAssignmentsPage ด้านล่างแทน
  */
 export async function getExceptionAssignmentsByDefinitionId(
-  id: string,
-  signal?: AbortSignal
+  id: string | number,
+  opts?: { page?: number; pageSize?: number },
+  signal?: AbortSignal,
 ): Promise<ExceptionAssignmentRow[]> {
-  const url = `${API_BASE_URL}/exceptions/${encodeURIComponent(id)}/assignees`;
+  const query = {
+    pageIndex: opts?.page ?? 1,
+    pageSize: opts?.pageSize ?? 20,
+  };
+  const url = `${EXC_BASE}/${encodeURIComponent(String(id))}/assignees${qs(
+    query,
+  )}`;
+
   const res = await http<any>(url, { signal });
-  // รองรับทั้ง array ตรง ๆ หรือ { data: [...] }
+  // รองรับทั้ง array ตรง ๆ หรือ { items: [...] }
   return Array.isArray(res) ? res : (res?.items ?? res?.data ?? []);
 }
 
-/**
- * POST /exceptions/:definitionId/assign
- * @payload รูปแบบที่แนะนำให้ backend รองรับ:
- *   { employees: AssignEmployeeInput[], options?: AssignOptions }
- * - ถ้า backend ใช้ชื่อ field ต่างกัน ให้ปรับ map ตรงนี้
- */
-export async function assignExceptionsToEmployees(
-  definitionId: string,
-  employees: AssignEmployeeInput[],
-  options?: AssignOptions,
-  signal?: AbortSignal
+/** เวอร์ชันที่คืน metadata ครบ */
+export async function getExceptionAssignmentsPage(
+  id: string | number,
+  opts?: { page?: number; pageSize?: number },
+  signal?: AbortSignal,
 ): Promise<{
-  added: number;
-  updated: number;
-  skipped: number;
-  rows: ExceptionAssignmentRow[];
+  items: ExceptionAssignmentRow[];
+  total: number;
+  page: number; // 1-based
+  pageSize: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
 }> {
-  const url = `${API_BASE_URL}/exceptions/${encodeURIComponent(definitionId)}/assign`;
-  const body = JSON.stringify({ employees, options });
-  const res = await http<any>(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
-    signal,
-  });
+  const query = {
+    pageIndex: opts?.page ?? 1,
+    pageSize: opts?.pageSize ?? 20,
+  };
+  const url = `${EXC_BASE}/${encodeURIComponent(String(id))}/assignees${qs(
+    query,
+  )}`;
 
-  // ปรับ map เผื่อ backend คืนโครงต่างกัน
+  const res = await http<any>(url, { signal });
+  const items: ExceptionAssignmentRow[] = res.items ?? res.data ?? [];
+  const total = Number(res.total ?? items.length);
+  const page = Number(res.pageIndex ?? query.pageIndex ?? 1);
+  const pageSize = Number(res.pageSize ?? query.pageSize ?? 20);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(Number(total) / Math.max(1, Number(pageSize))),
+  );
+
   return {
-    added: Number(res?.added ?? 0),
-    updated: Number(res?.updated ?? 0),
-    skipped: Number(res?.skipped ?? 0),
-    rows: (res?.rows as ExceptionAssignmentRow[]) ?? [],
+    items,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrev: page > 1,
   };
 }
 
 /**
- * POST /exceptions/:definitionId/revoke
- * @payload ที่แนะนำ: { employeeIds: string[] }
+ * POST /exceptions/:exceptionId/assign
+ * Backend payload (ตาม controller ของคุณ): { empCodes: string[], assignedBy?: string }
+ * - เปลี่ยนจากของเดิมที่เคยส่ง { employees, options }
  */
-export async function unassignExceptionsFromEmployees(
-  definitionId: string,
-  employeeIds: string[],
-  signal?: AbortSignal
-): Promise<{ removed: number; rows: ExceptionAssignmentRow[] }> {
-  const url = `${API_BASE_URL}/exceptions/${encodeURIComponent(definitionId)}/revoke`;
-  const body = JSON.stringify({ employeeIds });
+export async function assignExceptionsToEmployees(
+  exceptionId: string | number,
+  empCodes: string[],
+  assignedBy?: string,
+  signal?: AbortSignal,
+): Promise<{
+  inserted?: number;
+  reactivated?: number;
+  assignmentIds?: (number | string)[];
+}> {
+  if (!Array.isArray(empCodes) || empCodes.length === 0) {
+    throw new Error("empCodes is required (non-empty array)");
+  }
+
+  const url = `${EXC_BASE}/${encodeURIComponent(String(exceptionId))}/assign`;
+  const body = JSON.stringify({ empCodes, assignedBy });
+
   const res = await http<any>(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -192,10 +232,44 @@ export async function unassignExceptionsFromEmployees(
     signal,
   });
 
+  // map ผลลัพธ์ตาม backend ของคุณ
   return {
-    removed: Number(res?.removed ?? 0),
-    rows: (res?.rows as ExceptionAssignmentRow[]) ?? [],
+    inserted: Number(res?.inserted ?? 0),
+    reactivated: Number(res?.reactivated ?? 0),
+    assignmentIds: res?.assignmentIds ?? [],
   };
+}
+
+/**
+ * POST /exceptions/:exceptionId/revoke
+ * Backend payload: { empCodes: string[], revokedBy?: string, reason?: string }
+ */
+export async function unassignExceptionsFromEmployees(
+  exceptionId: string | number,
+  empCodes: string[],
+  opts?: { revokedBy?: string; reason?: string },
+  signal?: AbortSignal,
+): Promise<{ removed: number }> {
+  if (!Array.isArray(empCodes) || empCodes.length === 0) {
+    throw new Error("empCodes is required (non-empty array)");
+  }
+
+  const url = `${EXC_BASE}/${encodeURIComponent(String(exceptionId))}/revoke`;
+  const body = JSON.stringify({
+    empCodes,
+    revokedBy: opts?.revokedBy ?? undefined,
+    reason: opts?.reason ?? undefined,
+  });
+
+  const res = await http<any>(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+    signal,
+  });
+
+  // backend คืน { updated: number } → map เป็น removed
+  return { removed: Number(res?.updated ?? 0) };
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -204,90 +278,82 @@ export async function unassignExceptionsFromEmployees(
 
 /**
  * ดึง ExceptionDefinitions ที่สถานะ Active (เรียงตามชื่อ)
- * - ไม่มี endpoint เฉพาะ จึงเรียก /exceptions ด้วย status=Active & pageSize ใหญ่ ๆ
- * - ถ้า backend มี /exceptions/simple ก็สามารถเปลี่ยนมาเรียกตรงนั้นได้
+ * - เรียก /exceptions ด้วย isActive=true & pageSize ใหญ่ ๆ
+ * - ถ้ามี /exceptions/simple ก็สลับไปใช้ได้
  */
 export async function getActiveExceptionDefinitions(
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<ExceptionDefinition[]> {
   const res = await getExceptionDefinitions(
     {
       page: 1,
       pageSize: 1000,
-      status: "Active" as PolicyStatus,
+      status: "Active" as PolicyStatus, // map → isActive=true ภายใน
       sortBy: "name",
       sortOrder: "asc",
     },
-    signal
+    signal,
   );
 
-  // sort name asc เพื่อความชัดเจน (เผื่อฝั่ง backend ไม่เรียง)
   const items = (res.items ?? []).slice().sort((a, b) =>
     String(a.name ?? "").localeCompare(String(b.name ?? ""), undefined, {
       sensitivity: "base",
       numeric: true,
-    })
+    }),
   );
   return items;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
- * Wrap สำหรับหน้า Form: assignException({ definitionId, employeeIds, ... })
+ * Wrapper (Form): assignException({ definitionId, employeeIds, ... })
  * ────────────────────────────────────────────────────────────────────────────*/
 
 /**
  * assignException: สำหรับหน้าแบบฟอร์มที่ส่ง definitionId + employeeIds
- * - map ไปเป็น payload ของ assignExceptionsToEmployees
- * - notes จะ append ตาม options ในฝั่ง backend ถ้ามี
+ * - map → payload ของ backend: { empCodes }
  */
 export async function assignException(
   args: {
     definitionId: string | number;
     employeeIds: string[];
-    effectiveDate?: string;
-    expiresAt?: string;
-    notes?: string;
+    assignedBy?: string; // เพิ่มช่องทางส่งผู้ทำรายการ
+    effectiveDate?: string; // (unused) สำหรับ backend รุ่นถัดไป
+    expiresAt?: string; // (unused)
+    notes?: string; // (unused)
   },
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<{
   ok: boolean;
-  assignedCount: number; // added + updated
+  assignedCount: number; // inserted + reactivated
   definitionId: string;
-  added: number;
-  updated: number;
-  skipped: number;
+  added: number; // alias inserted
+  updated: number; // alias reactivated
+  skipped: number; // 0 (ไม่มีใน backend ปัจจุบัน)
 }> {
-  const { definitionId, employeeIds, notes } = args ?? {};
+  const { definitionId, employeeIds, assignedBy } = args ?? {};
   if (!definitionId) throw new Error("definitionId is required");
   if (!Array.isArray(employeeIds) || employeeIds.length === 0) {
     throw new Error("employeeIds is required");
   }
 
-  const employeesPayload: AssignEmployeeInput[] = employeeIds.map((id) => ({
-    employeeId: String(id),
-    // ส่ง notes เข้าไปที่แต่ละคน (ถ้า backend รองรับ)
-    notes: (notes?.trim() || null) ?? null,
-  }));
+  const empCodes = employeeIds.map((id) => String(id));
 
   const res = await assignExceptionsToEmployees(
     String(definitionId),
-    employeesPayload,
-    // ส่ง options ให้ backend ถ้ารองรับ (คุณปรับที่ controller ได้)
-    {
-      skipIfExists: true,
-      upsertNameAndDept: true,
-      noteStrategy: notes?.trim() ? "append" : "keep-existing",
-      noteAppendSeparator: " | ",
-    },
-    signal
+    empCodes,
+    assignedBy,
+    signal,
   );
+
+  const added = Number(res.inserted ?? 0);
+  const updated = Number(res.reactivated ?? 0);
 
   return {
     ok: true,
-    assignedCount: (res.added ?? 0) + (res.updated ?? 0),
+    assignedCount: added + updated,
     definitionId: String(definitionId),
-    added: res.added ?? 0,
-    updated: res.updated ?? 0,
-    skipped: res.skipped ?? 0,
+    added,
+    updated,
+    skipped: 0,
   };
 }

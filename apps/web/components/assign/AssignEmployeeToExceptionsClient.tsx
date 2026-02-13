@@ -14,7 +14,7 @@ import ExceptionFilterBar, {
   ExceptionUIFilters,
 } from "@/components/filters/ExceptionFilterBar";
 import BackButton from "../ui/BackButton";
-import { assignExceptionsToEmployees } from "@/services/exceptions.service.mock";
+import { assignExceptionsToEmployees } from "@/services/exceptions.service";
 import { fullName } from "@/lib/name";
 
 type ExceptionDomainFilters = { status?: PolicyStatus; search?: string };
@@ -107,32 +107,6 @@ export default function AssignEmployeeToExceptionsClient({
           notes: note.trim() || null,
         },
       ];
-
-      const defs = selectedDefIds?.map(String) ?? [];
-      if (defs.length === 0) throw new Error("ยังไม่ได้เลือก Exception");
-
-      // เรียก service แบบต่อ definition แล้วรวมผลลัพธ์
-      const results = await Promise.all(
-        defs.map((defId) =>
-          assignExceptionsToEmployees(defId, employeesPayload, {
-            // ให้ behavior ใกล้เคียงเดิม: ถ้ามีอยู่แล้วให้ข้าม
-            skipIfExists: true,
-            // อัปเดตชื่อ/แผนกถ้าส่งมา (เราไม่ได้ส่งใน payload ข้างบนก็ไม่กระทบ)
-            upsertNameAndDept: true,
-            // ถ้ามี note ใหม่ให้ append ต่อท้าย (หรือเปลี่ยนเป็น "replace" ถ้าต้องการ)
-            noteStrategy: note.trim() ? "append" : "keep-existing",
-          }),
-        ),
-      );
-
-      const addedTotal = results.reduce((n, r) => n + (r?.added ?? 0), 0);
-      const updatedTotal = results.reduce((n, r) => n + (r?.updated ?? 0), 0);
-      const skippedTotal = results.reduce((n, r) => n + (r?.skipped ?? 0), 0);
-
-      setLastMsg(
-        `Assigned ${defs.length} exception(s) ให้ ${fullName(employee)} สำเร็จ ` +
-          `(added ${addedTotal}, updated ${updatedTotal}, skipped ${skippedTotal})`,
-      );
       setSelectedDefIds([]);
     } catch (e: any) {
       setLastMsg(e?.message ?? "Assign ล้มเหลว (unknown error)");

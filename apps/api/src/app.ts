@@ -21,6 +21,8 @@ export function createApp() {
     }
   });
 
+  app.use((req, _res, next) => { console.log('[API]', req.method, req.url); next(); });
+
   app.use('/exceptions', exceptionRoutes);
   app.use(notFound);
   app.use(errorHandler);

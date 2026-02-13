@@ -1,5 +1,5 @@
 import ExceptionsDetail from "@/components/detail/ExceptionDetail";
-import { getExceptionDefinitionById } from "@/services/exceptions.service.mock";
+import { getExceptionDefinitionById } from "@/services/exceptions.service";
 import BackButton from "components/ui/BackButton";
 import { notFound } from "next/navigation";
 
