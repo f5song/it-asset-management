@@ -11,7 +11,7 @@ import {
   AssignOptions,
 } from "@/types/exception";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
 /* ─────────────────────────────────────────────────────────────────────────────
  * Utilities
@@ -72,29 +72,35 @@ export async function getExceptionDefinitionById(
  * - รับ query เดียวกับ mock: page(1-based), pageSize, sortBy, sortOrder, search, status
  * - รองรับ response ได้หลายรูปแบบ (items/data + totalCount/total/pagination.total)
  */
+
 export async function getExceptionDefinitions(
   q: ExceptionDefinitionListQuery,
   signal?: AbortSignal
 ): Promise<ExceptionDefinitionListResponse> {
+  // 🔁 Map เป็น query ที่ backend ต้องการจริง
   const query = {
-    page: q.page ?? 1, // 1-based (ฮุคคุณแปลงมาแล้ว)
+    pageIndex: Math.max(0, (q.page ?? 1) - 1),                // 0-based
     pageSize: q.pageSize ?? 10,
-    sortBy: q.sortBy,
-    sortOrder: q.sortOrder,
+    sort: q.sortBy ? `${q.sortBy}:${q.sortOrder ?? "asc"}` : undefined,
+    isActive:
+      typeof q.status === "string"
+        ? String(q.status).toLowerCase() === "active"
+        : undefined,
     search: q.search,
-    status: q.status as PolicyStatus | undefined,
   };
+
   const url = `${API_BASE_URL}/exceptions${qs(query)}`;
   const res = await http<any>(url, { signal });
 
-  // Map ให้ตรงกับ type เดิมที่ mock คืน
+  // 🌐 Map กลับเป็น format เดิมที่ Hook ใช้ได้
   const items: ExceptionDefinition[] = res.items ?? res.data ?? [];
   const totalCount =
     res.totalCount ?? res.pagination?.total ?? res.total ?? items.length;
-  const page = res.page ?? query.page ?? 1;
-  const pageSize = res.pageSize ?? query.pageSize ?? 10;
 
+  const page = (res.pageIndex ?? query.pageIndex ?? 0) + 1; // convert กลับเป็น 1-based
+  const pageSize = res.pageSize ?? query.pageSize ?? 10;
   const totalPages = Math.max(1, Math.ceil(Number(totalCount) / Number(pageSize)));
+
   return {
     items,
     totalCount: Number(totalCount),
@@ -105,6 +111,7 @@ export async function getExceptionDefinitions(
     totalPages,
   };
 }
+
 
 /** alias (คงไว้ให้ส่วนอื่นที่เรียกชื่อ list... ใช้ต่อได้) */
 export async function listExceptionDefinitions(
