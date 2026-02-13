@@ -1,36 +1,33 @@
 import { Request, Response, NextFunction } from 'express';
 import * as svc from '../services/exception.service';
+import { withPaging } from '../utils/pagination';
+
+// helper: แปลง query sort=col:dir → { col, desc }
+function parseSortParam(sort?: string): { col: string; desc: boolean } | undefined {
+  if (!sort) return undefined;
+  const [col, dir] = sort.split(':');
+  if (!col) return undefined;
+  return { col, desc: (dir || '').toLowerCase() === 'desc' };
+}
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
-    const {
-      search,
-      risk,
-      categoryId,
-      isActive,
-      sortCol,
-      sortDesc,
-      pageIndex = '0',
-      pageSize = '20',
-    } = req.query;
+    const { search, risk, categoryId, isActive } = req.query;
+    const sortParam = parseSortParam(typeof req.query.sort === 'string' ? req.query.sort : undefined);
 
-    const result = await svc.listExceptions({
+    // ใช้ pagination 1-based จาก middleware
+    const p = req.pagination!;
+    const { items, total } = await svc.listExceptions({
       search: typeof search === 'string' ? search : undefined,
       risk: typeof risk === 'string' ? (risk as any) : undefined,
       categoryId: typeof categoryId === 'string' ? +categoryId : undefined,
-      isActive:
-        typeof isActive !== 'undefined'
-          ? String(isActive) === 'true'
-          : undefined,
-      sort:
-        typeof sortCol === 'string'
-          ? { col: sortCol, desc: String(sortDesc) === 'true' }
-          : undefined,
-      pageIndex: Number(pageIndex),
-      pageSize: Number(pageSize),
+      isActive: typeof isActive !== 'undefined' ? String(isActive) === 'true' : undefined,
+      sort: sortParam,
+      pageIndex: p.pageIndex0,  // service 0‑based
+      pageSize: p.pageSize,
     });
 
-    res.json(result);
+    return res.json(withPaging(items, total, p.pageIndex0, p.pageSize));
   } catch (err) {
     next(err);
   }
@@ -48,9 +45,9 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 
 export async function listAssignees(req: Request, res: Response, next: NextFunction) {
   try {
-    const { pageIndex = '0', pageSize = '20' } = req.query;
-    const result = await svc.listAssigneesByException(+req.params.id, +pageIndex, +pageSize);
-    res.json(result);
+    const p = req.pagination!;
+    const { items, total } = await svc.listAssigneesByException(+req.params.id, p.pageIndex0, p.pageSize);
+    return res.json(withPaging(items, total, p.pageIndex0, p.pageSize));
   } catch (err) {
     next(err);
   }

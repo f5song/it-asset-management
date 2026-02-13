@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: it_software_mgmt
     ports:
-      - "5432:5432" # เปิดเฉพาะ dev
+      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./apps/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro

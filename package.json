@@ -1,7 +1,20 @@
 {
   "name": "it-asset-monorepo",
+  "version": "1.0.0",
   "private": true,
-  "packageManager": "npm@10.9.0",
+  "description": "- Stack: Backend = Node.js (Express), Frontend = Next.js + Tailwind, DB = PostgreSQL",
+  "homepage": "https://github.com/f5song/it-asset-management#readme",
+  "bugs": {
+    "url": "https://github.com/f5song/it-asset-management/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/f5song/it-asset-management.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -39,5 +52,6 @@
     "react-dom": "18.2.0",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.0"
-  }
+  },
+  "packageManager": "npm@10.9.0"
 }
