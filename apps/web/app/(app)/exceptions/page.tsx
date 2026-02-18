@@ -23,9 +23,6 @@ export default function ExceptionPage() {
   // Controller
   const ctl = useServerTableController({
     pageSize: 8,
-    // ❌ หลีกเลี่ยง createdAt เป็น default เพื่อไม่ให้ครอง sort ตอนรีเฟรช
-    // defaultSort: { id: "createdAt", desc: true } as const,
-    // ✅ ใช้ name เป็นค่าเริ่มต้น (จะถูก override ด้านล่างเมื่อ All Status)
     defaultSort: { id: "name", desc: false } as const,
     domainFilters,
     setDomainFilters,

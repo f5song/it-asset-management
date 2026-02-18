@@ -1,20 +1,8 @@
 // next.config.mjs
-const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-  // (แนะนำ) ลองตัดการตั้งค่า turbopack ออกชั่วคราวให้เรียบที่สุดก่อน
-  // turbopack: { root: path.resolve(__dirname, '../../') },
-
-  async rewrites() {
-    return {
-      beforeFiles: [
-        { source: '/backend/:path*', destination: `${base}/:path*` },
-      ],
-      afterFiles: [],
-      fallback: [],
-    };
-  },
+  output: "standalone", // ถ้าคุณใช้ containerize/Deploy แบบ standalone
+  // ไม่มี rewrites อีกต่อไป เพราะเราจะเรียก API ด้วย base URL จาก env ฝั่ง client
 };
 
 export default nextConfig;

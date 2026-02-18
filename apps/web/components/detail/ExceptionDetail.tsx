@@ -4,28 +4,28 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { DetailView, EditConfig } from "components/detail/DetailView";
-import { InstallationSection } from "components/tabbar/InstallationSection";
-import { InventoryActionToolbar } from "components/toolbar/InventoryActionToolbar";
+import { DetailView, EditConfig } from "@/components/detail/DetailView";
+import { InstallationSection } from "@/components/tabbar/InstallationSection";
+import { InventoryActionToolbar } from "@/components/toolbar/InventoryActionToolbar";
 
-import type { BreadcrumbItem, HistoryEvent } from "types";
+import type { BreadcrumbItem, HistoryEvent } from "@/types";
 import type {
   ExceptionDefinition,
   ExceptionAssignmentRow,
   ExceptionEditValues,
-} from "types/exception";
+} from "@/types/exception";
 
-import { show } from "lib/show";
-import { exceptionAssignmentColumns } from "lib/tables/exceptionAssignmentColumns";
+import { show } from "@/lib/show";
+import { exceptionAssignmentColumns } from "@/lib/tables/exceptionAssignmentColumns";
 import {
   demoExceptionAssignments,
   demoExceptionHistory,
-} from "lib/demo/exceptionDetailDemoData";
+} from "@/lib/demo/exceptionDetailDemoData";
 import { formatDateSafe } from "@/lib/date";
 import { toLocalInput } from "@/lib/date-input";
 import { exceptionEditFields } from "@/config/forms/exceptionEditFields";
-import { DetailInfoGrid } from "components/detail/DetailInfo";
-import { HistoryList } from "components/detail/HistoryList";
+import { DetailInfoGrid } from "@/components/detail/DetailInfo";
+import { HistoryList } from "@/components/detail/HistoryList";
 
 type ExceptionsDetailProps = {
   item: ExceptionDefinition;
@@ -43,13 +43,19 @@ export default function ExceptionsDetail({
   const router = useRouter();
 
   const historyData = React.useMemo<HistoryEvent[]>(
-    () => (Array.isArray(history) && history.length ? history : demoExceptionHistory),
+    () =>
+      Array.isArray(history) && history.length
+        ? history
+        : demoExceptionHistory,
     [history],
   );
 
   // ข้อมูลดิบ
   const rawRows = React.useMemo<ExceptionAssignmentRow[]>(
-    () => (Array.isArray(assignments) && assignments.length ? assignments : demoExceptionAssignments),
+    () =>
+      Array.isArray(assignments) && assignments.length
+        ? assignments
+        : demoExceptionAssignments,
     [assignments],
   );
 
@@ -113,7 +119,6 @@ export default function ExceptionsDetail({
         }}
         onAction={(act) => {
           if (act === "Assign Exceptions") handleAssign();
-          // ถ้าต้องการ Delete ด้วย ให้ใส่ปุ่ม Delete ใน visibleActions และ handle ที่นี่
         }}
       />
     ),
@@ -149,7 +154,7 @@ export default function ExceptionsDetail({
         risk: item.risk ?? "Low",
         createdAt: toLocalInput(item.createdAt),
         lastUpdated: toLocalInput(item.lastUpdated ?? ""),
-        notes: item.notes ?? "",
+        description: item.description ?? "",
       },
       onSubmit: async (values) => {
         console.log("save exception:", values);
@@ -157,7 +162,14 @@ export default function ExceptionsDetail({
       submitLabel: "Confirm",
       cancelLabel: "Cancel",
     }),
-    [item.name, item.status, item.risk, item.createdAt, item.lastUpdated, item.notes],
+    [
+      item.name,
+      item.status,
+      item.risk,
+      item.createdAt,
+      item.lastUpdated,
+      item.description,
+    ],
   );
 
   const tabs = React.useMemo(

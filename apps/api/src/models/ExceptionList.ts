@@ -9,7 +9,7 @@ export interface ExceptionListAttributes {
   name: string;
   risk_level: RiskLevel;
   category_id: number | null;
-  is_active: boolean;
+  status: boolean;
   created_at: Date;
 }
 
@@ -24,7 +24,7 @@ export class ExceptionList
   declare name: string;
   declare risk_level: RiskLevel;
   declare category_id: number | null;
-  declare is_active: boolean;
+  declare status: boolean;
   declare created_at: Date;
 }
 
@@ -35,7 +35,7 @@ ExceptionList.init(
     name: { type: DataTypes.STRING, allowNull: false },
     risk_level: { type: DataTypes.ENUM('Low', 'Medium', 'High'), allowNull: false },
     category_id: { type: DataTypes.INTEGER, allowNull: true },
-    is_active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    status: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: sequelize.literal('now()') },
   },
   {

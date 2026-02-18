@@ -1,64 +1,84 @@
 // src/services/exceptions.service.ts
-// Frontend service (Next.js) เรียก Backend Express ตามเส้นทางจริง
+// Frontend service (Next.js) เรียก Backend Express ตามเส้นทางจริง (ผ่าน base URL จาก ENV)
 
+import { buildUrl } from "@/config/config";
+import { http, qs } from "@/lib/http";
 import {
   ExceptionAssignmentRow,
   ExceptionDefinition,
   PolicyStatus,
   ExceptionDefinitionListQuery,
   ExceptionDefinitionListResponse,
-  AssignEmployeeInput,
-  // AssignOptions, // ไม่ใช้แล้วใน payload ส่งไป backend
+  RiskLevel,
 } from "@/types/exception";
 
-/**
- * ตั้งค่า base URL ของ API
- * - ใส่ใน .env.local: NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
- * - จากนั้นเราจะต่อท้ายด้วย /exceptions เอง
- */
-
-// ✅ ใช้ relative path ภายใต้ prefix ที่ rewrite ไว้
-const EXC_BASE = '/backend/exceptions';
-
-// ตัวอย่าง
-
 /* ─────────────────────────────────────────────────────────────────────────────
- * Utilities
+ * Mappers: แปลง snake_case (backend) → camelCase (frontend types)
  * ────────────────────────────────────────────────────────────────────────────*/
-function qs(params: Record<string, any>) {
-  const sp = new URLSearchParams();
-  Object.entries(params).forEach(([k, v]) => {
-    if (v === undefined || v === null || v === "") return;
-    sp.append(k, String(v));
-  });
-  const s = sp.toString();
-  return s ? `?${s}` : "";
+
+type BackendExceptionDefinition = {
+  exception_id: string; // "1"
+  code?: string | null;
+  name: string;
+  description?: string | null;
+  risk_level: string; // "Low" | "Medium" | "High"
+  category_id?: string | null;
+  status: string; // true/false
+  created_at: string; // ISO
+  created_by?: string | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
+  assignees_active?: string | number | null; // "3"
+  last_assigned_at?: string | null;
+  tickets_count?: string | number | null;
+};
+
+export function toPolicyStatus(s: string): PolicyStatus {
+  const v = s.trim().toLowerCase();
+  if (v === "active") return "Active";
+  if (v === "inactive") return "Inactive";
+
+  // รองรับสตริงตัวแทนทั่วไป
+  if (v === "1" || v === "true" || v === "yes" || v === "y") return "Active";
+  if (v === "0" || v === "false" || v === "no" || v === "n") return "Inactive";
+
+  throw new Error(`Invalid PolicyStatus: ${s}`);
 }
 
-async function http<T>(
-  input: RequestInfo,
-  init?: RequestInit & { parse?: "json" | "text" | "void" },
-): Promise<T> {
-  const res = await fetch(input, {
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      ...(init?.headers || {}),
-    },
-    ...init,
-  });
-  if (!res.ok) {
-    let msg = `HTTP ${res.status}`;
-    try {
-      const text = await res.text();
-      msg = text || msg;
-    } catch {}
-    throw new Error(msg);
-  }
-  const parse = init?.parse ?? "json";
-  if (parse === "json") return res.json() as unknown as T;
-  if (parse === "text") return res.text() as unknown as T;
-  return undefined as unknown as T;
+export function toRiskLevel(s: string): RiskLevel {
+  const v = s.trim().toLowerCase();
+  if (v === "low") return "Low";
+  if (v === "medium") return "Medium";
+  if (v === "high") return "High";
+
+  // (ถ้าต้องการ) map เพิ่ม เช่น "1"→Low, "2"→Medium, "3"→High
+  // if (v === "1") return "Low";
+  // if (v === "2") return "Medium";
+  // if (v === "3") return "High";
+
+  throw new Error(`Invalid RiskLevel: ${s}`);
+}
+
+function toNumberOrZero(v: unknown): number {
+  if (v === null || v === undefined || v === "") return 0;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function mapBackendDefinition(
+  row: BackendExceptionDefinition,
+): ExceptionDefinition {
+  return {
+    id: String(row.exception_id),
+    name: row.name ?? "",
+    status: toPolicyStatus(row.status),
+    risk: toRiskLevel(row.risk_level),
+    createdAt: row.created_at ?? "",
+    lastUpdated: row.updated_at ?? null,
+    description: row.description ?? undefined,
+    // สำหรับ UI: totalAssignments จาก assignees_active
+    totalAssignments: toNumberOrZero(row.assignees_active),
+  };
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -67,12 +87,16 @@ async function http<T>(
 
 /** GET /exceptions/:id  (รองรับมี/ไม่มี trailing slash) */
 export async function getExceptionDefinitionById(
-  id: string | number,
+  id: string,
   signal?: AbortSignal,
 ): Promise<ExceptionDefinition | null> {
-  const url = `${EXC_BASE}/${encodeURIComponent(String(id))}`;
-  const data = await http<ExceptionDefinition>(url, { signal });
-  return data ?? null;
+  const url = buildUrl(`/exceptions/${encodeURIComponent(String(id))}`);
+  // บาง backend อาจคืนเป็น object โดยตรง หรือห่อใน { item } / { data }
+  const raw = await http<any>(url, { signal });
+  const row: BackendExceptionDefinition | null =
+    raw?.item ?? raw?.data ?? raw ?? null;
+  if (!row) return null;
+  return mapBackendDefinition(row);
 }
 
 /**
@@ -97,29 +121,36 @@ export async function getExceptionDefinitions(
     search: q.search,
   };
 
-  const url = `${EXC_BASE}${qs(query)}`;
+  const url = buildUrl(`/exceptions${qs(query)}`);
   const res = await http<any>(url, { signal });
 
-  // รองรับ response shape หลายแบบ
-  const items: ExceptionDefinition[] = res.items ?? res.data ?? [];
-  const totalCount =
-    res.total ?? res.totalCount ?? res.pagination?.total ?? items.length;
+  // รองรับ response shape ของ backend ตามตัวอย่างที่ให้มา
+  // {
+  //   items: [...], total, pageIndex, pageSize, pageCount, hasPrev, hasNext
+  // }
+  const rows: BackendExceptionDefinition[] = res?.items ?? res?.data ?? [];
+  const items: ExceptionDefinition[] = rows.map(mapBackendDefinition);
 
-  // เมทาดาต้า — backend เราส่ง 1‑based กลับมาแล้ว (ถ้ามี)
-  const page = Number(res.pageIndex ?? query.pageIndex ?? 1);
-  const pageSize = Number(res.pageSize ?? query.pageSize ?? 10);
-  const totalPages = Math.max(
-    1,
-    Math.ceil(Number(totalCount) / Math.max(1, Number(pageSize))),
+  const totalCount = Number(
+    res?.total ?? res?.totalCount ?? res?.pagination?.total ?? items.length,
   );
+
+  const page = Number(res?.pageIndex ?? query.pageIndex ?? 1);
+  const pageSize = Number(res?.pageSize ?? query.pageSize ?? 10);
+  const totalPages =
+    Number(res?.pageCount) ||
+    Math.max(1, Math.ceil(Number(totalCount) / Math.max(1, Number(pageSize))));
+  const hasPrev = typeof res?.hasPrev === "boolean" ? !!res.hasPrev : page > 1;
+  const hasNext =
+    typeof res?.hasNext === "boolean" ? !!res.hasNext : page < totalPages;
 
   return {
     items,
-    totalCount: Number(totalCount),
+    totalCount,
     page,
     pageSize,
-    hasNext: page < totalPages,
-    hasPrev: page > 1,
+    hasNext,
+    hasPrev,
     totalPages,
   };
 }
@@ -151,9 +182,10 @@ export async function getExceptionAssignmentsByDefinitionId(
     pageIndex: opts?.page ?? 1,
     pageSize: opts?.pageSize ?? 20,
   };
-  const url = `${EXC_BASE}/${encodeURIComponent(String(id))}/assignees${qs(
-    query,
-  )}`;
+
+  const url = buildUrl(
+    `/exceptions/${encodeURIComponent(String(id))}/assignees${qs(query)}`,
+  );
 
   const res = await http<any>(url, { signal });
   // รองรับทั้ง array ตรง ๆ หรือ { items: [...] }
@@ -178,19 +210,22 @@ export async function getExceptionAssignmentsPage(
     pageIndex: opts?.page ?? 1,
     pageSize: opts?.pageSize ?? 20,
   };
-  const url = `${EXC_BASE}/${encodeURIComponent(String(id))}/assignees${qs(
-    query,
-  )}`;
+
+  const url = buildUrl(
+    `/exceptions/${encodeURIComponent(String(id))}/assignees${qs(query)}`,
+  );
 
   const res = await http<any>(url, { signal });
-  const items: ExceptionAssignmentRow[] = res.items ?? res.data ?? [];
-  const total = Number(res.total ?? items.length);
-  const page = Number(res.pageIndex ?? query.pageIndex ?? 1);
-  const pageSize = Number(res.pageSize ?? query.pageSize ?? 20);
-  const totalPages = Math.max(
-    1,
-    Math.ceil(Number(total) / Math.max(1, Number(pageSize))),
-  );
+  const items: ExceptionAssignmentRow[] = res?.items ?? res?.data ?? [];
+  const total = Number(res?.total ?? items.length);
+  const page = Number(res?.pageIndex ?? query.pageIndex ?? 1);
+  const pageSize = Number(res?.pageSize ?? query.pageSize ?? 20);
+  const totalPages =
+    Number(res?.pageCount) ||
+    Math.max(1, Math.ceil(Number(total) / Math.max(1, Number(pageSize))));
+  const hasPrev = typeof res?.hasPrev === "boolean" ? !!res.hasPrev : page > 1;
+  const hasNext =
+    typeof res?.hasNext === "boolean" ? !!res.hasNext : page < totalPages;
 
   return {
     items,
@@ -198,8 +233,8 @@ export async function getExceptionAssignmentsPage(
     page,
     pageSize,
     totalPages,
-    hasNext: page < totalPages,
-    hasPrev: page > 1,
+    hasNext,
+    hasPrev,
   };
 }
 
@@ -222,7 +257,9 @@ export async function assignExceptionsToEmployees(
     throw new Error("empCodes is required (non-empty array)");
   }
 
-  const url = `${EXC_BASE}/${encodeURIComponent(String(exceptionId))}/assign`;
+  const url = buildUrl(
+    `/exceptions/${encodeURIComponent(String(exceptionId))}/assign`,
+  );
   const body = JSON.stringify({ empCodes, assignedBy });
 
   const res = await http<any>(url, {
@@ -254,7 +291,9 @@ export async function unassignExceptionsFromEmployees(
     throw new Error("empCodes is required (non-empty array)");
   }
 
-  const url = `${EXC_BASE}/${encodeURIComponent(String(exceptionId))}/revoke`;
+  const url = buildUrl(
+    `/exceptions/${encodeURIComponent(String(exceptionId))}/revoke`,
+  );
   const body = JSON.stringify({
     empCodes,
     revokedBy: opts?.revokedBy ?? undefined,

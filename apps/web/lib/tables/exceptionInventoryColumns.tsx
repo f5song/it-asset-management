@@ -3,11 +3,11 @@ import type { ExceptionDefinition } from "types/exception";
 import { show } from "lib/show";
 import { formatDateTH } from "lib/date";
 import { StatusBadge } from "components/ui/StatusBadge";
-import { AppColumnDef } from "@/types";
+import type { AppColumnDef } from "@/types";
 
 export const exceptionInventoryColumns: AppColumnDef<ExceptionDefinition>[] = [
   {
-    id: "id",
+    id: "exception_id",
     header: "ID",
     accessorKey: "id",
     getSortValue: (row) => row.id,
@@ -28,24 +28,24 @@ export const exceptionInventoryColumns: AppColumnDef<ExceptionDefinition>[] = [
     cell: (value) => <StatusBadge label={show(value as string)} variant="exception" />,
   },
   {
-    id: "risk",
+    id: "risk_level",
     header: "Risk",
-    accessorKey: "risk",
+    accessorKey: "risk", // ← ตรวจให้ตรงกับ type: ถ้าใน type คือ risk_level ให้เปลี่ยนเป็น "risk_level"
     getSortValue: (row) => row.risk ?? "",
     cell: (value) => show(value as string),
   },
   {
-    id: "createdAt",
+    id: "created_at",
     header: "Created At",
-    accessorKey: "createdAt",
+    accessorKey: "createdAt", // ← ตรวจให้ตรงกับ type: ถ้า backend ส่ง created_at และคุณ map ไว้แล้ว ก็ OK
     getSortValue: (row) => row.createdAt ?? "",
     cell: (value) => formatDateTH(value as string | null | undefined),
   },
   {
-    id: "notes",
-    header: "Notes",
-    accessorKey: "notes",
-    getSortValue: (row) => row.notes ?? "",
+    id: "description",
+    header: "Description",
+    accessorKey: "description",
+    getSortValue: (row) => row.description ?? "",
     cell: (value) => show(value as string),
   },
 ];

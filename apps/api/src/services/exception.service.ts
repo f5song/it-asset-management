@@ -33,7 +33,7 @@ const PLAIN_SORT_COLUMNS = new Set([
   'name',
   'risk_level',
   'category_id',
-  'is_active',
+  'status',
   'created_at',
   'updated_at',
 ]);
@@ -67,7 +67,7 @@ export async function listExceptions(p: ListExceptionsParams) {
   }
   if (p.risk) where.risk_level = p.risk;
   if (p.categoryId) where.category_id = p.categoryId;
-  if (typeof p.isActive === 'boolean') where.is_active = p.isActive;
+  if (typeof p.isActive === 'boolean') where.status = p.isActive;
 
   const sortKey = p.sort?.col ?? 'exception_id';
   const sortDir = p.sort?.desc ? 'DESC' : 'ASC';
@@ -80,7 +80,7 @@ export async function listExceptions(p: ListExceptionsParams) {
     'description',  // <-- ลบออกได้ถ้า schema ไม่มี
     'risk_level',
     'category_id',
-    'is_active',
+    'status',
     'created_at',
     'created_by',   // <-- ลบออกได้ถ้า schema ไม่มี
     'updated_at',   // <-- ลบออกได้ถ้า schema ไม่มี
@@ -322,7 +322,7 @@ export async function revokeAssignments(
 // ------------------------------
 export async function listExceptionsSimple(limit = 10) {
   const rows = await ExceptionList.findAll({
-    attributes: ['exception_id', 'code', 'name', 'risk_level', 'is_active'],
+    attributes: ['exception_id', 'code', 'name', 'risk_level', 'status'],
     order: [['exception_id', 'DESC']],
     limit,
     raw: true,

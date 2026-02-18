@@ -14,4 +14,5 @@ export const env = {
   DB_SSL: (process.env.DB_SSL ?? 'false') === 'true',
 
   TZ: process.env.TZ ?? '+07:00',
+  FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000',
 };
