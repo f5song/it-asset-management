@@ -5,7 +5,7 @@ import { InventoryPageShell } from "components/inventory/InventoryPageShell";
 import { useServerTableController } from "hooks/useServerTableController";
 
 import type { ExportFormat } from "types";
-import type { ExceptionDefinition, PolicyStatus } from "types/exception";
+import type { ExceptionDefinitionRow, PolicyStatus } from "types/exception";
 
 import { exceptionInventoryColumns } from "lib/tables/exceptionInventoryColumns";
 import {
@@ -36,12 +36,11 @@ export default function ExceptionPage() {
     const isAll = ctl.simpleFilters.status == null; // undefined = All Status
     if (isAll) {
       ctl.setSorting([
-        { id: "status_priority", desc: false }, // Active -> Inactive
+        { id: "status_priority", desc: false }, // Active -> Inactive (ถ้า server รองรับ)
         { id: "name",            desc: false }, // secondary
       ]);
     } else {
-      // ถ้าเลือกสถานะเฉพาะแล้ว ไม่ต้องบังคับ priority
-      ctl.setSorting([{ id: "name", desc: false }]); // หรือจะเป็น createdAt ก็ได้
+      ctl.setSorting([{ id: "name", desc: false }]);
     }
     // รีเซ็ตหน้าเพื่อ UX ที่ดีเมื่อเกณฑ์เรียงเปลี่ยน
     ctl.setPagination({ pageIndex: 0, pageSize: ctl.pagination.pageSize });
@@ -54,7 +53,7 @@ export default function ExceptionPage() {
     [ctl.simpleFilters],
   );
 
-  // ดึงข้อมูลในตาราง
+  // ดึงข้อมูลในตาราง (ให้ hook คืน rows: ExceptionDefinitionRow[])
   const { rows, totalRows, isLoading, isError, errorMessage } =
     useExceptionInventory(ctl.serverQuery, serviceFilters);
 
@@ -86,7 +85,7 @@ export default function ExceptionPage() {
   );
 
   return (
-    <InventoryPageShell<ExceptionDefinition, PolicyStatus>
+    <InventoryPageShell<ExceptionDefinitionRow, PolicyStatus>
       title="Exceptions"
       breadcrumbs={[{ label: "Exceptions", href: "/exceptions" }]}
 
@@ -106,7 +105,7 @@ export default function ExceptionPage() {
       onPaginationChange={ctl.setPagination}
       sorting={ctl.sorting}
       onSortingChange={ctl.setSorting}
-      rowHref={(row) => `/exceptions/${row.id}`}
+      rowHref={(row) => `/exceptions/${row.id}`} // ใช้ id (ที่ map จาก exception_id)
 
       // States
       isLoading={isLoading}

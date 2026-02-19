@@ -4,7 +4,7 @@
 import * as React from "react";
 import { useServerTableController } from "@/hooks/useServerTableController";
 import { useExceptionDefinitionsInventory } from "@/hooks/useExceptionDefinitionsInventory";
-import type { ExceptionDefinition, PolicyStatus } from "@/types/exception";
+import type {  ExceptionDefinitionRow, PolicyStatus } from "@/types/exception";
 import type { EmployeeItem } from "@/types";
 import { DataTable } from "@/components/table";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -35,7 +35,7 @@ export default function AssignEmployeeToExceptionsClient({
     React.useState<ExceptionDomainFilters>(toDomainFilters({}));
 
   const ctl = useServerTableController<
-    ExceptionDefinition,
+    ExceptionDefinitionRow,
     ExceptionDomainFilters,
     ExceptionUIFilters
   >({
@@ -187,7 +187,7 @@ export default function AssignEmployeeToExceptionsClient({
           selectable={true}
           selectedIds={selectedIdSet}
           onSelectionChange={handleSelectionChange}
-          getRowId={(row: ExceptionDefinition) => row.id}
+          getRowId={(row: ExceptionDefinitionRow) => row.id}
           selectionScope="page"
         />
       </section>

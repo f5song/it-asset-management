@@ -1,16 +1,16 @@
 // lib/tables/exceptionInventoryColumns.ts
-import type { ExceptionDefinition } from "types/exception";
+import type { ExceptionDefinitionRow } from "types/exception";
 import { show } from "lib/show";
 import { formatDateTH } from "lib/date";
 import { StatusBadge } from "components/ui/StatusBadge";
 import type { AppColumnDef } from "@/types";
 
-export const exceptionInventoryColumns: AppColumnDef<ExceptionDefinition>[] = [
+export const exceptionInventoryColumns: AppColumnDef<ExceptionDefinitionRow>[] = [
   {
     id: "exception_id",
-    header: "ID",
-    accessorKey: "id",
-    getSortValue: (row) => row.id,
+    header: "Exception Id",
+    accessorKey: "exception_id",                 // ✅ key มีอยู่จริงใน ExceptionDefinitionRow
+    getSortValue: (row) => row.exception_id,
     cell: (value) => show(value as string),
   },
   {
@@ -28,16 +28,16 @@ export const exceptionInventoryColumns: AppColumnDef<ExceptionDefinition>[] = [
     cell: (value) => <StatusBadge label={show(value as string)} variant="exception" />,
   },
   {
-    id: "risk_level",
+    id: "risk",
     header: "Risk",
-    accessorKey: "risk", // ← ตรวจให้ตรงกับ type: ถ้าใน type คือ risk_level ให้เปลี่ยนเป็น "risk_level"
+    accessorKey: "risk",                          // ✅ ใน type ใช้ 'risk' (ไม่ใช่ risk_level)
     getSortValue: (row) => row.risk ?? "",
     cell: (value) => show(value as string),
   },
   {
-    id: "created_at",
+    id: "createdAt",
     header: "Created At",
-    accessorKey: "createdAt", // ← ตรวจให้ตรงกับ type: ถ้า backend ส่ง created_at และคุณ map ไว้แล้ว ก็ OK
+    accessorKey: "createdAt",                     // ✅ คุณ map camelCase แล้ว
     getSortValue: (row) => row.createdAt ?? "",
     cell: (value) => formatDateTH(value as string | null | undefined),
   },

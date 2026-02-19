@@ -11,41 +11,42 @@ import SemiRadialGauge from "@/components/charts/SemiRadialGauge";
 import { LicenseSummaryCards } from "@/components/charts/LicenseSummaryCards";
 
 import { useExceptionsMetrics } from "@/hooks/useExceptionsMetrics";
-import type { ExceptionDefinition } from "@/types/exception";
+
 
 import { FiCpu, FiMonitor, FiAlertCircle, FiInbox } from "react-icons/fi";
+import { ExceptionDefinition } from "@/types/exception";
 
 const exceptionsMock: ExceptionDefinition[] = [
   {
-    id: "EXC-024",
+    exception_id: "EXC-024",
     name: "Bypass Proxy",
     risk: "High",
     status: "Inactive",
     createdAt: "2025-11-24T08:00:00Z",
   },
   {
-    id: "EXC-101",
+    exception_id: "EXC-101",
     name: "Allow Sideload",
     risk: "Medium",
     status: "Active",
     createdAt: "2025-11-20T03:00:00Z",
   },
   {
-    id: "EXC-115",
+    exception_id: "EXC-115",
     name: "Disable USB Lock",
     risk: "High",
     status: "Active",
     createdAt: "2025-12-02T02:00:00Z",
   },
   {
-    id: "EXC-130",
+    exception_id: "EXC-130",
     name: "Allow Legacy TLS",
     risk: "Low",
     status: "Inactive",
     createdAt: "2025-10-18T01:00:00Z",
   },
   {
-    id: "EXC-151",
+    exception_id: "EXC-151",
     name: "Whitelist Domain",
     risk: "Medium",
     status: "Active",

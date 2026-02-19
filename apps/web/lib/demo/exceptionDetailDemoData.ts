@@ -9,7 +9,8 @@ import type { HistoryEvent } from "types";
  */
 export const demoExceptionAssignments: ExceptionAssignmentRow[] = [
   {
-    id: "A-001",
+    id:"A-001",
+    assignment_id: "A-001",
     definitionId: "EXC-DEMO",
     employeeId: "EMP-001",
     employeeName: "Jirawee Phongchai",
@@ -22,6 +23,7 @@ export const demoExceptionAssignments: ExceptionAssignmentRow[] = [
   },
   {
     id: "A-002",
+    assignment_id: "A-002",
     definitionId: "EXC-DEMO",
     employeeId: "EMP-002",
     employeeName: "Puttaraporn Jitpranee",
@@ -34,6 +36,7 @@ export const demoExceptionAssignments: ExceptionAssignmentRow[] = [
   },
   {
     id: "A-003",
+    assignment_id: "A-003",
     definitionId: "EXC-DEMO",
     employeeId: "EMP-003",
     employeeName: "Napat S.",
@@ -46,6 +49,7 @@ export const demoExceptionAssignments: ExceptionAssignmentRow[] = [
   },
   {
     id: "A-004",
+    assignment_id: "A-004",
     definitionId: "EXC-DEMO",
     employeeId: "EMP-004",
     employeeName: "Suthep K.",

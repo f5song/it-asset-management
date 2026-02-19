@@ -1,66 +1,25 @@
-// src/types/exception.ts
 import type { OffsetPage, OffsetPaginationParams, Searchable } from "./common";
 
-/**
- * หมายเหตุความเข้ากันได้กับ services:
- * - services/exceptions.service.ts ใช้:
- *   - ExceptionDefinitionListQuery: มี page (1-based), pageSize
- *   - ExceptionDefinitionListResponse: ต้องมีคีย์
- *     items, totalCount, page, pageSize, totalPages, hasNext, hasPrev
- *
- * ถ้าในโปรเจกต์ของคุณไฟล์ ./common ยังไม่ได้กำหนดชนิดเหล่านี้ตามนี้
- * คุณสามารถใช้ definition ตัวอย่างด้านล่าง (ย้ายไป common ก็ได้):
- *
- * // export type OffsetPaginationParams = { page?: number; pageSize?: number };
- * // export type OffsetPage<T> = {
- * //   items: T[];
- * //   totalCount: number;
- * //   page: number;      // 1-based
- * //   pageSize: number;
- * //   totalPages: number;
- * //   hasNext: boolean;
- * //   hasPrev: boolean;
- * // };
- * // export type Searchable = { search?: string };
- */
-
-/** สถานะของ "นโยบายข้อยกเว้น" (Policy-level) */
 export type PolicyStatus = "Active" | "Inactive";
 export type RiskLevel = "Low" | "Medium" | "High";
 
-
-/**
- * ExceptionDefinition: รายการ "นโยบายยกเว้น" ในระบบ (ระดับ Catalog)
- */
+/** โดเมนของ ExceptionDefinition (ยังไม่มี id) */
 export interface ExceptionDefinition {
-  id: string;                  // EXC-001 (แนะนำใช้ string เพื่อรองรับ EXC-xxx)
-  name: string;                // เช่น "Allow LINE on PC" / "Allow USB storage"
-  status: PolicyStatus;        // Active | Inactive | Deprecated | Archived
-  risk: RiskLevel;
-  createdAt: string;           // ISO
-  lastUpdated?: string | null; // ISO
+  exception_id: string; // เช่น "17" (string รองรับ bigint)
+  name: string;
+  status: PolicyStatus;
+  risk: RiskLevel; // ใช้ชื่อ 'risk' (ไม่ใช่ risk_level)
+  createdAt: string; // camelCase
+  lastUpdated?: string | null;
   description?: string;
-  // สถิติการมอบหมาย (สำหรับ UI)
-  totalAssignments?: number;   // รวมทั้งหมด
+  totalAssignments?: number;
 }
 
-/**
- * Assignment (User-only): ใครได้รับ exception definition นี้บ้าง
- */
-export type ExceptionAssignmentRow = {
-  id: string;          // mapping id หรือ userId (ผ่อนคลายเป็น number ได้)
-  definitionId: string;         // FK -> ExceptionDefinition.id
-  employeeId: string;           // ผู้ใช้ที่ได้รับสิทธิ์
-  employeeName?: string | null;
-  department?: string | null;
-  assignedBy?: string | null;
-  assignedAt?: string | null;   // ISO
-  expiresAt?: string | null;    // ISO
-  status?: "Active" | "Pending" | "Revoked";
-  notes?: string | null;
-};
+/** ใช้สำหรับตาราง */
+export type RowBase = { id: string };
+export type ExceptionDefinitionRow = ExceptionDefinition & RowBase;
 
-/** ฟิลเตอร์หน้า Inventory (Definition-level) — ใช้คีย์มาตรฐาน search */
+/** ฟิลเตอร์หน้า Inventory */
 export type ExceptionDomainFilters = {
   search?: string;
   status?: PolicyStatus;
@@ -69,56 +28,85 @@ export type ExceptionDomainFilters = {
 
 /** ฟิลเตอร์แบบ UI (ใช้ใน FilterBar) */
 export type ExceptionFilterValues = {
-  status?: PolicyStatus; // map -> status
-  search?: string;       // keyword
+  status?: PolicyStatus;
+  search?: string;
 };
 
-/** สำหรับแบบฟอร์ม Edit ของ Definition (ไม่ใช่คำขอ) */
+/** แบบฟอร์มแก้ไข */
 export type ExceptionEditValues = {
   name: string;
   status: PolicyStatus;
   risk: RiskLevel;
-  createdAt: string;           // datetime-local หรือ ISO
-  lastUpdated?: string | null; // datetime-local หรือ ISO
-  reviewAt?: string | null;    // datetime-local หรือ ISO
+  createdAt: string;
+  lastUpdated?: string | null;
+  reviewAt?: string | null;
   notes?: string;
 };
 
-/** ✅ Query/Response ของ Definition list (สำหรับ service/hook)
- * - services ใช้ page (1-based), pageSize, search, status
- */
-export type ExceptionDefinitionListQuery =
-  OffsetPaginationParams &
+/** Query/Response ของ Definition list (สำหรับ service/hook) */
+export type ExceptionDefinitionListQuery = OffsetPaginationParams &
   Searchable &
   ExceptionDomainFilters;
 
-export type ExceptionDefinitionListResponse = OffsetPage<ExceptionDefinition>;
+/** ✅ เปลี่ยนให้ items เป็น Row[] */
+export type ExceptionDefinitionListResponse =
+  OffsetPage<ExceptionDefinitionRow>;
 
-/** ✅ Query/Response ของ Assignment list (ถ้ามีหน้ารายการผู้ได้รับสิทธิ์)
- * - ถ้าจะใช้หน้ารายการผู้รับสิทธิ์แบบแยก สามารถอิงโครงสร้างนี้ได้
- */
-export type ExceptionAssignmentListQuery =
-  OffsetPaginationParams &
+/** (ที่เหลือของไฟล์คงเดิม) */
+export type ExceptionAssignment = {
+  assignment_id: string;
+  definitionId: string;
+  employeeId: string;
+  employeeName?: string | null;
+  department?: string | null;
+  assignedBy?: string | null;
+  assignedAt?: string | null;
+  expiresAt?: string | null;
+  status?: "Active" | "Pending" | "Revoked";
+  notes?: string | null;
+};
+
+export type ExceptionAssignmentRow = ExceptionAssignment & RowBase;
+
+export type ExceptionAssignmentListQuery = OffsetPaginationParams &
   Searchable & {
-    definitionId?: string;      // กรองตาม definition
+    definitionId?: string;
     status?: "Active" | "Pending" | "Expired";
     department?: string;
   };
 
-export type ExceptionAssignmentListResponse = OffsetPage<ExceptionAssignmentRow>;
+export type ExceptionAssignmentListResponse =
+  OffsetPage<ExceptionAssignmentRow>;
+
+/** ... ส่วน Request types ตามไฟล์เดิม ... */
+
+/**
+ * ExceptionDefinition: รายการ "นโยบายยกเว้น" ในระบบ (ระดับ Catalog)
+ */
+
+export interface ExceptionDefinition {
+  exception_id: string; // เช่น "17" (เก็บเป็น string รองรับ bigint)
+  name: string;
+  status: PolicyStatus;
+  risk: RiskLevel; // ใน type นี้คุณใช้ชื่อ 'risk' (ไม่ใช่ risk_level)
+  createdAt: string; // คุณ map เป็น camelCase แล้ว
+  lastUpdated?: string | null;
+  description?: string;
+  totalAssignments?: number;
+}
 
 /** ✅ Canonical: Payload/Result สำหรับ Assign แบบ bulk */
 export type AssignExceptionsToEmployeesPayload = {
-  employeeIds: string[];       // กลุ่มพนักงาน
-  definitionIds: string[];     // ข้อยกเว้นหลายรายการ
-  effectiveDate?: string;      // YYYY-MM-DD
-  expiresAt?: string | null;   // (ถ้ามี)
+  employeeIds: string[]; // กลุ่มพนักงาน
+  definitionIds: string[]; // ข้อยกเว้นหลายรายการ
+  effectiveDate?: string; // YYYY-MM-DD
+  expiresAt?: string | null; // (ถ้ามี)
   notes?: string;
 };
 
 export type AssignExceptionsToEmployeesResult = {
   ok: boolean;
-  assignedCount: number;       // จำนวนพนักงานที่ได้รับมอบหมาย
+  assignedCount: number; // จำนวนพนักงานที่ได้รับมอบหมาย
   definitionIds: string[];
 };
 
@@ -157,7 +145,7 @@ export type RequestItem = {
 
 /** RequestQuery ใช้ pageIndex 0-based (ต่างจาก Definition list ที่ 1-based) */
 export type RequestQuery = {
-  pageIndex: number;  // 0-based
+  pageIndex: number; // 0-based
   pageSize: number;
   filters?: {
     site?: string;

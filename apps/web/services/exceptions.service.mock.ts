@@ -8,6 +8,7 @@ import {
   ExceptionDefinitionListResponse,
   AssignEmployeeInput,
   AssignOptions,
+  ExceptionDefinitionRow,
 } from "@/types/exception";
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -63,46 +64,77 @@ function toDisplayName(employeeId: string): string {
   return `${p1?.charAt(0).toUpperCase()}${p1?.slice(1)} ${p2}`;
 }
 
-/** Definitions (Catalog) — only 4 items (no loop 24) */
-const MOCK_DEFINITIONS: ExceptionDefinition[] = NAMES.map((name, i) => {
+
+// helper ที่คุณมีอยู่แล้ว
+// const pad = (n: number) => String(n).padStart(3, "0");
+// const makeDates = (i: number) => ({ createdAt: ..., lastUpdated: ... });
+// const addDays = (d: Date, days: number) => ...
+// const toDisplayName = (employeeId: string) => ...
+// const USER_PREFIX = ["IT", "HR", ...];
+// const NAMES = [...];
+// const STATUSES: readonly PolicyStatus[] = ["Active", "Inactive"];
+
+// -------------------- Definitions (Catalog) --------------------
+// เดิมคุณ set เป็น ExceptionDefinition[] และใช้ field id + notes
+// แก้เป็น ExceptionDefinitionRow[] และใช้ exception_id + description
+export const MOCK_DEFINITIONS: ExceptionDefinitionRow[] = NAMES.map((name, i) => {
   const idNum = i + 1;
-  const id = `EXC-${pad(idNum)}`;
+  const excId = `EXC-${pad(idNum)}`; // ใช้รูปแบบ EXC-001 สำหรับ demo
   const status = STATUSES[i % STATUSES.length];
   const { createdAt, lastUpdated } = makeDates(i);
-  const total = (i % 7) + 3; // หรือจะ fix เลยก็ได้ เช่น total = 5;
+  const total = (i % 7) + 3; // หรือ fix เป็น 5 ก็ได้
 
   return {
-    id,
+    // RowBase
+    id: excId,                 // ✅ ใช้ id = exception_id
+
+    // Domain
+    exception_id: excId,       // ✅ เก็บ exception_id ไว้สำหรับการแสดงผล
     name,
     status,
     risk: (["Low", "Medium", "High"] as const)[i % 3],
     createdAt,
     lastUpdated,
-    notes: "",
+    description: "",           // ✅ แทน notes
     totalAssignments: total,
   };
 });
 
-/** Assignments per definition */
-const MOCK_ASSIGNMENTS: Record<string, ExceptionAssignmentRow[]> = {};
+// -------------------- Assignments per definition --------------------
+export const MOCK_ASSIGNMENTS: Record<string, ExceptionAssignmentRow[]> = {};
+
 for (const def of MOCK_DEFINITIONS) {
   const total = def.totalAssignments ?? 0;
   const rows: ExceptionAssignmentRow[] = [];
+
   for (let i = 0; i < total; i++) {
     const employeeId = `${USER_PREFIX[i % USER_PREFIX.length]}.${pad((i % 20) + 1)}`;
     const employeeName = toDisplayName(employeeId);
     const assignedAt = addDays(new Date(def.createdAt), i).toISOString();
 
+    const aId = `${def.id}-U-${pad(i + 1)}`;
+
     rows.push({
-      id: `${def.id}-U-${pad(i + 1)}`,
-      definitionId: def.id,
+      // Row identity
+      id: aId,                      // ✅ เพิ่ม id ให้ทุกแถว
+      assignment_id: aId,           // ✅ เก็บเลข assignment จริง
+
+      // linkage + employee info
+      definitionId: def.id,         // ✅ ผูกกับ definition ผ่าน id
       employeeId,
       employeeName,
       department: ["IT", "HR", "FIN", "OPS"][i % 4],
+
+      // timestamps / status / notes
+      assignedBy: "System",         // ใส่ค่า mock ได้
+      assignedAt,                   // ถ้าใน type เป็น optional ก็ส่งได้
+      expiresAt: null,
+      status: i % 5 === 0 ? "Revoked" : "Active", // demo
       notes: i % 2 === 0 ? "Demo assignment note" : null,
-      // assignedAt: assignedAt, // ถ้า type ของคุณมี field นี้สามารถเติมได้
     });
   }
+
+  // ✅ key ด้วย def.id (เพราะทั้ง UI/URL ใช้ id)
   MOCK_ASSIGNMENTS[def.id] = rows;
 }
 
@@ -321,6 +353,7 @@ export async function assignExceptionsToEmployees(
     const id = nextAssignmentId(definitionId);
     const row: ExceptionAssignmentRow = {
       id,
+      assignment_id : id,
       definitionId,
       employeeId: emp.employeeId,
       employeeName: emp.employeeName ?? toDisplayName(emp.employeeId),

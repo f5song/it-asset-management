@@ -1,10 +1,10 @@
 import { getActiveExceptionDefinitions } from "@/services/exceptions.service";
-import { ExceptionDefinition } from "@/types/exception";
+import { ExceptionDefinitionRow } from "@/types/exception";
 import React from "react";
 
 /** ดึง ExceptionDefinitions ที่ Active เพื่อใช้เป็น checkbox */
 export function useActiveExceptionDefinitions() {
-  const [defs, setDefs] = React.useState<ExceptionDefinition[]>([]);
+  const [defs, setDefs] = React.useState<ExceptionDefinitionRow[]>([]);
   const [isLoading, setLoading] = React.useState(false);
 
   React.useEffect(() => {

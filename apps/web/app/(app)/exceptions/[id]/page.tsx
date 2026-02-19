@@ -3,26 +3,26 @@ import ExceptionsDetail from "@/components/detail/ExceptionDetail";
 import BackButton from "@/components/ui/BackButton";
 import { notFound } from "next/navigation";
 import { getExceptionDefinitionById } from "@/services/exceptions.service";
+import type { ExceptionDefinitionRow } from "@/types/exception";
 
-type PageProps = { params: { id: string } }; // หรือใช้ PageParams<"id">
-
-// (ทางเลือก) ปิด cache เพื่อให้เห็น error/log แบบสด ๆ
 export const revalidate = 0;
-// หรือใช้: export const dynamic = "force-dynamic";
+// หรือใช้ export const dynamic = "force-dynamic";
+
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
 
 export default async function ExceptionsDetailPage({ params }: PageProps) {
-  const { id } = params ?? {};
+  // ✅ ต้อง await ก่อนใช้งาน
+  const { id } = await params;
   if (!id) return notFound();
 
-  let exception = null;
+  let exception: ExceptionDefinitionRow | null = null;
   try {
     exception = await getExceptionDefinitionById(id);
   } catch (err) {
-    // ป้องกันการล่มของ SSR ด้วยการ log แล้วโยน 404/แสดง page error ที่ควบคุมเอง
     console.error("getExceptionDefinitionById failed:", err);
-    // คุณอาจเลือก return notFound() หรือแสดง fallback UI แทน
-    // return notFound();
-    throw err; // ถ้าต้องการให้ dev mode โชว์ stack trace
+    throw err;
   }
 
   if (!exception) return notFound();
@@ -30,8 +30,8 @@ export default async function ExceptionsDetailPage({ params }: PageProps) {
   const breadcrumbs = [
     { label: "Exceptions", href: "/exceptions" },
     {
-      label: exception.name ?? `Exception ${exception.id}`,
-      href: `/exceptions/${exception.id}`,
+      label: exception.name ?? `Exception ${exception.exception_id}`,
+      href: `/exceptions/${id}`, // ✅ ใช้ id จาก route แทนค่าใน record ที่อาจชื่อ field ต่างกัน
     },
   ];
 

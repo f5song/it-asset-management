@@ -6,6 +6,7 @@ import type {
   ExceptionDomainFilters,
   ExceptionDefinitionListQuery,
   ExceptionDefinitionListResponse,
+  ExceptionDefinitionRow,
 } from "@/types/exception";
 import type { ServerQuery } from "@/types/server-query";
 import { toUndefTrim } from "@/lib/filters";
@@ -13,7 +14,7 @@ import { listExceptionDefinitions } from "@/services/exceptions.service";
 
 
 type Result = {
-  rows: ExceptionDefinition[];
+  rows: ExceptionDefinitionRow[];
   totalRows: number;
   isLoading: boolean;
   isError: boolean;
@@ -30,7 +31,7 @@ export function useExceptionDefinitionsInventory(
   serverQuery: ServerQuery,
   filters: ExceptionDomainFilters = {},
 ): Result {
-  const [rows, setRows] = React.useState<ExceptionDefinition[]>([]);
+  const [rows, setRows] = React.useState<ExceptionDefinitionRow[]>([]);
   const [totalRows, setTotalRows] = React.useState(0);
   const [isLoading, setLoading] = React.useState(false);
   const [isError, setError] = React.useState(false);
@@ -96,7 +97,7 @@ export function useExceptionDefinitionsInventory(
           (res as any).total ??
           0;
 
-        setRows(Array.isArray(items) ? (items as ExceptionDefinition[]) : []);
+        setRows(Array.isArray(items) ? (items as ExceptionDefinitionRow[]) : []);
         setTotalRows(Number.isFinite(total) ? Number(total) : 0);
       } catch (e: any) {
         if (e?.name === "AbortError") return;

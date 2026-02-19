@@ -10,7 +10,7 @@ import { InventoryActionToolbar } from "@/components/toolbar/InventoryActionTool
 
 import type { BreadcrumbItem, HistoryEvent } from "@/types";
 import type {
-  ExceptionDefinition,
+  ExceptionDefinitionRow,        // ⬅️ ใช้ Row ที่มี id
   ExceptionAssignmentRow,
   ExceptionEditValues,
 } from "@/types/exception";
@@ -28,7 +28,7 @@ import { DetailInfoGrid } from "@/components/detail/DetailInfo";
 import { HistoryList } from "@/components/detail/HistoryList";
 
 type ExceptionsDetailProps = {
-  item: ExceptionDefinition;
+  item: ExceptionDefinitionRow;         // ⬅️ เปลี่ยนให้เป็น Row
   history?: HistoryEvent[];
   assignments?: ExceptionAssignmentRow[];
   breadcrumbs?: BreadcrumbItem[];
@@ -43,19 +43,13 @@ export default function ExceptionsDetail({
   const router = useRouter();
 
   const historyData = React.useMemo<HistoryEvent[]>(
-    () =>
-      Array.isArray(history) && history.length
-        ? history
-        : demoExceptionHistory,
+    () => (Array.isArray(history) && history.length ? history : demoExceptionHistory),
     [history],
   );
 
-  // ข้อมูลดิบ
+  // ข้อมูลดิบของ assignments
   const rawRows = React.useMemo<ExceptionAssignmentRow[]>(
-    () =>
-      Array.isArray(assignments) && assignments.length
-        ? assignments
-        : demoExceptionAssignments,
+    () => (Array.isArray(assignments) && assignments.length ? assignments : demoExceptionAssignments),
     [assignments],
   );
 
@@ -128,11 +122,12 @@ export default function ExceptionsDetail({
   // Info panels (Definition-level)
   const infoLeft = React.useMemo(
     () => [
-      { label: "Exception ID", value: show(item.id) },
+      // แสดงหมายเลขจริงของ exception
+      { label: "Exception ID", value: show(item.exception_id) }, // ใช้ exception_id
       { label: "Name", value: show(item.name) },
       { label: "Risk", value: show(item.risk) },
     ],
-    [item.id, item.name, item.risk],
+    [item.exception_id, item.name, item.risk],
   );
 
   const infoRight = React.useMemo(
@@ -162,14 +157,7 @@ export default function ExceptionsDetail({
       submitLabel: "Confirm",
       cancelLabel: "Cancel",
     }),
-    [
-      item.name,
-      item.status,
-      item.risk,
-      item.createdAt,
-      item.lastUpdated,
-      item.description,
-    ],
+    [item.name, item.status, item.risk, item.createdAt, item.lastUpdated, item.description],
   );
 
   const tabs = React.useMemo(

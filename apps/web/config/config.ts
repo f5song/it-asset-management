@@ -1,13 +1,22 @@
-// config.ts (แนะนำแยกไฟล์ config ไว้รวมศูนย์)
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+// config.ts
+// อ่าน ENV แล้ว cast ให้เป็น string ที่ TS รับได้ จากนั้น guard ซ้ำที่ runtime
+const SERVER_API_BASE: string =
+  (process.env.API_BASE as string | undefined) ??
+  (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined) ??
+  '';
 
-/**
- * รวม path ต่อท้าย API_BASE อย่างปลอดภัย
- * - ตัด/เติม slash ให้ถูก
- */
+if (!SERVER_API_BASE) {
+  throw new Error(
+    'API base URL is not set. Please set API_BASE in .env.local (or NEXT_PUBLIC_API_BASE_URL for client).',
+  );
+}
+
+/** รวม path ต่อท้าย base อย่างปลอดภัย */
 export function buildUrl(path: string) {
-  const base = API_BASE.replace(/\/+$/, '');      // เอา / ท้าย base ออก
-  const suffix = path.replace(/^\/+/, '');        // เอา / ต้น path ออก
+  // ถ้า path เป็น absolute URL อยู่แล้ว ให้คืนเลย
+  if (/^https?:\/\//i.test(path)) return path;
+
+  const base = SERVER_API_BASE.replace(/\/+$/, '');
+  const suffix = String(path || '').replace(/^\/+/, '');
   return `${base}/${suffix}`;
 }

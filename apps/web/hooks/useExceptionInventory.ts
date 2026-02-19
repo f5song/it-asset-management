@@ -4,38 +4,40 @@
 import * as React from "react";
 import { getExceptionDefinitions } from "@/services/exceptions.service";
 import type {
-  ExceptionDefinition,
+  ExceptionDefinitionRow,
   PolicyStatus,
-  ExceptionDomainFilters
+  ExceptionDomainFilters,
+  ExceptionDefinitionListQuery,
+  ExceptionDefinitionListResponse,
 } from "types/exception";
 import type { ServerQuery } from "types/server-query";
 import { toUndefTrim } from "lib/filters";
 
 export function useExceptionInventory(
   serverQuery: ServerQuery,
-  filters: ExceptionDomainFilters = {}
+  filters: ExceptionDomainFilters = {},
 ) {
-  const [rows, setRows] = React.useState<ExceptionDefinition[]>([]);
+  const [rows, setRows] = React.useState<ReadonlyArray<ExceptionDefinitionRow>>(
+    [],
+  );
   const [totalRows, setTotalRows] = React.useState(0);
   const [isLoading, setLoading] = React.useState(false);
   const [isError, setError] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | undefined>();
 
-  const serviceQuery = React.useMemo(() => {
+  const serviceQuery = React.useMemo<ExceptionDefinitionListQuery>(() => {
     const { pageIndex = 0, pageSize = 10, sortBy, sortOrder } = serverQuery;
 
-    const search = toUndefTrim(filters.search) ?? "";
+    const search = toUndefTrim(filters.search) ?? undefined;
     const status = toUndefTrim(filters.status) as PolicyStatus | undefined;
-    // const owner = toUndefTrim(filters.owner); // ถ้า service ไม่มี owner ก็อย่าส่ง
 
     return {
-      page: pageIndex + 1,         // ✅ 1-based
-      pageSize,                    // ✅ ใช้ key ที่ service รองรับ
-      sortBy,                      // ✅ ส่งต่อไปตรง ๆ
-      sortOrder,                   // ✅
-      search,                      // ✅
-      status,                      // ✅ undefined = All Status
-      // owner,                    // (เพิ่มภายหลังถ้า service รองรับ)
+      page: pageIndex + 1, // backend 1-based
+      pageSize,
+      sortBy: sortBy as any,
+      sortOrder: sortOrder as any,
+      search,
+      status, // undefined = All
     };
   }, [
     serverQuery.pageIndex,
@@ -44,7 +46,6 @@ export function useExceptionInventory(
     serverQuery.sortOrder,
     filters.search,
     filters.status,
-    // filters.owner,
   ]);
 
   React.useEffect(() => {
@@ -57,26 +58,25 @@ export function useExceptionInventory(
         setError(false);
         setErrorMessage(undefined);
 
-        const res = await getExceptionDefinitions(serviceQuery as any, ac.signal);
+        const res: ExceptionDefinitionListResponse = await getExceptionDefinitions(
+          serviceQuery,
+          ac.signal,
+        );
         if (!alive) return;
 
-        const items =
-          (res as any).items ??
-          (res as any).data ??
-          [];
-        const total =
-          (res as any).totalCount ??
-          (res as any).pagination?.total ??
-          (res as any).total ??
-          0;
-
-        setRows(Array.isArray(items) ? items : []);
-        setTotalRows(Number.isFinite(total) ? Number(total) : 0);
+        setRows(res.items ?? []); // ✅ ตอนนี้เป็น ExceptionDefinitionRow[] แล้ว
+        setTotalRows(
+          Number.isFinite(res.totalCount)
+            ? res.totalCount
+            : (res.items?.length ?? 0),
+        );
       } catch (e: any) {
         if (e?.name === "AbortError") return;
         if (!alive) return;
         setError(true);
         setErrorMessage(e?.message ?? "โหลดรายการข้อยกเว้นไม่สำเร็จ");
+        setRows([]);
+        setTotalRows(0);
       } finally {
         if (alive) setLoading(false);
       }
