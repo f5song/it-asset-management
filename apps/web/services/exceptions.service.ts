@@ -177,37 +177,6 @@ export async function listExceptionDefinitions(
 
 export type ExceptionAssigneesPage = OffsetPage<ExceptionAssignmentRow>;
 
-/**
- * GET /exceptions/:id/assignees?pageIndex=1&pageSize=10
- * → คืนรายการผู้ถูก assign แบบแบ่งหน้า (normalize เป็น OffsetPage<...>)
- */
-export async function getExceptionAssigneesPage(
-  id: string | number,
-  opts?: { pageIndex?: number; pageSize?: number },
-  signal?: AbortSignal,
-): Promise<ExceptionAssigneesPage> {
-  const query = {
-    pageIndex: opts?.pageIndex ?? 1, // 1-based
-    pageSize: opts?.pageSize ?? 10,
-  };
-
-  const url = buildUrl(
-    `/exceptions/${encodeURIComponent(String(id))}/assignees${qs(query)}`,
-  );
-  const res = await http<any>(url, { method: "GET", signal });
-
-  const items: ExceptionAssignmentRow[] = res?.items ?? res?.data ?? [];
-  const totalCount = pickTotalCount(res, items.length);
-
-  const { page, pageSize, hasPrev, hasNext, totalPages } = normalizePageInfo(
-    res,
-    query.pageIndex ?? 1,
-    query.pageSize ?? 10,
-    totalCount,
-  );
-
-  return { items, totalCount, page, pageSize, hasPrev, hasNext, totalPages };
-}
 
 /* ─────────────────────────────────────────────────────────────────────────────
  * Wrapper (Form): assign / unassign
@@ -356,4 +325,98 @@ export async function getActiveExceptionDefinitions(
       numeric: true,
     }),
   );
+}
+
+
+/** =========================
+ * Types (FE)
+ * ======================= */
+export type AssigneesPageQuery = {
+  /** 1-based page */
+  page: number;
+  pageSize: number;
+  /** ถ้าไม่ส่ง -> backend interpret เป็น 'all' หรือค่า default */
+  status?: "active" | "revoked" | "all";
+};
+
+export type AssigneesPageResponse = {
+  items: ExceptionAssignmentRow[];
+  totalCount: number;
+  page: number;     // 1-based
+  pageSize: number;
+  hasPrev: boolean;
+  hasNext: boolean;
+};
+
+/** =========================
+ * GET /exceptions/:id/assignees (page 1-based)
+ * ======================= */
+export async function getExceptionAssigneesPage(
+  exceptionId: string | number,
+  q: AssigneesPageQuery,
+  signal?: AbortSignal,
+): Promise<AssigneesPageResponse> {
+  const page = Math.max(1, Number(q.page ?? 1));
+  const pageSize = Math.max(1, Number(q.pageSize ?? 10));
+
+  const query = {
+    page,
+    pageSize,
+    ...(q.status && q.status !== "all" ? { status: q.status } : {}),
+  };
+
+  const url = buildUrl(
+    `/exceptions/${encodeURIComponent(String(exceptionId))}/assignees${qs(query)}`
+  );
+  const res = await http<any>(url, { method: "GET", signal });
+
+  const items: ExceptionAssignmentRow[] = res?.items ?? res?.data ?? [];
+  const totalCount = Number(
+    res?.totalCount ?? res?.total ?? res?.pagination?.total ?? items.length
+  );
+  const pageOut = Number(res?.page ?? page);
+  const pageSizeOut = Number(res?.pageSize ?? pageSize);
+
+  const hasPrev =
+    typeof res?.hasPrev === "boolean" ? !!res.hasPrev : pageOut > 1;
+  const hasNext =
+    typeof res?.hasNext === "boolean"
+      ? !!res.hasNext
+      : pageOut * pageSizeOut < totalCount;
+
+  return {
+    items,
+    totalCount,
+    page: pageOut,
+    pageSize: pageSizeOut,
+    hasPrev,
+    hasNext,
+  };
+}
+
+/** =========================
+ * POST /exceptions/:id/revoke
+ * Body: { empCodes: string[], actor: string }
+ * ======================= */
+export async function revokeAssignments(
+  exceptionId: string | number,
+  empCodes: string[],
+  actor: string,
+  signal?: AbortSignal,
+): Promise<{ updated: number }> {
+  const url = buildUrl(
+    `/exceptions/${encodeURIComponent(String(exceptionId))}/revoke`
+  );
+
+  const body = { empCodes, actor };
+
+  const res = await http<any>(url, {
+    method: "POST",
+    signal,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const updated = Number(res?.updated ?? res?.affected ?? 0);
+  return { updated };
 }

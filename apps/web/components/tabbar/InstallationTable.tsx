@@ -1,153 +1,200 @@
-// components/tabbar/InstallationTable.tsx
-"use client";
+'use client';
 
-import React, { useMemo, useEffect } from "react";
-import type {
-  AppColumnDef,
-  DataTableProps,
-} from "../../types/ui-table";
-import { DataTable } from "components/table";
+import * as React from 'react';
+import type { AppColumnDef } from '@/types/ui-table';
+import type { PaginationState, SortingState } from '@tanstack/react-table';
+import { DataTable } from '../table';
 
 export type InstallationFilters = {
-  query: string;
+  /** ค้นหาแบบเบา ๆ (รวม ๆ) */
+  query?: string;
 };
 
-export function InstallationTable<R extends { id?: string | number }>({
-  rows,
-  columns,
-  filters,
-  page,
-  pageSize,
-  onPageChange,
-  // (optionals เผื่ออนาคต)
-  emptyMessage = "No data found.",
-  maxBodyHeight = 340,
+type AfterFilterPayload<R> = {
+  filteredRows: R[];
+  pageRows: R[];
+  totalRows: number;
+};
 
-  /** ✅ callback แจ้งผลหลังกรอง/แบ่งหน้าให้ parent ใช้ทำ export ฯลฯ */
-  onAfterFilter,
-}: {
+type Props<R extends { id?: string | number }> = {
   rows: R[];
   columns: AppColumnDef<R>[];
-  filters: InstallationFilters;
+
+  /** 1-based */
   page: number;
   pageSize: number;
-  onPageChange?: (p: number) => void;
+
+  /** client-side only */
+  onPageChange?: (nextPage: number) => void;
+
+  filters: InstallationFilters;
+  onAfterFilter?: (payload: AfterFilterPayload<R>) => void;
+
+  /** ===== Selection (optional) ===== */
+  selectable?: boolean;
+  selectedIds?: Set<string | number>;
+  onSelectionChange?: (next: Set<string | number>) => void;
+  getRowId?: (row: R) => string | number;
+
+  /** ===== Passthrough (optional) ===== */
+  variant?: 'default' | 'striped'; // ✅ ให้ตรงกับ DataTable
+  size?: 'xs' | 'sm' | 'md';
   emptyMessage?: string;
+  isLoading?: boolean;
+  isError?: boolean;
+  errorMessage?: string;
   maxBodyHeight?: number;
-  onAfterFilter?: (meta: {
-    totalRows: number;
-    filteredRows: R[];
-    pageRows: R[];
-    pageIndex: number; // เริ่ม 1
-    totalPages: number;
-  }) => void;
-}) {
-  const q = (filters.query ?? "").trim().toLowerCase();
+  sorting?: SortingState;
+  onSortingChange?: (next: SortingState) => void;
+  clientSideSort?: boolean;
+  onRowClick?: (row: R) => void;
+  /** ให้ type ตรงกับ DataTable; ถ้าอยากให้ส่ง undefined ได้ ให้ wrap ตอนส่งเข้า DataTable */
+  rowHref?: (row: R) => string | undefined;
+  defaultColMinWidth?: number;
+};
 
-  // 1) client-side filter
-  const filtered = useMemo(() => {
+export function InstallationTable<R extends { id?: string | number }>(props: Props<R>) {
+  const {
+    rows,
+    columns,
+    page,
+    pageSize,
+    onPageChange,
+    filters,
+    onAfterFilter,
+
+    // selection
+    selectable = false,
+    selectedIds,
+    onSelectionChange,
+    getRowId,
+
+    // passthrough
+    variant = 'default', // ✅ default ถูกกับ DataTable
+    size = 'xs',
+    emptyMessage = 'ไม่พบข้อมูล',
+    isLoading,
+    isError,
+    errorMessage,
+    maxBodyHeight = 340,
+    sorting,
+    onSortingChange,
+    clientSideSort = false,
+    onRowClick,
+    rowHref,
+    defaultColMinWidth = 88,
+  } = props;
+
+  const rowId = React.useCallback(
+    (r: R) => (getRowId ? getRowId(r) : (r as any)?.id),
+    [getRowId],
+  );
+
+  // ---- filter (client-side) ----
+  const filtered = React.useMemo(() => {
+    const q = (filters.query ?? '').trim().toLowerCase();
     if (!q) return rows;
-    return rows.filter((r) => JSON.stringify(r).toLowerCase().includes(q));
-  }, [rows, q]);
 
-  // 2) client-side pagination
+    const includesQ = (value: unknown) =>
+      String(value ?? '').toLowerCase().includes(q);
+
+    return rows.filter((r) => {
+      for (const c of columns) {
+        const anyC = c as any;
+        // accessorKey
+        if (typeof anyC.accessorKey === 'string') {
+          const v = (r as any)?.[anyC.accessorKey];
+          if (includesQ(v)) return true;
+        }
+        // cell
+        if (typeof anyC.cell === 'function') {
+          let v: unknown = undefined;
+          if (typeof anyC.accessorKey === 'string') {
+            v = (r as any)?.[anyC.accessorKey];
+          }
+          const out = anyC.cell(v, r);
+          const text = reactNodeToText(out);
+          if (includesQ(text)) return true;
+        }
+      }
+      return false;
+    });
+  }, [rows, columns, filters.query]);
+
   const totalRows = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
-  const safePage = Math.min(Math.max(1, page), totalPages);
-  const start = (safePage - 1) * pageSize;
-  const pageRows = filtered.slice(start, start + pageSize);
+  const totalPages = Math.max(1, Math.ceil(totalRows / Math.max(1, pageSize)));
+  const safePage = Math.max(1, Math.min(page, totalPages));
 
-  // ✅ แจ้งผลหลังกรอง/แบ่งหน้าให้ parent
-  useEffect(() => {
+  const pageRows = React.useMemo(() => {
+    const startIdx = (safePage - 1) * pageSize;
+    const endIdx = startIdx + pageSize;
+    return filtered.slice(startIdx, endIdx);
+  }, [filtered, safePage, pageSize]);
+
+  // callback ส่งผลกรองให้ parent (client-side mode เท่านั้น)
+  React.useEffect(() => {
     onAfterFilter?.({
-      totalRows,
       filteredRows: filtered,
       pageRows,
-      pageIndex: safePage,
-      totalPages,
+      totalRows,
     });
-  }, [onAfterFilter, totalRows, filtered, pageRows, safePage, totalPages]);
+  }, [filtered, pageRows, totalRows, onAfterFilter]);
 
-  /**
-   * 3) Map columns ให้เป็นรูปแบบที่ DataTable คาดหวัง
-   *
-   * เราไม่รู้แน่ชัดว่า AppColumnDef<R> (จาก types/ui-table) ที่ผู้ใช้ส่งมาจะมี key ไหน
-   * จึงทำ adapter รองรับ 3 รูปแบบ:
-   *  - c.cell?(value, row)            → ใช้เลย
-   *  - c.accessor?(row)               → wrap เป็น cell
-   *  - c.accessorKey?                 → ดึงค่าจาก row[key] แล้วส่งให้ cell
-   * ถ้าไม่มีอะไรเลย จะ fallback เป็นค่าว่าง
-   */
-  const mappedColumns = useMemo(() => {
-    return columns.map((c, idx) => {
-      const anyC = c as any;
-
-      // header
-      const header = anyC.header;
-
-      // id / accessorKey
-      const id: string = anyC.id ?? String(idx);
-      const accessorKey: string =
-        typeof anyC.accessorKey === "string" ? anyC.accessorKey : id;
-
-      // สร้าง cell จากตัวเลือกที่มี
-      const cell =
-        typeof anyC.cell === "function"
-          ? (value: unknown, row: R) => anyC.cell(value, row)
-          : typeof anyC.accessor === "function"
-          ? (_value: unknown, row: R) => anyC.accessor(row)
-          : anyC.accessorKey
-          ? (_value: unknown, row: R) => {
-              const k = anyC.accessorKey as keyof R;
-              // คืนค่าดิบเพื่อให้ DataTable/renderer จัดการแสดงผลตามปกติ
-              return (row as any)?.[k] ?? "";
-            }
-          : (_value: unknown, _row: R) => "";
-
-      // คืนคอลัมน์ตาม spec ของ DataTable (ชนิดเดียวกับ AppColumnDef จาก types/ui-table)
-      const coreCol: AppColumnDef<R> = {
-        ...anyC,
-        id,
-        header,
-        accessorKey,
-        cell,
-      };
-
-      return coreCol;
-    });
-  }, [columns]);
-
-  // 4) props ให้ DataTable
-  const dataTableProps: DataTableProps<R> = {
-    columns: mappedColumns,
-    rows: pageRows,
-    totalRows,
-    isLoading: false,
-    isError: false,
-    errorMessage: undefined,
-    emptyMessage,
-    maxBodyHeight,
-    clientSideSort: false,
-    variant: "default",
-    size: "xs",
-    pagination: {
-      pageIndex: safePage,
-      pageSize,
+  // ✅ แปลง onPaginationChange ของ DataTable (0-based) -> onPageChange ของเรา (1-based)
+  const handlePaginationChange = React.useCallback(
+    (next: PaginationState) => {
+      onPageChange?.(next.pageIndex + 1);
     },
-    onPaginationChange: (next) => {
-      if (
-        typeof next?.pageIndex === "number" &&
-        next.pageIndex !== safePage
-      ) {
-        onPageChange?(next.pageIndex) : ""
-      }
-    },
-    onRowClick: undefined,
-    rowHref: undefined,
-    defaultColMinWidth: 88,
-    sorting: undefined,
-    onSortingChange: undefined,
-  };
+    [onPageChange],
+  );
 
-  return <DataTable<R> {...dataTableProps} />;
+  // ✅ สร้าง rowHref สำหรับ DataTable ให้แน่ใจว่า return string เสมอ (หรือไม่ส่ง prop ถ้าไม่มี)
+  const dtRowHref = React.useMemo(() => {
+    if (!rowHref) return undefined;
+    return (row: R) => rowHref(row) ?? ''; // fallback เป็น '' ถ้า undefined
+  }, [rowHref]);
+
+  return (
+    <DataTable<R>
+      columns={columns}
+      /** ✅ ส่งเฉพาะแถวของหน้านี้เข้า DataTable เพื่อให้ selection header ทำงานเฉพาะหน้า */
+      rows={pageRows}
+      totalRows={totalRows}
+      /** ✅ DataTable ใช้ 0-based pageIndex */
+      pagination={{ pageIndex: safePage - 1, pageSize }}
+      onPaginationChange={onPageChange ? handlePaginationChange : undefined}
+      /** passthrough */
+      variant={variant}            // 'default' | 'striped'
+      size={size}
+      emptyMessage={emptyMessage}
+      isLoading={isLoading}
+      isError={isError}
+      errorMessage={errorMessage}
+      maxBodyHeight={maxBodyHeight}
+      sorting={sorting}
+      onSortingChange={onSortingChange}
+      clientSideSort={clientSideSort}
+      onRowClick={onRowClick}
+      rowHref={dtRowHref as any}   // ✅ ให้ type ตรงกับ DataTable (คืน string เสมอ)
+      defaultColMinWidth={defaultColMinWidth}
+      /** selection */
+      selectable={selectable}
+      selectedIds={selectedIds}
+      onSelectionChange={onSelectionChange}
+      getRowId={getRowId}
+    />
+  );
+}
+
+function reactNodeToText(n: React.ReactNode): string {
+  if (n == null || typeof n === 'boolean') return '';
+  if (typeof n === 'string' || typeof n === 'number') return String(n);
+  if (Array.isArray(n)) return n.map(reactNodeToText).join(' ');
+  const props = (n as any)?.props;
+  if (props?.children) return reactNodeToText(props.children);
+  try {
+    return String(n);
+  } catch {
+    return '';
+  }
 }

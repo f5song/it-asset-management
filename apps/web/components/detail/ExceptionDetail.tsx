@@ -23,7 +23,11 @@ import { toLocalInput } from "@/lib/date-input";
 import { exceptionEditFields } from "@/config/forms/exceptionEditFields";
 import { DetailInfoGrid } from "@/components/detail/DetailInfo";
 import { HistoryList } from "@/components/detail/HistoryList";
-import { getExceptionAssigneesPage } from "@/services/exceptions.service";
+
+import {
+  getExceptionAssigneesPage,
+  revokeAssignments,
+} from "@/services/exceptions.service";
 
 type ExceptionsDetailProps = {
   item: ExceptionDefinitionRow; // ⬅️ เปลี่ยนให้เป็น Row
@@ -41,8 +45,7 @@ export default function ExceptionsDetail({
   const router = useRouter();
 
   const historyData = React.useMemo<HistoryEvent[]>(
-    () =>
-      Array.isArray(history) && history.length ? history : demoExceptionHistory,
+    () => (Array.isArray(history) && history.length ? history : demoExceptionHistory),
     [history],
   );
 
@@ -52,13 +55,14 @@ export default function ExceptionsDetail({
   const [page, setPage] = React.useState<number>(1); // 1-based
   const [pageSize, setPageSize] = React.useState<number>(8);
   const [totalRows, setTotalRows] = React.useState<number>(0);
-  const [assignRows, setAssignRows] = React.useState<ExceptionAssignmentRow[]>(
-    [],
-  );
+  const [assignRows, setAssignRows] = React.useState<ExceptionAssignmentRow[]>([]);
   const [loadingAssign, setLoadingAssign] = React.useState<boolean>(false);
   const [assignError, setAssignError] = React.useState<string | null>(null);
 
-  // โหลดจาก API เมื่อ exception id / page / pageSize เปลี่ยน
+  // selection (ใช้ emp_code เป็น id selection เพื่อส่งให้ revoke ตรง ๆ)
+  const [selectedEmpCodes, setSelectedEmpCodes] = React.useState<Set<string | number>>(new Set());
+
+  // โหลดเฉพาะ "Active assignees" ด้วย page 1-based
   React.useEffect(() => {
     if (!item?.id) {
       setAssignRows([]);
@@ -73,13 +77,11 @@ export default function ExceptionsDetail({
       try {
         const res = await getExceptionAssigneesPage(
           item.id,
-          { pageIndex: page, pageSize },
+          { page, pageSize, status: "active" }, // ✅ 1-based + เฉพาะ active
           ac.signal,
         );
         setAssignRows(res.items ?? []);
         setTotalRows(Number(res.totalCount ?? 0));
-        console.log("res.items sample:", res.items?.[0]);
-        console.table(res.items);
       } catch (e: any) {
         if (e?.name !== "AbortError") {
           console.error("load assignees failed:", e);
@@ -99,12 +101,11 @@ export default function ExceptionsDetail({
   React.useEffect(() => {
     if (Array.isArray(assignments) && assignments.length) {
       setAssignRows(assignments);
-      // ถ้าไม่ได้ส่ง total มาด้วย ก็ใช้ความยาวของแถวเป็นค่าเริ่มต้น
       setTotalRows((t) => (t > 0 ? t : assignments.length));
     }
   }, [assignments]);
 
-  // ✅ เรียง Active -> Resigned; ถ้าไม่มีสถานะ ให้ไปท้าย (เรียงเฉพาะภายใน "หน้านี้")
+  // ✅ เรียง Active -> Resigned; ถ้าไม่มีสถานะ ให้ไปท้าย (เฉพาะในหน้า)
   const sortedRows = React.useMemo<ExceptionAssignmentRow[]>(() => {
     const pr = new Map<string, number>([
       ["active", 0],
@@ -121,7 +122,7 @@ export default function ExceptionsDetail({
       return typeof s === "string" ? s : undefined;
     };
 
-    const getEmpId = (r: any) => r?.employeeId ?? r?.userId ?? r?.empId ?? "";
+    const getEmpId = (r: any) => r?.employeeId ?? r?.emp_code ?? r?.userId ?? r?.empId ?? "";
 
     return [...assignRows].sort((a: any, b: any) => {
       const sa = (getStatus(a) ?? "").toLowerCase();
@@ -146,9 +147,8 @@ export default function ExceptionsDetail({
   }, [item.id]);
 
   const handleAssign = React.useCallback(() => {
-    console.log("Assign exception:", item.id);
-    // TODO: route ไปหน้า assign หรือเปิด modal
-  }, [item.id]);
+    router.push(`/exceptions/${item.id}/assign`);
+  }, [item.id, router]);
 
   const toolbar = React.useMemo(
     () => (
@@ -173,8 +173,7 @@ export default function ExceptionsDetail({
   // Info panels (Definition-level)
   const infoLeft = React.useMemo(
     () => [
-      // แสดงหมายเลขจริงของ exception
-      { label: "Exception ID", value: show(item.exception_id) }, // ใช้ exception_id
+      { label: "Exception ID", value: show(item.exception_id) },
       { label: "Name", value: show(item.name) },
       { label: "Risk", value: show(item.risk) },
     ],
@@ -218,6 +217,114 @@ export default function ExceptionsDetail({
     ],
   );
 
+  /* ------------------------------------------------------------------------
+   * Unassign (รายแถว + modal ยืนยัน) + Bulk Unassign
+   * ----------------------------------------------------------------------*/
+  const [unassignOpen, setUnassignOpen] = React.useState(false);
+  const [unassigning, setUnassigning] = React.useState(false);
+  const [pendingEmpCodes, setPendingEmpCodes] = React.useState<string[]>([]);
+
+  const openUnassignFor = React.useCallback((empCodes: string[]) => {
+    setPendingEmpCodes(empCodes);
+    setUnassignOpen(true);
+  }, []);
+
+  const closeUnassign = React.useCallback(() => {
+    setUnassignOpen(false);
+    setPendingEmpCodes([]);
+  }, []);
+
+  const resolveActor = React.useCallback((): string => {
+    // หา actor จากแหล่งที่คุณมี (แก้ให้ตรงระบบ auth จริง)
+    // ลำดับความสำคัญ: localStorage.userEmail -> localStorage.username -> 'system'
+    try {
+      if (typeof window !== "undefined") {
+        const email = localStorage.getItem("userEmail");
+        if (email) return email;
+        const username = localStorage.getItem("username");
+        if (username) return username;
+      }
+    } catch {}
+    return "system";
+  }, []);
+
+  const confirmUnassign = React.useCallback(async () => {
+    if (!item?.id || pendingEmpCodes.length === 0) return;
+    setUnassigning(true);
+    try {
+      const actor = resolveActor();
+      await revokeAssignments(item.id, pendingEmpCodes, actor);
+      // refresh หน้าแรกเพื่อให้หายจากรายการ (เพราะไม่ active แล้ว)
+      setPage(1);
+      // ล้าง selection
+      setSelectedEmpCodes(new Set());
+    } catch (e: any) {
+      console.error("unassign failed:", e);
+      // TODO: toast error
+    } finally {
+      setUnassigning(false);
+      closeUnassign();
+    }
+  }, [item?.id, pendingEmpCodes, resolveActor, closeUnassign]);
+
+  // สร้าง columns ใหม่ (เพิ่มปุ่ม Actions -> Unassign รายแถว)
+  const assignmentColsWithActions = React.useMemo(
+    () =>
+      [
+        ...exceptionAssignmentColumns,
+        {
+          id: "actions",
+          header: "Actions",
+          accessorKey: "__actions",
+          align: "center",
+          width: 120,
+          cell: (_value: unknown, row: any) => {
+            // เดา emp_code จากหลายฟิลด์
+            const empCode =
+              row?.emp_code ??
+              row?.employeeId ??
+              row?.empId ??
+              row?.userId ??
+              row?.id ??
+              "";
+            return (
+              <button
+                className="text-red-600 hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const code = String(empCode || "").trim();
+                  if (!code) return;
+                  openUnassignFor([code]);
+                }}
+              >
+                Unassign
+              </button>
+            );
+          },
+        } as const,
+      ] as const,
+    [openUnassignFor],
+  );
+
+  // ปุ่ม Bulk (อยู่ทางขวาของแถบใน InstallationSection ผ่าน prop rightExtra)
+  const rightExtra = React.useMemo(() => {
+    const count = selectedEmpCodes.size;
+    return (
+      <button
+        className="rounded bg-red-600 text-white px-3 py-2 text-sm disabled:opacity-50"
+        disabled={count === 0 || loadingAssign}
+        onClick={() => {
+          const list = Array.from(selectedEmpCodes).map(String).filter(Boolean);
+          if (list.length === 0) return;
+          openUnassignFor(list);
+        }}
+        title={count > 0 ? `Unassign Selected (${count})` : "Select rows to unassign"}
+      >
+        {count > 0 ? `Unassign Selected (${count})` : "Unassign Selected"}
+      </button>
+    );
+  }, [selectedEmpCodes, loadingAssign, openUnassignFor]);
+
   const tabs = React.useMemo(
     () => [
       {
@@ -231,7 +338,7 @@ export default function ExceptionsDetail({
         content: (
           <InstallationSection<ExceptionAssignmentRow>
             rows={sortedRows}
-            columns={exceptionAssignmentColumns}
+            columns={assignmentColsWithActions}
             resetKey={`exception-${item.id}-${page}-${pageSize}`}
             initialPage={page} // 1-based
             pageSize={pageSize}
@@ -246,6 +353,22 @@ export default function ExceptionsDetail({
                 setPage(nextPage);
               }
             }}
+
+            // ===== Selection สำหรับ Bulk Unassign =====
+            selectable
+            selectedIds={selectedEmpCodes}
+            onSelectionChange={(next) => setSelectedEmpCodes(next)}
+            // ใช้ emp_code เป็น id ของ selection เพื่อส่งให้ revoke ตรง ๆ
+            getRowId={(row: any) =>
+              row?.emp_code ??
+              row?.employeeId ??
+              row?.empId ??
+              row?.userId ??
+              row?.id
+            }
+
+            // ปุ่มด้านขวา (รวมกับ Export)
+            rightExtra={rightExtra}
           />
         ),
       },
@@ -259,6 +382,7 @@ export default function ExceptionsDetail({
       infoLeft,
       infoRight,
       sortedRows,
+      assignmentColsWithActions,
       item.id,
       page,
       pageSize,
@@ -266,20 +390,53 @@ export default function ExceptionsDetail({
       loadingAssign,
       assignError,
       historyData,
+      selectedEmpCodes,
+      rightExtra,
     ],
   );
 
   return (
-    <DetailView
-      title={show(item.name)}
-      compliance={undefined}
-      breadcrumbs={breadcrumbs}
-      headerRightExtra={toolbar}
-      tabs={tabs}
-      defaultTabKey="assignments"
-      onBack={handleBack}
-      onDelete={handleDelete}
-      editConfig={editConfig}
-    />
+    <>
+      <DetailView
+        title={show(item.name)}
+        compliance={undefined}
+        breadcrumbs={breadcrumbs}
+        headerRightExtra={toolbar}
+        tabs={tabs}
+        defaultTabKey="assignments"
+        onBack={handleBack}
+        onDelete={handleDelete}
+        editConfig={editConfig}
+      />
+
+      {/* ====== Modal ยืนยัน Unassign ====== */}
+      {unassignOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="w-full max-w-md rounded bg-white p-4 shadow-lg">
+            <h3 className="mb-2 text-base font-semibold">ยืนยันการยกเลิกสิทธิ์ (Unassign)</h3>
+            <p className="mb-4 text-sm text-slate-700">
+              จะยกเลิกสิทธิ์ของพนักงานจำนวน <strong>{pendingEmpCodes.length}</strong> รายการ
+            </p>
+
+            <div className="flex justify-end gap-2">
+              <button
+                className="rounded border px-3 py-1 text-sm"
+                onClick={closeUnassign}
+                disabled={unassigning}
+              >
+                ยกเลิก
+              </button>
+              <button
+                className="rounded bg-red-600 px-3 py-1 text-sm text-white disabled:opacity-50"
+                onClick={confirmUnassign}
+                disabled={unassigning}
+              >
+                {unassigning ? "กำลังยกเลิก..." : "ยืนยัน Unassign"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
