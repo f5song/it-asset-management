@@ -155,11 +155,13 @@ export async function listAssigneesByException(
   exceptionId: number,
   pageIndex: number,
   pageSize: number,
+  options?: { status?: 'active' | 'revoked' | 'any' }
 ) {
-  // เงื่อนไขหลัก
-  const baseWhere: any = { exception_id: exceptionId };
+  const status = options?.status ?? 'any';
 
-  // หากต้องการ "ต้องมี employee" จริง ๆ ใช้ EXISTS ใน where
+  const baseWhere: any = { exception_id: exceptionId };
+  if (status !== 'any') baseWhere.status = status; // ✅ filter ตามต้องการ
+
   const mustHaveEmployee = literal(`
     EXISTS (
       SELECT 1
@@ -168,44 +170,38 @@ export async function listAssigneesByException(
     )
   `);
 
-  // นับด้วย where เดียวกัน (รวม EXISTS ให้สอดคล้องกับ rows)
   const total = await ExceptionAssignment.count({
     where: {
       ...baseWhere,
-      [Op.and]: [sqlWhere(literal("true"), mustHaveEmployee)],
+      [Op.and]: [sqlWhere(literal('true'), mustHaveEmployee)],
     },
   });
 
-  // ป้องกันหน้าเกิน (safe paging)
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const safeIndex = Math.min(
-    Math.max(0, pageIndex),
-    Math.max(0, pageCount - 1),
-  );
+  const pageCount = Math.max(1, Math.ceil(total / Math.max(1, pageSize)));
+  const safeIndex = Math.min(Math.max(0, pageIndex), Math.max(0, pageCount - 1));
   const offset = safeIndex * pageSize;
 
-  // ดึง rows ด้วย LEFT JOIN (required:false) เพราะเราบังคับ EXISTS ไว้ใน where แล้ว
   const rows = await ExceptionAssignment.findAll({
     where: {
       ...baseWhere,
-      [Op.and]: [sqlWhere(literal("true"), mustHaveEmployee)],
+      [Op.and]: [sqlWhere(literal('true'), mustHaveEmployee)],
     },
     include: [
       {
         model: Employee,
-        as: "employee",
-        attributes: ["name_th", "surname_th", "department_name"],
-        required: false, // ใช้ LEFT JOIN
+        as: 'employee',
+        attributes: ['name_th', 'surname_th', 'department_name'],
+        required: false,
       },
     ],
-    order: [["assigned_at", "DESC"]],
+    order: [['assigned_at', 'DESC']],
     limit: pageSize,
     offset,
     raw: true,
     nest: true,
   });
 
-  const items = rows.map((r: any) => ({
+  const items = (rows as any[]).map((r) => ({
     assignment_id: r.assignment_id,
     emp_code: r.emp_code,
     status: r.status,
@@ -230,7 +226,6 @@ export async function listAssigneesByException(
     hasNext: safeIndex < pageCount - 1,
   };
 }
-
 // ------------------------------
 // Assign exception to employees (transaction)
 // ------------------------------
@@ -337,3 +332,4 @@ export async function listExceptionsSimple(limit = 10) {
   });
   return rows as any[];
 }
+
