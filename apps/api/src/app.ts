@@ -7,6 +7,7 @@ import { sequelize } from './models';
 import exceptionRoutes from './routes/exception.routes';
 import { notFound } from './middlewares/notFound';
 import { errorHandler } from './middlewares/error';
+import employeeRoutes from './routes/employee.routes';
 
 export function createApp() {
   const app = express();
@@ -62,6 +63,7 @@ export function createApp() {
 
   // Business routes
   app.use('/exceptions', exceptionRoutes);
+  app.use('/employees', employeeRoutes);
 
   // Not found & error handler
   app.use(notFound);

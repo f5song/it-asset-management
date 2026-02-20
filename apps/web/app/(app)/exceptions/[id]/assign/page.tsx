@@ -23,7 +23,7 @@ import {
 } from "@/lib/mappers/employeeFilterMappers";
 
 import { useActiveExceptionDefinitions } from "@/hooks/useActiveExceptionDefinitions";
-import { assignExceptionsToEmployees } from "@/services/exceptions.service";
+import { assignExceptionsToEmployees, getExceptionDefinitionById } from "@/services/exceptions.service";
 import { useEmployeesInventory } from "@/hooks/useEmployeeInventory";
 import EmployeeFilterBar from "@/components/filters/EmployeeFilterBar";
 
@@ -32,6 +32,7 @@ import EmployeeFilterBar from "@/components/filters/EmployeeFilterBar";
  * ------------------------------------------------------------------------------*/
 const STATUS_OPTIONS: readonly EmployeeStatus[] = ["Active", "Resigned"];
 
+// (คงเดิม) ตัวอย่าง department แบบฮาร์ดโค้ด
 const DEPARTMENT_OPTIONS: readonly string[] = [
   "สำนักการตลาด",
   "สำนักข่าว",
@@ -57,6 +58,12 @@ export default function AssignEmployeeExceptionsPage() {
     [params],
   );
 
+  // แปลงเป็น number (หรือ null ถ้าไม่ใช่ตัวเลข)
+  const exceptionIdNum = React.useMemo(() => {
+    const n = Number(exceptionId);
+    return Number.isFinite(n) ? n : null;
+  }, [exceptionId]);
+
   /* --------------------------- Controller & Data --------------------------- */
   const [domainFilters, setDomainFilters] =
     React.useState<EmployeeDomainFilters>(toDomainFilters());
@@ -72,10 +79,30 @@ export default function AssignEmployeeExceptionsPage() {
     setDomainFilters,
     toSimple: (df) => toSimpleFilters(df),
     fromSimple: (sf) => toDomainFilters(sf),
-    resetDeps: [domainFilters.status, domainFilters.type, domainFilters.search],
+
+    // ✅ เพิ่ม excludeAssignedForExceptionId เข้า resetDeps ด้วย
+    resetDeps: [
+      domainFilters.status,
+      domainFilters.type,
+      domainFilters.search,
+      // ↓↓↓ เพิ่มอันนี้เพื่อให้ refetch เมื่อ exception เปลี่ยน
+      (domainFilters as any).excludeAssignedForExceptionId,
+    ],
   });
 
-  // บังคับเรียง Active ก่อนเมื่อ All Status
+  // ✅ เมื่อ exceptionId เปลี่ยน → เซ็ต filter "แสดงเฉพาะพนักงานที่ไม่มี Active assignment" ให้ backend
+  React.useEffect(() => {
+    setDomainFilters((prev) => {
+      // ถ้าเดิมเป็นค่าเดียวกัน ไม่ต้อง set ใหม่ ลด re-render
+      if ((prev as any).excludeAssignedForExceptionId === exceptionIdNum) return prev;
+      return { ...prev, excludeAssignedForExceptionId: exceptionIdNum as any };
+    });
+    // รีเซ็ตหน้าไปหน้าแรกเพื่อให้ paging ตรง
+    ctl.setPagination({ pageIndex: 0, pageSize: ctl.pagination.pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exceptionIdNum]);
+
+  // บังคับเรียง Active ก่อนเมื่อ All Status (คงเดิม)
   React.useEffect(() => {
     const isAll = ctl.simpleFilters.status == null; // undefined = All Status
     if (isAll) {
@@ -91,6 +118,7 @@ export default function AssignEmployeeExceptionsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctl.simpleFilters.status]);
 
+  // ✅ hook นี้ต้องส่ง domainFilters (ที่มี excludeAssignedForExceptionId) เข้า service → API
   const { rows, totalRows, isLoading, isError, errorMessage } =
     useEmployeesInventory(ctl.serverQuery, domainFilters);
 
@@ -108,7 +136,6 @@ export default function AssignEmployeeExceptionsPage() {
   }, []);
 
   /* ----------------- Exception Definition ที่เลือกจาก URL ----------------- */
-  // useActiveExceptionDefinitions: ควรคืน defs: ExceptionDefinitionRow[] (มี id)
   const { defs, isLoading: loadingDefs } =
     useActiveExceptionDefinitions();
 
@@ -116,6 +143,30 @@ export default function AssignEmployeeExceptionsPage() {
     () => defs.find((d) => d.id === exceptionId),
     [defs, exceptionId],
   );
+
+  // ✅ ดึงชื่อจาก backend รายตัว (ไม่จำกัด Active) เพื่อใช้เป็นหัวข้อเสมอ
+  const [titleName, setTitleName] = React.useState<string | null>(null);
+  const [loadingTitle, setLoadingTitle] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!exceptionId) {
+      setTitleName(null);
+      return;
+    }
+    const ac = new AbortController();
+    setLoadingTitle(true);
+    (async () => {
+      try {
+        const def = await getExceptionDefinitionById(exceptionId, ac.signal);
+        setTitleName(def?.name ?? null);
+      } catch (_e) {
+        setTitleName(null);
+      } finally {
+        setLoadingTitle(false);
+      }
+    })();
+    return () => ac.abort();
+  }, [exceptionId]);
 
   /* --------------------------------- Form --------------------------------- */
   const [effectiveDate, setEffectiveDate] = React.useState<string>(
@@ -135,7 +186,6 @@ export default function AssignEmployeeExceptionsPage() {
     setSubmitting(true);
     setLastMsg(null);
     try {
-      // เรียก service: assignExceptionsToEmployees(exceptionId, empCodes[], assignedBy?)
       const res = await assignExceptionsToEmployees(
         exceptionId,
         selectedEmployeeIds,
@@ -145,9 +195,7 @@ export default function AssignEmployeeExceptionsPage() {
       const inserted = Number(res.inserted ?? 0);
       const reactivated = Number(res.reactivated ?? 0);
 
-      setLastMsg(
-        `สำเร็จ: เพิ่ม ${inserted} รายการ, เปิดใช้งานใหม่ ${reactivated} รายการ`,
-      );
+      setLastMsg(`สำเร็จ: เพิ่ม ${inserted} รายการ, เปิดใช้งานใหม่ ${reactivated} รายการ`);
       setSelectedEmployeeIds([]); // reset selection
     } catch (e: any) {
       setLastMsg(e?.message ?? "Assign ล้มเหลว (unknown error)");
@@ -157,13 +205,14 @@ export default function AssignEmployeeExceptionsPage() {
   }, [canSubmit, exceptionId, selectedEmployeeIds]);
 
   /* --------------------------------- Render -------------------------------- */
-  const headerTitle = loadingDefs
-    ? "Assign Exception → Employees"
-    : currentDef
-      ? `${currentDef.name}`
-      : exceptionId
-        ? `Exception ${exceptionId} (ไม่พบในรายการ Active)`
-        : "Assign Exception → Employees";
+  const headerTitle =
+    loadingTitle || loadingDefs
+      ? "Assign Exception → Employees"
+      : titleName
+        ? titleName
+        : exceptionId
+          ? `Exception ${exceptionId} (ไม่พบในรายการ Active)`
+          : "Assign Exception → Employees";
 
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -174,27 +223,17 @@ export default function AssignEmployeeExceptionsPage() {
           { label: "Exceptions", href: "/exceptions" },
           currentDef
             ? { label: currentDef.name, href: `/exceptions/${currentDef.id}` }
-            : { label: "Exception", href: `/exceptions/${exceptionId}` },
+            : titleName
+              ? { label: titleName, href: `/exceptions/${exceptionId}` }
+              : { label: "Exception", href: `/exceptions/${exceptionId}` },
           { label: "Assign to Employees", href: "#" },
         ]}
       />
 
-      {/* Summary ⇒ 3 ใบ: Total Employees / Selected Employees / Exception */}
+      {/* Summary ⇒ 3 ใบ: Total Employees / Selected Employees */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <Card title="Total Employees" count={totalRows} compact />
         <Card title="Selected Employees" count={selectedEmployeeIds.length} compact />
-        {/* สามารถปลดคอมเมนต์เพื่อแสดงสรุป exception */}
-        {/* <Card title="Exception" compact>
-          <p className="text-sm text-slate-600">
-            {loadingDefs
-              ? "กำลังโหลด..."
-              : currentDef
-                ? `${currentDef.name} (${currentDef.id})`
-                : exceptionId
-                  ? `(${exceptionId}) ไม่พบในรายการ Active`
-                  : "-"}
-          </p>
-        </Card> */}
       </div>
 
       {/* Filter Bar */}
@@ -206,22 +245,6 @@ export default function AssignEmployeeExceptionsPage() {
           departmentOptions={DEPARTMENT_OPTIONS}
           rightExtra={
             <div className="flex items-center gap-2">
-              {/* Note / Effective date (ถ้าต้องใช้ในอนาคต) */}
-              {/* <input
-                type="date"
-                value={effectiveDate}
-                onChange={(e) => setEffectiveDate(e.target.value)}
-                className="border rounded px-2 py-1 h-9 text-sm"
-              />
-              <input
-                type="text"
-                placeholder="หมายเหตุ"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="border rounded px-2 py-1 h-9 text-sm"
-              /> */}
-
-              {/* Confirm */}
               <button
                 className="rounded bg-slate-900 text-white px-4 py-2 text-sm h-9 disabled:opacity-50"
                 disabled={!canSubmit || submitting}

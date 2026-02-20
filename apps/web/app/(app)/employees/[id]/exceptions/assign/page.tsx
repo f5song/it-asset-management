@@ -1,6 +1,6 @@
 import AssignEmployeeToExceptionsClient from "@/components/assign/AssignEmployeeToExceptionsClient";
 import { notFound } from "next/navigation";
-import { getEmployeeById } from "@/services/employees.service.mock"; // ⚠️ ต้อง server-safe (ไม่มี 'use client')
+import { getEmployeeById } from "@/services/employees.service"; // ⚠️ ต้อง server-safe (ไม่มี 'use client')
 
 export default async function ExceptionAssignPage({
   params,

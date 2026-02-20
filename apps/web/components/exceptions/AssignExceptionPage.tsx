@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { EmployeeItem } from "@/types";
-import { searchEmployees } from "@/services/employees.service.mock";
+import { searchEmployees } from "@/services/employees.service";
 import { assignException } from "@/services/exceptions.service";
 import { fullName } from "@/lib/name";
 

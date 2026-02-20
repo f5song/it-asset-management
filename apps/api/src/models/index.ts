@@ -2,7 +2,7 @@ import { sequelize } from '../config/sequelize';
 import { ExceptionList } from './ExceptionList';
 import { ExceptionAssignment } from './ExceptionAssignment';
 import { ExceptionTicketMap } from './ExceptionTicketMap';
-import { Employees } from './Employees';
+import { Employee } from './Employee';
 
 // Associations
 ExceptionAssignment.belongsTo(ExceptionList, { foreignKey: 'exception_id', as: 'exception' });
@@ -11,12 +11,12 @@ ExceptionList.hasMany(ExceptionAssignment, { foreignKey: 'exception_id', as: 'as
 ExceptionTicketMap.belongsTo(ExceptionList, { foreignKey: 'exception_id', as: 'exception' });
 ExceptionList.hasMany(ExceptionTicketMap, { foreignKey: 'exception_id', as: 'ticketMaps' });
 
-ExceptionAssignment.belongsTo(Employees, { foreignKey: 'emp_code', targetKey: 'emp_code', as: 'employee' });
+ExceptionAssignment.belongsTo(Employee, { foreignKey: 'emp_code', targetKey: 'emp_code', as: 'employee' });
 
 export {
   sequelize,
   ExceptionList,
   ExceptionAssignment,
   ExceptionTicketMap,
-  Employees,
+  Employee,
 };

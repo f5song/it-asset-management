@@ -31,7 +31,7 @@ export function InstallationTable<R extends { id?: string | number }>({
   filters: InstallationFilters;
   page: number;
   pageSize: number;
-  onPageChange: (p: number) => void;
+  onPageChange?: (p: number) => void;
   emptyMessage?: string;
   maxBodyHeight?: number;
   onAfterFilter?: (meta: {
@@ -139,7 +139,7 @@ export function InstallationTable<R extends { id?: string | number }>({
         typeof next?.pageIndex === "number" &&
         next.pageIndex !== safePage
       ) {
-        onPageChange(next.pageIndex);
+        onPageChange?(next.pageIndex) : ""
       }
     },
     onRowClick: undefined,

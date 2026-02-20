@@ -10,25 +10,23 @@ import { InventoryActionToolbar } from "@/components/toolbar/InventoryActionTool
 
 import type { BreadcrumbItem, HistoryEvent } from "@/types";
 import type {
-  ExceptionDefinitionRow,        // ⬅️ ใช้ Row ที่มี id
+  ExceptionDefinitionRow, // ⬅️ ใช้ Row ที่มี id
   ExceptionAssignmentRow,
   ExceptionEditValues,
 } from "@/types/exception";
 
 import { show } from "@/lib/show";
 import { exceptionAssignmentColumns } from "@/lib/tables/exceptionAssignmentColumns";
-import {
-  demoExceptionAssignments,
-  demoExceptionHistory,
-} from "@/lib/demo/exceptionDetailDemoData";
+import { demoExceptionHistory } from "@/lib/demo/exceptionDetailDemoData";
 import { formatDateSafe } from "@/lib/date";
 import { toLocalInput } from "@/lib/date-input";
 import { exceptionEditFields } from "@/config/forms/exceptionEditFields";
 import { DetailInfoGrid } from "@/components/detail/DetailInfo";
 import { HistoryList } from "@/components/detail/HistoryList";
+import { getExceptionAssigneesPage } from "@/services/exceptions.service";
 
 type ExceptionsDetailProps = {
-  item: ExceptionDefinitionRow;         // ⬅️ เปลี่ยนให้เป็น Row
+  item: ExceptionDefinitionRow; // ⬅️ เปลี่ยนให้เป็น Row
   history?: HistoryEvent[];
   assignments?: ExceptionAssignmentRow[];
   breadcrumbs?: BreadcrumbItem[];
@@ -43,17 +41,70 @@ export default function ExceptionsDetail({
   const router = useRouter();
 
   const historyData = React.useMemo<HistoryEvent[]>(
-    () => (Array.isArray(history) && history.length ? history : demoExceptionHistory),
+    () =>
+      Array.isArray(history) && history.length ? history : demoExceptionHistory,
     [history],
   );
 
-  // ข้อมูลดิบของ assignments
-  const rawRows = React.useMemo<ExceptionAssignmentRow[]>(
-    () => (Array.isArray(assignments) && assignments.length ? assignments : demoExceptionAssignments),
-    [assignments],
+  /* ------------------------------------------------------------------------
+   * Assignments: Server-side pagination (API)
+   * ----------------------------------------------------------------------*/
+  const [page, setPage] = React.useState<number>(1); // 1-based
+  const [pageSize, setPageSize] = React.useState<number>(8);
+  const [totalRows, setTotalRows] = React.useState<number>(0);
+  const [assignRows, setAssignRows] = React.useState<ExceptionAssignmentRow[]>(
+    [],
   );
+  const [loadingAssign, setLoadingAssign] = React.useState<boolean>(false);
+  const [assignError, setAssignError] = React.useState<string | null>(null);
 
-  // ✅ เรียง Active -> Resigned; ถ้าไม่มีสถานะ ให้ไปท้าย
+  // โหลดจาก API เมื่อ exception id / page / pageSize เปลี่ยน
+  React.useEffect(() => {
+    if (!item?.id) {
+      setAssignRows([]);
+      setTotalRows(0);
+      return;
+    }
+    const ac = new AbortController();
+    setLoadingAssign(true);
+    setAssignError(null);
+
+    (async () => {
+      try {
+        const res = await getExceptionAssigneesPage(
+          item.id,
+          { pageIndex: page, pageSize },
+          ac.signal,
+        );
+        setAssignRows(res.items ?? []);
+        setTotalRows(Number(res.totalCount ?? 0));
+        console.log("res.items sample:", res.items?.[0]);
+        console.table(res.items);
+      } catch (e: any) {
+        if (e?.name !== "AbortError") {
+          console.error("load assignees failed:", e);
+          setAssignError(e?.message ?? "โหลดรายการผู้ได้รับสิทธิ์ไม่สำเร็จ");
+          setAssignRows([]);
+          setTotalRows(0);
+        }
+      } finally {
+        setLoadingAssign(false);
+      }
+    })();
+
+    return () => ac.abort();
+  }, [item.id, page, pageSize]);
+
+  // ✅ ถ้าภายนอกส่ง assignments มา (เช่นจาก SSR) ให้ override หน้านั้น
+  React.useEffect(() => {
+    if (Array.isArray(assignments) && assignments.length) {
+      setAssignRows(assignments);
+      // ถ้าไม่ได้ส่ง total มาด้วย ก็ใช้ความยาวของแถวเป็นค่าเริ่มต้น
+      setTotalRows((t) => (t > 0 ? t : assignments.length));
+    }
+  }, [assignments]);
+
+  // ✅ เรียง Active -> Resigned; ถ้าไม่มีสถานะ ให้ไปท้าย (เรียงเฉพาะภายใน "หน้านี้")
   const sortedRows = React.useMemo<ExceptionAssignmentRow[]>(() => {
     const pr = new Map<string, number>([
       ["active", 0],
@@ -72,7 +123,7 @@ export default function ExceptionsDetail({
 
     const getEmpId = (r: any) => r?.employeeId ?? r?.userId ?? r?.empId ?? "";
 
-    return [...rawRows].sort((a: any, b: any) => {
+    return [...assignRows].sort((a: any, b: any) => {
       const sa = (getStatus(a) ?? "").toLowerCase();
       const sb = (getStatus(b) ?? "").toLowerCase();
       const pa = pr.get(sa) ?? 999;
@@ -84,7 +135,7 @@ export default function ExceptionsDetail({
         sensitivity: "base",
       });
     });
-  }, [rawRows]);
+  }, [assignRows]);
 
   const handleBack = React.useCallback(() => {
     router.back();
@@ -157,7 +208,14 @@ export default function ExceptionsDetail({
       submitLabel: "Confirm",
       cancelLabel: "Cancel",
     }),
-    [item.name, item.status, item.risk, item.createdAt, item.lastUpdated, item.description],
+    [
+      item.name,
+      item.status,
+      item.risk,
+      item.createdAt,
+      item.lastUpdated,
+      item.description,
+    ],
   );
 
   const tabs = React.useMemo(
@@ -174,9 +232,20 @@ export default function ExceptionsDetail({
           <InstallationSection<ExceptionAssignmentRow>
             rows={sortedRows}
             columns={exceptionAssignmentColumns}
-            resetKey={`exception-${item.id}`}
-            initialPage={1}
-            pageSize={8}
+            resetKey={`exception-${item.id}-${page}-${pageSize}`}
+            initialPage={page} // 1-based
+            pageSize={pageSize}
+            totalRows={totalRows}
+            isLoading={loadingAssign}
+            errorMessage={assignError ?? undefined}
+            onPageChange={(nextPage: number, nextSize?: number) => {
+              if (typeof nextSize === "number" && nextSize !== pageSize) {
+                setPageSize(nextSize);
+                setPage(1); // เปลี่ยน page size แล้วรีเซ็ตหน้า
+              } else {
+                setPage(nextPage);
+              }
+            }}
           />
         ),
       },
@@ -186,7 +255,18 @@ export default function ExceptionsDetail({
         content: <HistoryList history={historyData} />,
       },
     ],
-    [infoLeft, infoRight, sortedRows, item.id, historyData],
+    [
+      infoLeft,
+      infoRight,
+      sortedRows,
+      item.id,
+      page,
+      pageSize,
+      totalRows,
+      loadingAssign,
+      assignError,
+      historyData,
+    ],
   );
 
   return (

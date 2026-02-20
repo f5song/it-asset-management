@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { listEmployees } from "services/employees.service.mock";
+import { listEmployees } from "services/employees.service";
 import type {
   EmployeeItem,
   EmployeeDomainFilters,
@@ -95,6 +95,7 @@ export function useEmployeesInventory(
    * - pageSize -> pageSize
    * - แนบ search/status/type
    * - ส่ง sortBy/sortOrder ถ้ามี
+   * - ส่ง excludeAssignedForExceptionId -> ให้ backend กรอง "ไม่มี Active assignment"
    * - (ชั่วคราว) แนบ orderByRaw ให้ service mock เห็นรูปแบบที่อยากได้ (ถ้า service รองรับ)
    */
   const serviceQuery = React.useMemo(() => {
@@ -104,11 +105,17 @@ export function useEmployeesInventory(
     const type = toUndefTrim(filters.type);
     const search = toUndefTrim(filters.search) ?? "";
 
+    // ✅ ดึงค่าจาก domain filters (มาจากหน้า Assign)
+    const excludeAssignedForExceptionId =
+      (filters as any)?.excludeAssignedForExceptionId ?? undefined;
+
     const q: EmployeesListQuery & {
       sortBy?: string;
       sortOrder?: "asc" | "desc";
       // เสริมสำหรับ mock/อนาคต: ให้ backend ใช้ orderByRaw ได้ ถ้ารองรับ
       orderByRaw?: string[];
+      // ✅ เพิ่ม field นี้ใน EmployeesListQuery (ฝั่ง client type) ด้วย
+      excludeAssignedForExceptionId?: number;
     } = {
       page: pageIndex + 1,
       pageSize,
@@ -117,6 +124,10 @@ export function useEmployeesInventory(
       type: type ?? undefined,
       ...(sortBy ? { sortBy: String(sortBy) } : {}),
       ...(sortOrder ? { sortOrder } : {}),
+      // ✅ แนบไปให้ service
+      ...(typeof excludeAssignedForExceptionId === "number"
+        ? { excludeAssignedForExceptionId }
+        : {}),
     };
 
     // ❗️ถ้าเป็นการเรียงแบบ priority ที่สถานะ:
@@ -142,6 +153,8 @@ export function useEmployeesInventory(
     filters.status,
     filters.type,
     filters.search,
+    // ✅ ให้ useMemo re-run เมื่อ exception filter เปลี่ยน
+    (filters as any)?.excludeAssignedForExceptionId,
   ]);
 
   React.useEffect(() => {
@@ -207,7 +220,14 @@ export function useEmployeesInventory(
       alive = false;
       ac.abort();
     };
-  }, [serviceQuery, filters.status, serverQuery.sortBy, serverQuery.sortOrder]);
+  }, [
+    serviceQuery,
+    filters.status,
+    serverQuery.sortBy,
+    serverQuery.sortOrder,
+    // ✅ ให้ useEffect re-run เมื่อ exception filter เปลี่ยน (เพื่อ refetch)
+    (filters as any)?.excludeAssignedForExceptionId,
+  ]);
 
   return { rows, totalRows, isLoading, isError, errorMessage };
 }

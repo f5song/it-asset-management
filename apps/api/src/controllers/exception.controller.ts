@@ -21,7 +21,6 @@ export async function list(req: Request, res: Response, next: NextFunction) {
       search: typeof search === 'string' ? search : undefined,
       risk: typeof risk === 'string' ? (risk as any) : undefined,
       categoryId: typeof categoryId === 'string' ? +categoryId : undefined,
-      isActive: typeof isActive !== 'undefined' ? String(isActive) === 'true' : undefined,
       sort: sortParam,
       pageIndex: p.pageIndex0,  // service 0‑based
       pageSize: p.pageSize,

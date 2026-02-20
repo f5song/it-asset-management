@@ -3,50 +3,52 @@
 
 import { buildUrl } from "@/config/config";
 import { http, qs } from "@/lib/http";
-import {
+
+import type {
   ExceptionAssignmentRow,
-  ExceptionDefinitionRow,      // 👈 ใช้ Row (มี id)
-  PolicyStatus,
+  ExceptionDefinitionRow,
   ExceptionDefinitionListQuery,
-  ExceptionDefinitionListResponse, // 👈 ตรวจว่าใน type นี้ items เป็น Row[]
-  RiskLevel,
+  ExceptionDefinitionListResponse,
 } from "@/types/exception";
+import type { OffsetPage } from "@/types/common";
 
 /* ─────────────────────────────────────────────────────────────────────────────
- * Mappers: แปลง snake_case (backend) → camelCase (frontend types)
+ * Backend types (เฉพาะฝั่ง service) + mappers (snake_case → camelCase)
  * ────────────────────────────────────────────────────────────────────────────*/
 
 type BackendExceptionDefinition = {
-  exception_id: string; // "1"
+  exception_id: string;
   code?: string | null;
   name: string;
   description?: string | null;
-  risk_level: string; // "Low" | "Medium" | "High" | "Critical"
+  risk_level: string;                 // "Low" | "Medium" | "High" | (อาจมี "Critical")
   category_id?: string | null;
-  status: string;     // "Active" | "Inactive" | "1"/"0" | "true"/"false"
-  created_at: string; // ISO
+  status: string;                     // "Active" | "Inactive" | "1"/"0" | "true"/"false"
+  created_at: string;                 // ISO
   created_by?: string | null;
   updated_at?: string | null;
   updated_by?: string | null;
-  assignees_active?: string | number | null; // "3"
+  assignees_active?: string | number | null;
   last_assigned_at?: string | null;
   tickets_count?: string | number | null;
 };
 
-export function toPolicyStatus(s: string): PolicyStatus {
+function toPolicyStatus(s: unknown): "Active" | "Inactive" {
   const v = String(s ?? "").trim().toLowerCase();
   if (v === "active") return "Active";
   if (v === "inactive") return "Inactive";
   if (v === "1" || v === "true" || v === "yes" || v === "y") return "Active";
   if (v === "0" || v === "false" || v === "no" || v === "n") return "Inactive";
+  // คงความเข้มงวดตามของเดิม: ถ้าอยาก tolerant ไม่ throw ให้ return "Inactive"
   throw new Error(`Invalid PolicyStatus: ${s}`);
 }
 
-export function toRiskLevel(s: string): RiskLevel {
+function toRiskLevel(s: unknown): "Low" | "Medium" | "High" {
   const v = String(s ?? "").trim().toLowerCase();
   if (v === "low") return "Low";
   if (v === "medium") return "Medium";
   if (v === "high") return "High";
+  // ถ้า backend อาจส่ง "Critical" ให้ตัดสินใจ map เป็น "High" หรือเพิ่มใน type
   throw new Error(`Invalid RiskLevel: ${s}`);
 }
 
@@ -56,13 +58,12 @@ function toNumberOrZero(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** ✅ mapper คืน ExceptionDefinitionRow (มี id) */
 function mapBackendDefinition(row: BackendExceptionDefinition): ExceptionDefinitionRow {
   return {
     // RowBase
     id: String(row.exception_id),
 
-    // Domain fields (เก็บ exception_id ไว้แสดงคอลัมน์ด้วย)
+    // Domain (ใช้ชื่อ field ตาม type เดิม)
     exception_id: String(row.exception_id),
     name: row.name ?? "",
     status: toPolicyStatus(row.status),
@@ -75,44 +76,56 @@ function mapBackendDefinition(row: BackendExceptionDefinition): ExceptionDefinit
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
+ * Utilities (normalize pagination result ให้เข้ากับ OffsetPage<T>)
+ * ────────────────────────────────────────────────────────────────────────────*/
+
+function pickTotalCount(res: any, fallbackLen = 0): number {
+  return Number(
+    res?.totalCount ?? res?.total ?? res?.pagination?.total ?? fallbackLen,
+  );
+}
+
+function normalizePageInfo(
+  res: any,
+  inPage: number,       // 1-based
+  inPageSize: number,
+  totalCount: number,
+) {
+  // รองรับทั้ง pageIndex (1-based) และ page
+  const page = Number(res?.pageIndex ?? res?.page ?? inPage ?? 1);
+  const pageSize = Number(res?.pageSize ?? inPageSize ?? 10);
+  const totalPages = Math.max(1, Math.ceil(Math.max(0, totalCount) / Math.max(1, pageSize)));
+  const hasPrev = typeof res?.hasPrev === "boolean" ? !!res.hasPrev : page > 1;
+  const hasNext = typeof res?.hasNext === "boolean" ? !!res.hasNext : page < totalPages;
+  return { page, pageSize, totalPages, hasPrev, hasNext };
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
  * Service APIs (Definitions)
  * ────────────────────────────────────────────────────────────────────────────*/
 
-/** GET /exceptions/:id  → คืน Row หรือ null */
+/** GET /exceptions/:id → คืน Row หรือ null */
 export async function getExceptionDefinitionById(
-  id: string,
+  id: string | number,
   signal?: AbortSignal,
 ): Promise<ExceptionDefinitionRow | null> {
   const url = buildUrl(`/exceptions/${encodeURIComponent(String(id))}`);
-  console.log("[getExceptionDefinitionById] URL =", url); // ✅ ควรเห็น :8000
-
-  const res = await fetch(url, { signal, cache: "no-store" }); // ถ้า http() ห่อ fetch อยู่ ให้ log ข้างในด้วย
-  console.log("[getExceptionDefinitionById] status =", res.status);
-
-  if (!res.ok) {
-    if (res.status === 404) return null;
-    throw new Error(`Backend failed ${res.status}`);
-  }
-
-  const raw = await res.json();
-  const row: BackendExceptionDefinition | null = raw?.item ?? raw?.data ?? raw ?? null;
-  if (!row) return null;
-  return mapBackendDefinition(row);
+  const res = await http<any>(url, { method: "GET", signal });
+  const raw: BackendExceptionDefinition | null = res?.item ?? res?.data ?? res ?? null;
+  return raw ? mapBackendDefinition(raw) : null;
 }
-
 
 /**
  * GET /exceptions (paged list with search/filter/sort)
- * - Backend ใช้ 1-based: pageIndex, pageSize
- * - sort ตัวอย่าง: ?sort=exception_id:desc
- * - isActive=true/false
- * ✅ คืน ExceptionDefinitionListResponse ที่ items: ExceptionDefinitionRow[]
+ * - FE query ใช้ `ExceptionDefinitionListQuery` (extends OffsetPaginationParams & Searchable)
+ * - BE รองรับ 1-based: pageIndex/pageSize
+ * - sort: ส่งแบบ `sort=field:dir` (หรือปรับให้ตรงกับ backend จริง)
  */
 export async function getExceptionDefinitions(
   q: ExceptionDefinitionListQuery,
   signal?: AbortSignal,
 ): Promise<ExceptionDefinitionListResponse> {
-  // FE → BE query (1-based)
+  // FE → BE (1-based)
   const query = {
     pageIndex: q.page ?? 1,
     pageSize: q.pageSize ?? 10,
@@ -125,35 +138,32 @@ export async function getExceptionDefinitions(
   };
 
   const url = buildUrl(`/exceptions${qs(query)}`);
-  const res = await http<any>(url, { signal });
+  const res = await http<any>(url, { method: "GET", signal });
 
   const rows: BackendExceptionDefinition[] = res?.items ?? res?.data ?? [];
   const items: ExceptionDefinitionRow[] = rows.map(mapBackendDefinition);
 
-  const totalCount = Number(
-    res?.total ?? res?.totalCount ?? res?.pagination?.total ?? items.length,
+  const totalCount = pickTotalCount(res, items.length);
+  const { page, pageSize, hasPrev, hasNext, totalPages } = normalizePageInfo(
+    res,
+    query.pageIndex ?? 1,
+    query.pageSize ?? 10,
+    totalCount,
   );
-  const page = Number(res?.pageIndex ?? query.pageIndex ?? 1);
-  const pageSize = Number(res?.pageSize ?? query.pageSize ?? 10);
-  const totalPages =
-    Number(res?.pageCount) ||
-    Math.max(1, Math.ceil(Number(totalCount) / Math.max(1, Number(pageSize))));
-  const hasPrev = typeof res?.hasPrev === "boolean" ? !!res.hasPrev : page > 1;
-  const hasNext =
-    typeof res?.hasNext === "boolean" ? !!res.hasNext : page < totalPages;
 
+  // ✅ คืนค่าเข้ากับ OffsetPage<ExceptionDefinitionRow>
   return {
-    items,        // 👈 Row[]
+    items,
     totalCount,
     page,
     pageSize,
-    totalPages,
-    hasNext,
     hasPrev,
+    hasNext,
+    totalPages,
   };
 }
 
-/** alias (คงชื่อเดิมให้ส่วนอื่นเรียกต่อได้) */
+/** alias ให้ส่วนอื่นเรียกต่อได้ (ชื่อเดิม) */
 export async function listExceptionDefinitions(
   q: ExceptionDefinitionListQuery,
   signal?: AbortSignal,
@@ -162,102 +172,45 @@ export async function listExceptionDefinitions(
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
- * Service APIs (Assignments / Assignees)
+ * Service APIs (Assignments / Assignees) — ใช้ pagination แบบ OffsetPage<T>
  * ────────────────────────────────────────────────────────────────────────────*/
 
-export async function getExceptionAssignmentsByDefinitionId(
+export type ExceptionAssigneesPage = OffsetPage<ExceptionAssignmentRow>;
+
+/**
+ * GET /exceptions/:id/assignees?pageIndex=1&pageSize=10
+ * → คืนรายการผู้ถูก assign แบบแบ่งหน้า (normalize เป็น OffsetPage<...>)
+ */
+export async function getExceptionAssigneesPage(
   id: string | number,
-  opts?: { page?: number; pageSize?: number },
+  opts?: { pageIndex?: number; pageSize?: number },
   signal?: AbortSignal,
-): Promise<ExceptionAssignmentRow[]> {
+): Promise<ExceptionAssigneesPage> {
   const query = {
-    pageIndex: opts?.page ?? 1,
-    pageSize: opts?.pageSize ?? 20,
+    pageIndex: opts?.pageIndex ?? 1, // 1-based
+    pageSize: opts?.pageSize ?? 10,
   };
 
   const url = buildUrl(
     `/exceptions/${encodeURIComponent(String(id))}/assignees${qs(query)}`,
   );
+  const res = await http<any>(url, { method: "GET", signal });
 
-  const res = await http<any>(url, { signal });
-  return Array.isArray(res) ? res : (res?.items ?? res?.data ?? []);
-}
-
-export async function getExceptionAssignmentsPage(
-  id: string | number,
-  opts?: { page?: number; pageSize?: number },
-  signal?: AbortSignal,
-): Promise<{
-  items: ExceptionAssignmentRow[];
-  total: number;
-  page: number; // 1-based
-  pageSize: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}> {
-  const query = {
-    pageIndex: opts?.page ?? 1,
-    pageSize: opts?.pageSize ?? 20,
-  };
-
-  const url = buildUrl(
-    `/exceptions/${encodeURIComponent(String(id))}/assignees${qs(query)}`,
-  );
-
-  const res = await http<any>(url, { signal });
   const items: ExceptionAssignmentRow[] = res?.items ?? res?.data ?? [];
-  const total = Number(res?.total ?? items.length);
-  const page = Number(res?.pageIndex ?? query.pageIndex ?? 1);
-  const pageSize = Number(res?.pageSize ?? query.pageSize ?? 20);
-  const totalPages =
-    Number(res?.pageCount) ||
-    Math.max(1, Math.ceil(Number(total) / Math.max(1, Number(pageSize))));
-  const hasPrev = typeof res?.hasPrev === "boolean" ? !!res.hasPrev : page > 1;
-  const hasNext =
-    typeof res?.hasNext === "boolean" ? !!res.hasNext : page < totalPages;
+  const totalCount = pickTotalCount(res, items.length);
 
-  return {
-    items,
-    total,
-    page,
-    pageSize,
-    totalPages,
-    hasNext,
-    hasPrev,
-  };
+  const { page, pageSize, hasPrev, hasNext, totalPages } = normalizePageInfo(
+    res,
+    query.pageIndex ?? 1,
+    query.pageSize ?? 10,
+    totalCount,
+  );
+
+  return { items, totalCount, page, pageSize, hasPrev, hasNext, totalPages };
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
- * Extra helper: active definitions for checkbox/list
- * ────────────────────────────────────────────────────────────────────────────*/
-
-/** ✅ คืน Row[] (มี id) */
-export async function getActiveExceptionDefinitions(
-  signal?: AbortSignal,
-): Promise<ExceptionDefinitionRow[]> {
-  const res = await getExceptionDefinitions(
-    {
-      page: 1,
-      pageSize: 1000,
-      status: "Active" as PolicyStatus,
-      sortBy: "name",
-      sortOrder: "asc",
-    },
-    signal,
-  );
-
-  const items = (res.items ?? []).slice().sort((a, b) =>
-    String(a.name ?? "").localeCompare(String(b.name ?? ""), undefined, {
-      sensitivity: "base",
-      numeric: true,
-    }),
-  );
-  return items;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
- * Wrapper (Form): assignException
+ * Wrapper (Form): assign / unassign
  * ────────────────────────────────────────────────────────────────────────────*/
 
 export async function assignException(
@@ -375,4 +328,32 @@ export async function unassignExceptionsFromEmployees(
 
   // backend คืน { updated: number } → map เป็น removed
   return { removed: Number(res?.updated ?? 0) };
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Extra helper: active definitions (checkbox/list)
+ * ────────────────────────────────────────────────────────────────────────────*/
+
+/** คืน Row[] (มี id) */
+export async function getActiveExceptionDefinitions(
+  signal?: AbortSignal,
+): Promise<ExceptionDefinitionRow[]> {
+  const res = await getExceptionDefinitions(
+    {
+      page: 1,
+      pageSize: 1000,
+      status: "Active",
+      sortBy: "name",
+      sortOrder: "asc",
+    },
+    signal,
+  );
+
+  // เรียงที่ FE เพื่อความแน่นอนตาม locale
+  return (res.items ?? []).slice().sort((a, b) =>
+    String(a.name ?? "").localeCompare(String(b.name ?? ""), undefined, {
+      sensitivity: "base",
+      numeric: true,
+    }),
+  );
 }

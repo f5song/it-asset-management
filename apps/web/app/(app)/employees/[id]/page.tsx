@@ -4,7 +4,7 @@ import { fullName } from "@/lib/name";
 import EmployeeDetail from "components/detail/EmployeeDetail";
 import BackButton from "components/ui/BackButton";
 import { notFound } from "next/navigation";
-import { getEmployeeById } from "services/employees.service.mock";
+import { getEmployeeById } from "services/employees.service";
 
 
 type PageProps = { params: { id: string } };

@@ -1,12 +1,13 @@
+// src/middlewares/pagination.ts
 import { Request, Response, NextFunction } from 'express';
 import { normalize1BasedPaging } from '../utils/pagination';
 
-// ประกาศ type เพิ่มให้ req.pagination ใช้ได้ใน TypeScript
+// เพิ่ม type ให้ req.pagination ใช้งานได้
 declare module 'express-serve-static-core' {
   interface Request {
     pagination?: {
       pageIndex0: number;
-      pageIndex1: number;
+      pageIndex1: number; // 1-based
       pageSize: number;
       offset: number;
       limit: number;
@@ -16,15 +17,15 @@ declare module 'express-serve-static-core' {
 
 /**
  * ใช้กับ route ที่ต้องการ 1-based pagination
- * รองรับ query ?pageIndex=1&pageSize=20
+ * ✅ รองรับ query: ?page=1&pageSize=20 (1-based เท่านั้น)
  */
 export function pagination1Based(opts?: { pageSizeDefault?: number; pageSizeMax?: number }) {
   return (req: Request, _res: Response, next: NextFunction) => {
-    const { pageIndex, pageSize } = req.query;
+    const { page, pageSize } = req.query;
 
     const normalized = normalize1BasedPaging({
-      pageIndex1: typeof pageIndex === 'string' ? pageIndex : undefined,
-      pageSize: typeof pageSize === 'string' ? pageSize : undefined,
+      pageIndex1: typeof page === 'string' ? page : undefined,           // ✅ อ่าน page
+      pageSize: typeof pageSize === 'string' ? pageSize : undefined,     // ✅ อ่าน pageSize
       pageSizeDefault: opts?.pageSizeDefault ?? 20,
       pageSizeMax: opts?.pageSizeMax ?? 100,
     });

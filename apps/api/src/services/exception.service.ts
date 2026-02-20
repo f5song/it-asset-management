@@ -1,20 +1,20 @@
 // src/services/exception.service.ts
-import { Op, fn, literal, where as sqlWhere } from 'sequelize';
-import type { FindAndCountOptions } from 'sequelize';
+import { Op, fn, literal, where as sqlWhere } from "sequelize";
+import type { FindAndCountOptions } from "sequelize";
 import {
   sequelize,
   ExceptionList,
   ExceptionAssignment,
   // ExceptionTicketMap, // ถ้ายังไม่ใช้สามารถคอมเมนต์ไว้ได้
-  Employees,
-} from '../models';
+  Employee,
+} from "../models";
 
 // ------------------------------
 // Types
 // ------------------------------
 export type ListExceptionsParams = {
   search?: string;
-  risk?: 'Low' | 'Medium' | 'High';
+  risk?: "Low" | "Medium" | "High";
   categoryId?: number;
   isActive?: boolean;
   sort?: { col: string; desc: boolean };
@@ -28,14 +28,14 @@ export type ListExceptionsParams = {
 //   - คอลัมน์คำนวณ: ใช้ literal
 // ------------------------------
 const PLAIN_SORT_COLUMNS = new Set([
-  'exception_id',
-  'code',
-  'name',
-  'risk_level',
-  'category_id',
-  'status',
-  'created_at',
-  'updated_at',
+  "exception_id",
+  "code",
+  "name",
+  "risk_level",
+  "category_id",
+  "status",
+  "created_at",
+  "updated_at",
 ]);
 
 const LITERAL_SORT_MAP: Record<string, string> = {
@@ -62,42 +62,47 @@ const LITERAL_SORT_MAP: Record<string, string> = {
 // ------------------------------
 export async function listExceptions(p: ListExceptionsParams) {
   const where: any = {};
-  if (p.search && p.search.trim() !== '') {
+  if (p.search && p.search.trim() !== "") {
     where.name = { [Op.iLike]: `%${p.search.trim()}%` };
   }
   if (p.risk) where.risk_level = p.risk;
   if (p.categoryId) where.category_id = p.categoryId;
-  if (typeof p.isActive === 'boolean') where.status = p.isActive;
 
-  const sortKey = p.sort?.col ?? 'exception_id';
-  const sortDir = p.sort?.desc ? 'DESC' : 'ASC';
+  if (typeof p.isActive === "boolean") {
+    // ปรับให้ตรงกับค่าที่คุณใช้จริงในตาราง (ตัวอย่าง: 'active'/'inactive')
+    where.status = p.isActive ? "active" : "inactive";
+    // ถ้าคุณเก็บเป็น 'true'/'false' (string) ให้ใช้: where.status = p.isActive ? 'true' : 'false'
+  }
+
+  const sortKey = p.sort?.col ?? "exception_id";
+  const sortDir = p.sort?.desc ? "DESC" : "ASC";
 
   // เลือก attributes ให้ได้รายละเอียดใกล้เคียง /exceptions/:id
   const attributes: any = [
-    'exception_id',
-    'code',
-    'name',
-    'description',  // <-- ลบออกได้ถ้า schema ไม่มี
-    'risk_level',
-    'category_id',
-    'status',
-    'created_at',
-    'created_by',   // <-- ลบออกได้ถ้า schema ไม่มี
-    'updated_at',   // <-- ลบออกได้ถ้า schema ไม่มี
-    'updated_by',   // <-- ลบออกได้ถ้า schema ไม่มี
-    [literal(LITERAL_SORT_MAP.assignees_active), 'assignees_active'],
-    [literal(LITERAL_SORT_MAP.last_assigned_at), 'last_assigned_at'],
-    [literal(LITERAL_SORT_MAP.tickets_count), 'tickets_count'],
+    "exception_id",
+    "code",
+    "name",
+    "description", // <-- ลบออกได้ถ้า schema ไม่มี
+    "risk_level",
+    "category_id",
+    "status",
+    "created_at",
+    "created_by", // <-- ลบออกได้ถ้า schema ไม่มี
+    "updated_at", // <-- ลบออกได้ถ้า schema ไม่มี
+    "updated_by", // <-- ลบออกได้ถ้า schema ไม่มี
+    [literal(LITERAL_SORT_MAP.assignees_active), "assignees_active"],
+    [literal(LITERAL_SORT_MAP.last_assigned_at), "last_assigned_at"],
+    [literal(LITERAL_SORT_MAP.tickets_count), "tickets_count"],
   ];
 
   // คำนวณ order: คอลัมน์จริง vs literal
-  let order: FindAndCountOptions['order'];
+  let order: FindAndCountOptions["order"];
   if (PLAIN_SORT_COLUMNS.has(sortKey)) {
     order = [[sortKey, sortDir]];
   } else if (LITERAL_SORT_MAP[sortKey]) {
     order = [literal(`${LITERAL_SORT_MAP[sortKey]} ${sortDir}`)] as any;
   } else {
-    order = [['exception_id', 'ASC']];
+    order = [["exception_id", "ASC"]];
   }
 
   const baseOptions: FindAndCountOptions = {
@@ -116,7 +121,7 @@ export async function listExceptions(p: ListExceptionsParams) {
   if ((result?.count ?? 0) > 0 && (result?.rows?.length ?? 0) === 0) {
     const retry = await ExceptionList.findAndCountAll({
       ...baseOptions,
-      order: [['exception_id', 'ASC']],
+      order: [["exception_id", "ASC"]],
       offset: 0,
     });
     return { items: retry.rows as any[], total: Number(retry.count) };
@@ -133,8 +138,8 @@ export async function getExceptionById(exceptionId: number) {
     where: { exception_id: exceptionId },
     attributes: {
       include: [
-        [literal(LITERAL_SORT_MAP.assignees_active), 'assignees_active'],
-        [literal(LITERAL_SORT_MAP.tickets_count), 'tickets_count'],
+        [literal(LITERAL_SORT_MAP.assignees_active), "assignees_active"],
+        [literal(LITERAL_SORT_MAP.tickets_count), "tickets_count"],
       ],
     },
     raw: true,
@@ -168,30 +173,33 @@ export async function listAssigneesByException(
   const total = await ExceptionAssignment.count({
     where: {
       ...baseWhere,
-      [Op.and]: [sqlWhere(literal('true'), mustHaveEmployee)],
+      [Op.and]: [sqlWhere(literal("true"), mustHaveEmployee)],
     },
   });
 
   // ป้องกันหน้าเกิน (safe paging)
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const safeIndex = Math.min(Math.max(0, pageIndex), Math.max(0, pageCount - 1));
+  const safeIndex = Math.min(
+    Math.max(0, pageIndex),
+    Math.max(0, pageCount - 1),
+  );
   const offset = safeIndex * pageSize;
 
   // ดึง rows ด้วย LEFT JOIN (required:false) เพราะเราบังคับ EXISTS ไว้ใน where แล้ว
   const rows = await ExceptionAssignment.findAll({
     where: {
       ...baseWhere,
-      [Op.and]: [sqlWhere(literal('true'), mustHaveEmployee)],
+      [Op.and]: [sqlWhere(literal("true"), mustHaveEmployee)],
     },
     include: [
       {
-        model: Employees,
-        as: 'employee',
-        attributes: ['name_th', 'surname_th', 'department_name'],
+        model: Employee,
+        as: "employee",
+        attributes: ["name_th", "surname_th", "department_name"],
         required: false, // ใช้ LEFT JOIN
       },
     ],
-    order: [['assigned_at', 'DESC']],
+    order: [["assigned_at", "DESC"]],
     limit: pageSize,
     offset,
     raw: true,
@@ -238,10 +246,11 @@ export async function assignExceptionToEmployees(
     // 1) Reactivate (revoked -> active)
     const [reactCount, reactRows] = await ExceptionAssignment.update(
       {
-        status: 'active',
-        assigned_at: fn('now') as unknown as Date,
+        status: "active",
+        assigned_at: fn("now") as unknown as Date,
         // ถ้าไม่ได้ส่ง assignedBy → คงค่าเดิมของคอลัมน์เดิม
-        assigned_by: assignedBy ?? (literal('"assigned_by"') as unknown as string),
+        assigned_by:
+          assignedBy ?? (literal('"assigned_by"') as unknown as string),
         revoked_at: null,
         revoked_by: null,
         revoke_reason: null,
@@ -250,20 +259,20 @@ export async function assignExceptionToEmployees(
         where: {
           exception_id: exceptionId,
           emp_code: { [Op.in]: empCodes },
-          status: 'revoked',
+          status: "revoked",
         },
         returning: true,
         transaction: t,
-      }
+      },
     );
 
     // 2) Insert ใหม่เฉพาะที่ยังไม่มี (unique (exception_id, emp_code, status))
     const payload = empCodes.map((emp) => ({
       exception_id: exceptionId,
       emp_code: emp,
-      status: 'active' as const,
+      status: "active" as const,
       assigned_by: assignedBy ?? null,
-      assigned_at: fn('now') as unknown as Date,
+      assigned_at: fn("now") as unknown as Date,
     }));
 
     const insertedRows = await ExceptionAssignment.bulkCreate(payload, {
@@ -297,8 +306,8 @@ export async function revokeAssignments(
   if (!empCodes.length) return { updated: 0 };
 
   const values: any = {
-    status: 'revoked',
-    revoked_at: fn('now') as unknown as Date,
+    status: "revoked",
+    revoked_at: fn("now") as unknown as Date,
     revoked_by: revokedBy ?? null,
   };
   // ถ้าไม่ได้ส่ง reason → คงค่าของ revoke_reason เดิมไว้ (ไม่แตะ)
@@ -310,7 +319,7 @@ export async function revokeAssignments(
     where: {
       exception_id: exceptionId,
       emp_code: { [Op.in]: empCodes },
-      status: 'active',
+      status: "active",
     },
   });
 
@@ -322,8 +331,8 @@ export async function revokeAssignments(
 // ------------------------------
 export async function listExceptionsSimple(limit = 10) {
   const rows = await ExceptionList.findAll({
-    attributes: ['exception_id', 'code', 'name', 'risk_level', 'status'],
-    order: [['exception_id', 'DESC']],
+    attributes: ["exception_id", "code", "name", "risk_level", "status"],
+    order: [["exception_id", "DESC"]],
     limit,
     raw: true,
   });
