@@ -5,7 +5,6 @@ import {
   sequelize,
   ExceptionList,
   ExceptionAssignment,
-  // ExceptionTicketMap, // ถ้ายังไม่ใช้สามารถคอมเมนต์ไว้ได้
   Employee,
 } from "../models";
 

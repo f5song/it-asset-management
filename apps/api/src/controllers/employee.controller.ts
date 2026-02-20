@@ -5,41 +5,34 @@ import * as svc from '../services/employee.service';
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
-    // ✅ ใช้ค่า 1-based จาก middleware pagination1Based (req.pagination)
-    const { pageIndex1 = 1, pageSize = 10 } = req.pagination ?? {};
+    const { pageIndex1 = 1, pageSize = 10 } = req.pagination ?? {}; // จาก middleware 1-based
     const q = req.query as Record<string, string | undefined>;
 
-    const sort =
-      q.sortBy
-        ? { col: String(q.sortBy), desc: String(q.sortOrder ?? 'asc').toLowerCase() === 'desc' }
-        : undefined;
+    const sort = q.sortBy
+      ? { col: String(q.sortBy), desc: String(q.sortOrder ?? 'asc').toLowerCase() === 'desc' }
+      : undefined;
 
-    // ✅ ส่ง 1-based เข้า service (เราได้แก้ service ให้รับ { page, pageSize } แล้ว)
     const data = await svc.listEmployees({
-      page: Number(pageIndex1),                      // 1-based
+      page: Number(pageIndex1),
       pageSize: Number(pageSize),
       search: q.search ?? '',
-      status: q.status as any,                       // "Active" | "Resigned" | undefined
-      type: q.type ?? undefined,                     // department_name
+      status: q.status as any,
+      type: q.type ?? undefined,
       sort,
-      // ถ้ามีฟิลเตอร์พิเศษ
+      // ✅ ส่ง exceptionId ที่ต้อง "exclude active" ใน exception นั้น
       excludeAssignedForExceptionId: q.excludeAssignedForExceptionId
         ? Number(q.excludeAssignedForExceptionId)
         : undefined,
     });
 
-    // ถ้า service ใช้ withPaging แล้ว จะมี meta 1-based กลับมาใน data อยู่แล้ว:
-    // { items, total, pageIndex(1-based), pageSize, pageCount, hasPrev, hasNext }
-    // คุณสามารถส่งออกทั้งก้อนเลย หรือ map ชื่อฟิลด์ตามที่ FE ต้องการ
-
     return res.json({
       items: data.items,
       totalCount: data.total,
-      page: data.pageIndex ?? Number(pageIndex1),    // 1-based
+      page: data.pageIndex ?? Number(pageIndex1),
       pageSize: data.pageSize ?? Number(pageSize),
       pageCount: data.pageCount,
-      hasPrev: data.hasPrev ?? (Number(pageIndex1) > 1),
-      hasNext: data.hasNext ?? (Number(pageIndex1) * Number(pageSize) < Number(data.total)),
+      hasPrev: data.hasPrev,
+      hasNext: data.hasNext,
     });
   } catch (err) {
     next(err);

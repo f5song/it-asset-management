@@ -16,6 +16,7 @@ export async function listEmployees(
   q: EmployeesListQuery,
   signal?: AbortSignal,
 ): Promise<EmployeesListResponse> {
+  // page: รองรับทั้ง page (1-based) และ fallback จาก pageIndex (0-based)
   const page =
     typeof q.page === "number"
       ? Math.max(1, Number(q.page))
@@ -25,6 +26,14 @@ export async function listEmployees(
   const sortOrder =
     q.sort?.desc != null ? (q.sort.desc ? "desc" : "asc") : (q.sortOrder ?? "asc");
 
+  // ✅ ดึง exceptionId ที่ต้อง "exclude active assignees" ออกจากลิสต์
+  //    - ถ้าได้อัปเดต type EmployeesListQuery แล้ว: q.excludeAssignedForExceptionId
+  //    - ถ้ายัง: fallback ใช้ (q as any)
+  const excludeAssignedForExceptionId =
+    typeof (q as any)?.excludeAssignedForExceptionId === "number"
+      ? (q as any).excludeAssignedForExceptionId
+      : undefined;
+
   const query = {
     page,
     pageSize: q.pageSize ?? 10,
@@ -33,6 +42,11 @@ export async function listEmployees(
     type: q.type || undefined,     // department
     sortBy: sortBy || undefined,
     sortOrder: sortBy ? (sortOrder ?? "asc") : undefined,
+
+    // ✅ แนบไปเมื่อมีค่า (ตัวเลข)
+    ...(typeof excludeAssignedForExceptionId === "number"
+      ? { excludeAssignedForExceptionId }
+      : {}),
   };
 
   const url = buildUrl(`/employees${qs(query)}`);

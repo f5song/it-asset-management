@@ -130,21 +130,20 @@ function buildWhere(p: Pick<EmployeesListParams, 'search' | 'status' | 'type'>):
 /* =========================
  * Public API (1-based pagination)
  * ========================= */
-export async function listEmployees(
-  p: EmployeesListParams,
-): Promise<EmployeesListResult> {
-  // ✅ 1-based → normalize
+
+
+export async function listEmployees(p: EmployeesListParams) {
   const { pageIndex0, pageSize, offset, limit } = normalize1BasedPaging({
-    pageIndex1: p.page,      // รับ 1-based
+    pageIndex1: p.page,
     pageSize: p.pageSize,
     pageSizeDefault: 10,
     pageSizeMax: 100,
   });
 
-  // Base where (search/status/department)
+  // where หลัก (search/status/type) — ของเดิมคุณใช้อยู่
   const where = buildWhere({ search: p.search, status: p.status, type: p.type });
 
-  // ✅ กรอง "ไม่มี Active assignment" ใน exception ที่กำหนด (NOT EXISTS)
+  // ✅ จุดสำคัญ: ซ่อนพนักงานที่ "กำลัง Active" ใน exception นี้
   const andConds: any[] = [];
   if (p.excludeAssignedForExceptionId != null) {
     const exceptionIdNum = Number(p.excludeAssignedForExceptionId);
@@ -155,82 +154,42 @@ export async function listEmployees(
           FROM public.exception_assignment a
           WHERE a.emp_code = "Employee"."emp_code"
             AND a.exception_id = ${exceptionIdNum}
-            AND a.status = 'active'
-        )
-      `);
+            AND a.status = 'active'      -- ✅ เงื่อนไข "กำลัง Active"
+      )`);
       andConds.push(sqlWhere(literal("true"), notExistsActiveForException));
     }
   }
+
   const finalWhere: WhereOptions =
     andConds.length > 0 ? { [Op.and]: [where, ...andConds] } : where;
 
-  // Attributes (mapping ออกเป็นคอลัมน์ที่ UI ใช้)
   const attributes: FindOptions["attributes"] = [
-    ["emp_code", "id"],
-    ["name_th", "firstNameTh"],
-    ["surname_th", "lastNameTh"],
-    ["name_eng", "firstNameEn"],
-    ["surname_eng", "lastNameEn"],
-    ["company_name", "company"],
-    ["department_name", "department"],
-    ["section_name", "section"],
-    ["unit_name", "unit"],
-    ["posi_name_th", "position"],
-    ["e_mail", "email"],
-    ["work_phone_in", "phone"],
-    [
-      literal(
-        `CASE emp_type WHEN 'P' THEN 'Permanent' WHEN 'C' THEN 'Contract' ELSE NULL END`,
-      ),
-      "empType",
-    ],
-    ["ebegin_date", "beginDate"],
-    ["resign_date", "resignDate"],
-    ["update_time", "updatedAt"],
-    [
-      literal(
-        `CASE emp_stus WHEN 'A' THEN 'Active' WHEN 'R' THEN 'Resigned' ELSE 'Unknown' END`,
-      ),
-      "status",
-    ],
+    ["emp_code", "id"], ["name_th", "firstNameTh"], ["surname_th", "lastNameTh"],
+    ["name_eng", "firstNameEn"], ["surname_eng", "lastNameEn"],
+    ["company_name", "company"], ["department_name", "department"],
+    ["section_name", "section"], ["unit_name", "unit"], ["posi_name_th", "position"],
+    ["e_mail", "email"], ["work_phone_in", "phone"],
+    [literal(`CASE emp_type WHEN 'P' THEN 'Permanent' WHEN 'C' THEN 'Contract' ELSE NULL END`),"empType"],
+    ["ebegin_date", "beginDate"], ["resign_date", "resignDate"], ["update_time", "updatedAt"],
+    [literal(`CASE emp_stus WHEN 'A' THEN 'Active' WHEN 'R' THEN 'Resigned' ELSE 'Unknown' END`),"status"],
   ];
 
-  // Sorting
   const resolved = resolveSort({ sort: p.sort });
-  let order: FindAndCountOptions["order"];
-  if (resolved.priority) {
-    order = [
-      literal(`${STATUS_PRIORITY_LITERAL()} ${resolved.dir}`),
-      ["emp_code", "ASC"],
-    ] as any;
-  } else {
-    order = [[resolved.dbCol, resolved.dir]];
-  }
+  const order: FindAndCountOptions["order"] =
+    resolved.priority ? [ literal(`${STATUS_PRIORITY_LITERAL()} ${resolved.dir}`), ["emp_code","ASC"] ] as any
+                      : [ [resolved.dbCol, resolved.dir] ];
 
-  // Query
   const baseOptions: FindAndCountOptions = {
-    where: finalWhere,
-    attributes,
-    order,
-    limit,     // ✅ normalize
-    offset,    // ✅ normalize
-    raw: true,
+    where: finalWhere, attributes, order, limit, offset, raw: true
   };
 
   const result = await Employee.findAndCountAll(baseOptions);
 
-  // Fallback หาก offset เกิน (ป้องกันหน้าไม่ตรง total)
   if ((result?.count ?? 0) > 0 && (result?.rows?.length ?? 0) === 0) {
-    const retry = await Employee.findAndCountAll({
-      ...baseOptions,
-      order: [["emp_code", "ASC"]],
-      offset: 0,
-    });
-    // ✅ withPaging ใส่ meta 1-based ให้
+    const retry = await Employee.findAndCountAll({ ...baseOptions, order: [["emp_code","ASC"]], offset: 0 });
     return withPaging((retry.rows as any[]) ?? [], Number(retry.count ?? 0), 0, pageSize);
   }
 
-  // ✅ คืนค่า items + total + meta 1‑based (pageIndex, pageSize, pageCount, hasPrev, hasNext)
   return withPaging((result?.rows as any[]) ?? [], Number(result?.count ?? 0), pageIndex0, pageSize);
 }
 

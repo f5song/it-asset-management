@@ -96,7 +96,7 @@ export function useEmployeesInventory(
    * - แนบ search/status/type
    * - ส่ง sortBy/sortOrder ถ้ามี
    * - ส่ง excludeAssignedForExceptionId -> ให้ backend กรอง "ไม่มี Active assignment"
-   * - (ชั่วคราว) แนบ orderByRaw ให้ service mock เห็นรูปแบบที่อยากได้ (ถ้า service รองรับ)
+   * - (mock) แนบ orderByRaw ถ้าจำเป็น
    */
   const serviceQuery = React.useMemo(() => {
     const { pageIndex = 0, pageSize = 10, sortBy, sortOrder } = serverQuery;
@@ -105,33 +105,31 @@ export function useEmployeesInventory(
     const type = toUndefTrim(filters.type);
     const search = toUndefTrim(filters.search) ?? "";
 
-    // ✅ ดึงค่าจาก domain filters (มาจากหน้า Assign)
+    // ✅ จากหน้า Assign
     const excludeAssignedForExceptionId =
-      (filters as any)?.excludeAssignedForExceptionId ?? undefined;
+      typeof (filters as any)?.excludeAssignedForExceptionId === "number"
+        ? (filters as any).excludeAssignedForExceptionId as number
+        : undefined;
 
     const q: EmployeesListQuery & {
       sortBy?: string;
       sortOrder?: "asc" | "desc";
-      // เสริมสำหรับ mock/อนาคต: ให้ backend ใช้ orderByRaw ได้ ถ้ารองรับ
       orderByRaw?: string[];
-      // ✅ เพิ่ม field นี้ใน EmployeesListQuery (ฝั่ง client type) ด้วย
       excludeAssignedForExceptionId?: number;
     } = {
-      page: pageIndex + 1,
+      page: pageIndex + 1,  // ✅ 1-based
       pageSize,
       search,
       status,
       type: type ?? undefined,
       ...(sortBy ? { sortBy: String(sortBy) } : {}),
       ...(sortOrder ? { sortOrder } : {}),
-      // ✅ แนบไปให้ service
       ...(typeof excludeAssignedForExceptionId === "number"
         ? { excludeAssignedForExceptionId }
         : {}),
     };
 
-    // ❗️ถ้าเป็นการเรียงแบบ priority ที่สถานะ:
-    // พยายามแนบคำสั่ง raw ให้ service (ถ้ารองรับ) เพื่อเรียงถูกตั้งแต่ DB
+    // FE priority sort (ถ้า backend ยังไม่รองรับ)
     if (sortBy === "status_priority" && !status /* All Status */) {
       const dir = sortOrder === "desc" ? "DESC" : "ASC";
       q.orderByRaw = [
@@ -153,8 +151,7 @@ export function useEmployeesInventory(
     filters.status,
     filters.type,
     filters.search,
-    // ✅ ให้ useMemo re-run เมื่อ exception filter เปลี่ยน
-    (filters as any)?.excludeAssignedForExceptionId,
+    (filters as any)?.excludeAssignedForExceptionId, // ✅ refetch เมื่อ exception เปลี่ยน
   ]);
 
   React.useEffect(() => {
@@ -183,7 +180,7 @@ export function useEmployeesInventory(
 
         let nextRows: EmployeeItem[] = Array.isArray(items) ? (items as EmployeeItem[]) : [];
 
-        // ✅ เสริม client-side priority sort (ภายใน "หน้านี้") ถ้า backend/mock ยังไม่รองรับ
+        // FE sort สำหรับ status_priority (ถ้า backend ยังไม่รองรับ)
         const isAllStatus = !filters.status;
         const sortBy = (serverQuery as any).sortBy as string | undefined;
         const sortOrder = (serverQuery as any).sortOrder as "asc" | "desc" | undefined;
@@ -198,7 +195,6 @@ export function useEmployeesInventory(
             (r) => r.id, // secondary
           );
 
-          // รองรับกรณี desc (กลับลำดับ priority ในหน้า)
           if (sortOrder === "desc") {
             nextRows = [...nextRows].reverse();
           }
@@ -225,8 +221,7 @@ export function useEmployeesInventory(
     filters.status,
     serverQuery.sortBy,
     serverQuery.sortOrder,
-    // ✅ ให้ useEffect re-run เมื่อ exception filter เปลี่ยน (เพื่อ refetch)
-    (filters as any)?.excludeAssignedForExceptionId,
+    (filters as any)?.excludeAssignedForExceptionId, // ✅ เพื่อ refetch
   ]);
 
   return { rows, totalRows, isLoading, isError, errorMessage };

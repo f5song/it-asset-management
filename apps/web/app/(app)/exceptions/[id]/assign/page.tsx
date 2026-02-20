@@ -80,25 +80,25 @@ export default function AssignEmployeeExceptionsPage() {
     toSimple: (df) => toSimpleFilters(df),
     fromSimple: (sf) => toDomainFilters(sf),
 
-    // ✅ เพิ่ม excludeAssignedForExceptionId เข้า resetDeps ด้วย
+    // ✅ รวม excludeAssignedForExceptionId เพื่อ trigger refetch เมื่อ exception เปลี่ยน
     resetDeps: [
       domainFilters.status,
       domainFilters.type,
       domainFilters.search,
-      // ↓↓↓ เพิ่มอันนี้เพื่อให้ refetch เมื่อ exception เปลี่ยน
       (domainFilters as any).excludeAssignedForExceptionId,
     ],
   });
 
-  // ✅ เมื่อ exceptionId เปลี่ยน → เซ็ต filter "แสดงเฉพาะพนักงานที่ไม่มี Active assignment" ให้ backend
+  // ✅ เมื่อ exceptionId เปลี่ยน → filter ให้ backend "ซ่อนพนักงานที่ active ใน exception นี้"
   React.useEffect(() => {
     setDomainFilters((prev) => {
-      // ถ้าเดิมเป็นค่าเดียวกัน ไม่ต้อง set ใหม่ ลด re-render
-      if ((prev as any).excludeAssignedForExceptionId === exceptionIdNum) return prev;
-      return { ...prev, excludeAssignedForExceptionId: exceptionIdNum as any };
+      const next = exceptionIdNum ?? undefined;
+      if ((prev as any).excludeAssignedForExceptionId === next) return prev;
+      return { ...prev, excludeAssignedForExceptionId: next as any };
     });
-    // รีเซ็ตหน้าไปหน้าแรกเพื่อให้ paging ตรง
+    // รีเซ็ตหน้าไปหน้าแรก & ล้าง selection
     ctl.setPagination({ pageIndex: 0, pageSize: ctl.pagination.pageSize });
+    setSelectedEmployeeIds([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exceptionIdNum]);
 
@@ -118,7 +118,7 @@ export default function AssignEmployeeExceptionsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctl.simpleFilters.status]);
 
-  // ✅ hook นี้ต้องส่ง domainFilters (ที่มี excludeAssignedForExceptionId) เข้า service → API
+  // ✅ hook นี้จะส่ง domainFilters (ที่มี excludeAssignedForExceptionId) เข้า service → API
   const { rows, totalRows, isLoading, isError, errorMessage } =
     useEmployeesInventory(ctl.serverQuery, domainFilters);
 
@@ -189,7 +189,7 @@ export default function AssignEmployeeExceptionsPage() {
       const res = await assignExceptionsToEmployees(
         exceptionId,
         selectedEmployeeIds,
-        undefined, // assignedBy (ถ้ามีระบบ auth อาจส่ง email/empCode ที่นี่)
+        undefined, // assignedBy
       );
 
       const inserted = Number(res.inserted ?? 0);
@@ -197,12 +197,14 @@ export default function AssignEmployeeExceptionsPage() {
 
       setLastMsg(`สำเร็จ: เพิ่ม ${inserted} รายการ, เปิดใช้งานใหม่ ${reactivated} รายการ`);
       setSelectedEmployeeIds([]); // reset selection
+      // หลัง assign สำเร็จ ควร refetch เพื่อให้รายการอัปเดต (คนที่เพิ่ง assign จะถูกซ่อน)
+      ctl.setPagination({ pageIndex: 0, pageSize: ctl.pagination.pageSize });
     } catch (e: any) {
       setLastMsg(e?.message ?? "Assign ล้มเหลว (unknown error)");
     } finally {
       setSubmitting(false);
     }
-  }, [canSubmit, exceptionId, selectedEmployeeIds]);
+  }, [canSubmit, exceptionId, selectedEmployeeIds, ctl]);
 
   /* --------------------------------- Render -------------------------------- */
   const headerTitle =
@@ -230,7 +232,7 @@ export default function AssignEmployeeExceptionsPage() {
         ]}
       />
 
-      {/* Summary ⇒ 3 ใบ: Total Employees / Selected Employees */}
+      {/* Summary ⇒ 2 ใบ: Total / Selected */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <Card title="Total Employees" count={totalRows} compact />
         <Card title="Selected Employees" count={selectedEmployeeIds.length} compact />
