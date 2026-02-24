@@ -9,7 +9,7 @@ import { getServerSession } from "next-auth/next";
 
 import Providers from "./providers";
 import ClientShell from "@/components/layout/ClientShell";
-import { authOptions } from "../api/auth/[...nextauth]";
+import { authOptions } from "./api/auth/[...nextauth]/route";
 
 export const metadata: Metadata = {
   title: "BEC IT Software Management",

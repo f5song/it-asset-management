@@ -15,6 +15,7 @@ import {
   ArrowRightStartOnRectangleIcon, // ⬅️ ใช้เป็น icon Logout (ต้องติดตั้ง heroicons v2)
 } from "@heroicons/react/24/outline";
 import { cn } from "@/lib/cn";
+import { signOut } from "next-auth/react";
 
 type MenuItem = {
   key: string;
@@ -25,21 +26,49 @@ type MenuItem = {
 };
 
 const MENU: MenuItem[] = [
-  { key: "dashboard", name: "Dashboard", icon: GlobeAltIcon, path: "/dashboard" },
+  {
+    key: "dashboard",
+    name: "Dashboard",
+    icon: GlobeAltIcon,
+    path: "/dashboard",
+  },
   {
     key: "software",
     name: "Software",
     icon: ComputerDesktopIcon,
     children: [
-      { key: "software-inventory", name: "Software Inventory", path: "/software/inventory" },
-      { key: "license-management", name: "License Management", path: "/software/license-management" },
+      {
+        key: "software-inventory",
+        name: "Software Inventory",
+        path: "/software/inventory",
+      },
+      {
+        key: "license-management",
+        name: "License Management",
+        path: "/software/license-management",
+      },
     ],
   },
-  { key: "devices", name: "Devices", icon: RectangleGroupIcon, path: "/devices" },
+  {
+    key: "devices",
+    name: "Devices",
+    icon: RectangleGroupIcon,
+    path: "/devices",
+  },
   { key: "employees", name: "Employees", icon: UsersIcon, path: "/employees" },
-  { key: "exceptions", name: "Exceptions", icon: IdentificationIcon, path: "/exceptions" },
+  {
+    key: "exceptions",
+    name: "Exceptions",
+    icon: IdentificationIcon,
+    path: "/exceptions",
+  },
   { key: "requests", name: "Requests", icon: BellAlertIcon, path: "/requests" },
-  { key: "reports", name: "Reports", icon: ChartBarSquareIcon, path: "/reports" },
+  {
+    key: "reports",
+    name: "Reports",
+    icon: ChartBarSquareIcon,
+    path: "/reports",
+  },
   { key: "settings", name: "Settings", icon: Cog6ToothIcon, path: "/settings" },
   // ⬇️ ไม่ต้องใส่ logout ตรงนี้ (เราจะวางปุ่มแยกด้านล่างให้ UI ชัด)
 ];
@@ -91,7 +120,7 @@ export default function Sidebar({
         "w-64 bg-white shadow-[4px_0_20px_-12px_rgba(0,0,0,0.25)]",
         "transform transition-transform duration-300 ease-in-out",
         open ? "translate-x-0" : "-translate-x-full",
-        "overflow-y-auto will-change-transform"
+        "overflow-y-auto will-change-transform",
       )}
       role="dialog"
     >
@@ -114,11 +143,14 @@ export default function Sidebar({
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2 rounded-md transition",
                     "text-gray-800 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
-                    (isActive(item.path) || isParentActive) && "text-blue-600 bg-blue-50"
+                    (isActive(item.path) || isParentActive) &&
+                      "text-blue-600 bg-blue-50",
                   )}
                   onClick={() => {
                     if (hasChildren) {
-                      setOpenGroup((prev) => (prev === item.key ? "" : item.key));
+                      setOpenGroup((prev) =>
+                        prev === item.key ? "" : item.key,
+                      );
                     } else if (item.path) {
                       onNavigate(item.path);
                     }
@@ -128,9 +160,9 @@ export default function Sidebar({
                     <Icon
                       className={cn(
                         "w-5 h-5",
-                        (isActive(item.path) || isParentActive)
+                        isActive(item.path) || isParentActive
                           ? "text-blue-600"
-                          : "text-gray-700"
+                          : "text-gray-700",
                       )}
                     />
                   )}
@@ -139,7 +171,7 @@ export default function Sidebar({
                     <ChevronDownIcon
                       className={cn(
                         "ml-auto w-4 h-4 text-gray-700 transition-transform",
-                        showChildren ? "rotate-180" : "rotate-0"
+                        showChildren ? "rotate-180" : "rotate-0",
                       )}
                     />
                   )}
@@ -149,7 +181,7 @@ export default function Sidebar({
                   <div
                     className={cn(
                       "pl-6 ml-2 border-l border-gray-200 overflow-hidden transition-[max-height] duration-300",
-                      showChildren ? "max-h-40" : "max-h-0"
+                      showChildren ? "max-h-40" : "max-h-0",
                     )}
                   >
                     {item.children!.map((child) => (
@@ -159,7 +191,8 @@ export default function Sidebar({
                         className={cn(
                           "w-full text-left px-3 py-2 rounded-md mt-1",
                           "text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
-                          isActive(child.path) && "text-blue-600 bg-blue-50 font-medium"
+                          isActive(child.path) &&
+                            "text-blue-600 bg-blue-50 font-medium",
                         )}
                       >
                         {child.name}
@@ -180,12 +213,11 @@ export default function Sidebar({
           {/* ใช้ form + formAction เพื่อเรียก server action */}
           <form>
             <button
-              type="submit"
-              // ถ้า parent ส่ง server action มา → bind ที่นี่
-              formAction={logoutAction}
+              type="button"
+              onClick={() => signOut({ callbackUrl: "/login" })}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2 rounded-md transition",
-                "text-gray-800 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                "text-gray-800 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
               )}
             >
               <ArrowRightStartOnRectangleIcon className="w-5 h-5 text-gray-700" />
