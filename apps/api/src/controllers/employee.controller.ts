@@ -19,7 +19,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
       status: q.status as any,
       type: q.type ?? undefined,
       sort,
-      // ✅ ส่ง exceptionId ที่ต้อง "exclude active" ใน exception นั้น
+      //   ส่ง exceptionId ที่ต้อง "exclude active" ใน exception นั้น
       excludeAssignedForExceptionId: q.excludeAssignedForExceptionId
         ? Number(q.excludeAssignedForExceptionId)
         : undefined,

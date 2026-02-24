@@ -180,14 +180,14 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
     <div className={containerClass}>
       <div className={tableWrapperClass} style={{ maxHeight: maxBodyHeight }}>
         <table className={tableClass}>
-          {/* ✅ Header */}
+          {/*   Header */}
           <DataTableHeader<TRow>
             columns={columns}
             sorting={sorting}
             onToggleSort={toggleSort}
             size={size}
             defaultColMinWidth={defaultColMinWidth}
-            // ✅ ช่องนำหน้า: checkbox select page
+            //   ช่องนำหน้า: checkbox select page
             leadingHeaderCell={
               selectable ? (
                 <th className="w-10 px-3 py-2 text-left">
@@ -212,7 +212,7 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
             <EmptyBody colSpan={colSpan} message={emptyMessage} size={size} />
           )}
 
-          {/* ✅ Body */}
+          {/*   Body */}
           {!isLoading && !isError && effectiveRows.length > 0 && (
             <DataTableBody<TRow>
               columns={columns}
@@ -221,7 +221,7 @@ export function DataTable<TRow extends { id?: string | number }>(props: DataTabl
               size={size}
               defaultColMinWidth={defaultColMinWidth}
               onRowActivate={handleRowNavigate}
-              // ✅ ส่งเฉพาะ “content” ของเซลล์ ไม่ใช่ <td> ครอบ
+              //   ส่งเฉพาะ “content” ของเซลล์ ไม่ใช่ <td> ครอบ
               renderLeadingCell={
                 selectable
                   ? (row) => (

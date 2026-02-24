@@ -64,7 +64,7 @@ export function useExceptionInventory(
         );
         if (!alive) return;
 
-        setRows(res.items ?? []); // ✅ ตอนนี้เป็น ExceptionDefinitionRow[] แล้ว
+        setRows(res.items ?? []); //   ตอนนี้เป็น ExceptionDefinitionRow[] แล้ว
         setTotalRows(
           Number.isFinite(res.totalCount)
             ? res.totalCount

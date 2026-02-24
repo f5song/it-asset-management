@@ -50,7 +50,7 @@ export default function LicenseManagementPage() {
     ],
   });
 
-  // ✅ ตั้ง multi-sort อัตโนมัติให้ Active มาก่อน (เฉพาะ All Status)
+  //   ตั้ง multi-sort อัตโนมัติให้ Active มาก่อน (เฉพาะ All Status)
   React.useEffect(() => {
     const isAll = domainFilters.status == null;
     if (isAll) {
@@ -134,7 +134,7 @@ export default function LicenseManagementPage() {
       breadcrumbs={[
         { label: "License Management", href: "/software/license-management" },
       ]}
-      // ✅ สรุปใต้งาน PageHeader (ไม่ผูก paging)
+      //   สรุปใต้งาน PageHeader (ไม่ผูก paging)
       summaryCards={summaryCards}
       // FilterBar
       filters={ctl.simpleFilters}

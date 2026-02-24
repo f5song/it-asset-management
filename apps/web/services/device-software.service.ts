@@ -16,7 +16,7 @@ export type DeviceSoftwareRow = {
   licenseStatus?: "Licensed" | "Unlicensed" | "Expired" | "Trial" | "Unknown";
   lastScan?: string | null;
 
-  // ✅ ขยายเพิ่มเพื่อรวมเคส BundledSoftwareRow (ตั้ง optional เพื่อไม่บังคับแหล่งข้อมูลทั้งหมด)
+  //   ขยายเพิ่มเพื่อรวมเคส BundledSoftwareRow (ตั้ง optional เพื่อไม่บังคับแหล่งข้อมูลทั้งหมด)
   expiryDate?: string | null;
   softwareType?: SoftwareType;
   clientServer?: ClientServer;

@@ -160,7 +160,7 @@ export async function listAssigneesByException(
   const status = options?.status ?? 'any';
 
   const baseWhere: any = { exception_id: exceptionId };
-  if (status !== 'any') baseWhere.status = status; // ✅ filter ตามต้องการ
+  if (status !== 'any') baseWhere.status = status; //   filter ตามต้องการ
 
   const mustHaveEmployee = literal(`
     EXISTS (

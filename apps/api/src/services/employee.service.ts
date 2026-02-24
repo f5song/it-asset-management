@@ -14,7 +14,7 @@ import { normalize1BasedPaging, withPaging } from "../utils/pagination";
  * Types
  * ========================= */
 export type EmployeesListParams = {
-  /** ✅ 1-based page (จาก controller/route) */
+  /**   1-based page (จาก controller/route) */
   page: number;          // <-- เปลี่ยนจาก pageIndex (0-based) เป็น page (1-based)
   pageSize: number;
   search?: string;
@@ -143,7 +143,7 @@ export async function listEmployees(p: EmployeesListParams) {
   // where หลัก (search/status/type) — ของเดิมคุณใช้อยู่
   const where = buildWhere({ search: p.search, status: p.status, type: p.type });
 
-  // ✅ จุดสำคัญ: ซ่อนพนักงานที่ "กำลัง Active" ใน exception นี้
+  //   จุดสำคัญ: ซ่อนพนักงานที่ "กำลัง Active" ใน exception นี้
   const andConds: any[] = [];
   if (p.excludeAssignedForExceptionId != null) {
     const exceptionIdNum = Number(p.excludeAssignedForExceptionId);
@@ -154,7 +154,7 @@ export async function listEmployees(p: EmployeesListParams) {
           FROM public.exception_assignment a
           WHERE a.emp_code = "Employee"."emp_code"
             AND a.exception_id = ${exceptionIdNum}
-            AND a.status = 'active'      -- ✅ เงื่อนไข "กำลัง Active"
+            AND a.status = 'active'      --   เงื่อนไข "กำลัง Active"
       )`);
       andConds.push(sqlWhere(literal("true"), notExistsActiveForException));
     }

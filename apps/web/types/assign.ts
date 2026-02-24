@@ -26,7 +26,7 @@ export type LicenseAssignFormValues = {
   installedOn: ISODateString; // YYYY-MM-DD
 };
 
-// ✅ โครง payload ใหม่ ฝั่ง Employee → License
+//   โครง payload ใหม่ ฝั่ง Employee → License
 export type EmployeeLicenseMap = {
   licenseId: string;
   deviceCount?: number;      // ถ้า per_device

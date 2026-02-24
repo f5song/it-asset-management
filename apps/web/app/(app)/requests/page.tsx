@@ -13,7 +13,7 @@ export default function Page() {
   ];
 
   return (
-    <div className="p-6">
+    <div>
       <PageHeader title={title} breadcrumbs={breadcrumbs} />
       <div className="mt-4">
         <RequestsView

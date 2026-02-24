@@ -42,7 +42,7 @@ export default function DonutChart({
     ],
   };
 
-  // ✅ ระบุชนิด options ให้ชัดเจน
+  //   ระบุชนิด options ให้ชัดเจน
   const options: ChartOptions<"doughnut"> = {
     responsive: true,
     maintainAspectRatio: false,

@@ -22,7 +22,7 @@ const COMPLIANCE = ["Compliant", "Non-Compliant"] as const satisfies readonly Co
 const CLIENT_SERVER = ["Client", "Server"] as const satisfies readonly ClientServer[];
 
 // ⛔️ ห้ามใช้ Object.values(LicenseModel) เพราะ LicenseModel เป็น type (ไม่มีค่า)
-// ✅ ประกาศค่าคงที่เองให้ TS ตรวจว่าเข้ากับ LicenseModel
+//   ประกาศค่าคงที่เองให้ TS ตรวจว่าเข้ากับ LicenseModel
 const LICENSE_MODELS = [
   "Per-User",
   "Per-Device",

@@ -32,7 +32,6 @@
     "@tanstack/react-table": "^8.21.3",
     "@types/node": "^25.3.0",
     "apexcharts": "^5.3.6",
-    "axios": "^1.13.4",
     "chart.js": "^4.5.1",
     "cors": "^2.8.6",
     "next-auth": "^4.24.13",
@@ -44,9 +43,11 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "autoprefixer": "^10.4.24",
+    "knip": "^5.85.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
     "ts-node-dev": "^2.0.0",
+    "ts-prune": "^0.10.3",
     "turbo": "^2.1.0",
     "typescript": "^5.9.3"
   },

@@ -38,7 +38,7 @@ const MENU: MenuItem[] = [
   { key: "devices", name: "Devices", icon: RectangleGroupIcon, path: "/devices" },
   { key: "employees", name: "Employees", icon: UsersIcon, path: "/employees" },
   { key: "exceptions", name: "Exceptions", icon: IdentificationIcon, path: "/exceptions" },
-  { key: "audit-logs", name: "Audit Logs", icon: BellAlertIcon, path: "/audit-logs" },
+  { key: "requests", name: "Requests", icon: BellAlertIcon, path: "/requests" },
   { key: "reports", name: "Reports", icon: ChartBarSquareIcon, path: "/reports" },
   { key: "settings", name: "Settings", icon: Cog6ToothIcon, path: "/settings" },
   // ⬇️ ไม่ต้องใส่ logout ตรงนี้ (เราจะวางปุ่มแยกด้านล่างให้ UI ชัด)
@@ -50,7 +50,7 @@ export default function Sidebar({
   variant = "overlay",
   open = false,
   onClose,
-  /** ✅ รับ server action มาจาก Server Component */
+  /**   รับ server action มาจาก Server Component */
   logoutAction,
 }: {
   currentPath?: string;

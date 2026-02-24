@@ -17,7 +17,7 @@ import type {
 import { employeeColumns } from "@/lib/tables/employeeInventoryColumns";
 import {
   toDomainFilters,
-  toServiceFilters, // ✅ ปรับให้รับ sorting เพิ่ม (ดูไฟล์ในข้อ 2)
+  toServiceFilters, //   ปรับให้รับ sorting เพิ่ม (ดูไฟล์ในข้อ 2)
   toSimpleFilters,
 } from "lib/mappers/employeeFilterMappers";
 
@@ -46,7 +46,7 @@ export default function EmployeesPage() {
     ],
   });
 
-  // ✅ เมื่อเป็น "All Status" ให้ตั้ง multi-sort: status_priority -> employeeId
+  //   เมื่อเป็น "All Status" ให้ตั้ง multi-sort: status_priority -> employeeId
   React.useEffect(() => {
     const isAllStatus = ctl.simpleFilters.status == null;
     if (isAllStatus) {
@@ -63,14 +63,14 @@ export default function EmployeesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctl.simpleFilters.status]);
 
-  // ---- Simple -> Service params (✅ ส่ง sorting เข้าไปด้วย) ----
+  // ---- Simple -> Service params (  ส่ง sorting เข้าไปด้วย) ----
   const serviceFilters = React.useMemo(
     () => toServiceFilters(ctl.simpleFilters, ctl.sorting),
     [ctl.simpleFilters, ctl.sorting],
   );
 
   // ---- Fetch rows ----
-  // ✅ ปรับ hook ให้รับ orderBy/params เพิ่ม (ดูไฟล์ในข้อ 3)
+  //   ปรับ hook ให้รับ orderBy/params เพิ่ม (ดูไฟล์ในข้อ 3)
 
   const { rows, totalRows, isLoading, isError, errorMessage } =
     useEmployeesInventory(ctl.serverQuery, domainFilters);

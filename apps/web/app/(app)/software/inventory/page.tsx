@@ -22,7 +22,7 @@ export default function SoftwarePage() {
   const [domainFilters, setDomainFilters] =
     React.useState<SoftwareFilters>(toDomainFilters());
 
-  // ✅ V1: <TRow, DF, SF> และ SF = SoftwareSimple (ไม่มี status)
+  //   V1: <TRow, DF, SF> และ SF = SoftwareSimple (ไม่มี status)
   const ctl = useServerTableController<SoftwareItem, SoftwareFilters, SoftwareSimple>({
     pageSize: 8,
     defaultSort: { id: "softwareName", desc: false },

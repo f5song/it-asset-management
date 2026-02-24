@@ -1,8 +1,8 @@
 import { sequelize } from '../config/sequelize';
 import { ExceptionList } from './ExceptionList';
 import { ExceptionAssignment } from './ExceptionAssignment';
-import { ExceptionTicketMap } from './ExceptionTicketMap';
 import { Employee } from './Employee';
+import { ExceptionTicketMap } from './ExceptionTicketMap';
 
 // Associations
 ExceptionAssignment.belongsTo(ExceptionList, { foreignKey: 'exception_id', as: 'exception' });

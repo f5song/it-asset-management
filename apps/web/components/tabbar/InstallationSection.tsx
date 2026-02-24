@@ -4,13 +4,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { InstallationTable, InstallationFilters } from "./InstallationTable";
 
-// ✅ ใช้ AppColumnDef ตัวเดียวกับ InstallationTable (จาก ui-table)
+//   ใช้ AppColumnDef ตัวเดียวกับ InstallationTable (จาก ui-table)
 import type { AppColumnDef } from "../../types/ui-table";
 import type { ExportFormat } from "types";
 
 import { SearchInput } from "../ui/SearchInput";
 import { ExportSelect } from "../ui/ExportSelect";
-import { Pagination } from "../pagination/Pagination"; // ✅ ใช้ Pagination component
+import { Pagination } from "../pagination/Pagination"; //   ใช้ Pagination component
 
 type Props<R extends { id?: string | number }> = {
   rows: R[];
@@ -285,7 +285,7 @@ export function InstallationSection<R extends { id?: string | number }>({
 
   return (
     <>
-      {/* ✅ Toolbar / Tab Header */}
+      {/*   Toolbar / Tab Header */}
       <div className="mb-3 flex items-center gap-3 flex-wrap">
         {/* Search ทางซ้าย */}
         <div className="min-w-[240px]">
@@ -347,7 +347,7 @@ export function InstallationSection<R extends { id?: string | number }>({
           )}
         </div>
 
-        {/* ✅ ใช้ Pagination component แทน UI เดิม */}
+        {/*   ใช้ Pagination component แทน UI เดิม */}
         <Pagination
           // Base (1-based) mode
           totalCount={computedTotalRows}

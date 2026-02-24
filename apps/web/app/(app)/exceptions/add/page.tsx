@@ -6,7 +6,7 @@ import { FormPage } from "@/components/ui/FormPage";
 import { FormField } from "@/types";
 import { z } from "zod";
 
-// ✅ ใช้ type ที่มีอยู่แล้ว
+//   ใช้ type ที่มีอยู่แล้ว
 import type {
   PolicyStatus,
   RiskLevel,

@@ -86,16 +86,16 @@ export const MOCK_DEFINITIONS: ExceptionDefinitionRow[] = NAMES.map((name, i) =>
 
   return {
     // RowBase
-    id: excId,                 // ✅ ใช้ id = exception_id
+    id: excId,                 //   ใช้ id = exception_id
 
     // Domain
-    exception_id: excId,       // ✅ เก็บ exception_id ไว้สำหรับการแสดงผล
+    exception_id: excId,       //   เก็บ exception_id ไว้สำหรับการแสดงผล
     name,
     status,
     risk: (["Low", "Medium", "High"] as const)[i % 3],
     createdAt,
     lastUpdated,
-    description: "",           // ✅ แทน notes
+    description: "",           //   แทน notes
     totalAssignments: total,
   };
 });
@@ -116,11 +116,11 @@ for (const def of MOCK_DEFINITIONS) {
 
     rows.push({
       // Row identity
-      id: aId,                      // ✅ เพิ่ม id ให้ทุกแถว
-      assignment_id: aId,           // ✅ เก็บเลข assignment จริง
+      id: aId,                      //   เพิ่ม id ให้ทุกแถว
+      assignment_id: aId,           //   เก็บเลข assignment จริง
 
       // linkage + employee info
-      definitionId: def.id,         // ✅ ผูกกับ definition ผ่าน id
+      definitionId: def.id,         //   ผูกกับ definition ผ่าน id
       employeeId,
       employeeName,
       department: ["IT", "HR", "FIN", "OPS"][i % 4],
@@ -134,7 +134,7 @@ for (const def of MOCK_DEFINITIONS) {
     });
   }
 
-  // ✅ key ด้วย def.id (เพราะทั้ง UI/URL ใช้ id)
+  //   key ด้วย def.id (เพราะทั้ง UI/URL ใช้ id)
   MOCK_ASSIGNMENTS[def.id] = rows;
 }
 

@@ -151,7 +151,7 @@ export async function getExceptionDefinitions(
     totalCount,
   );
 
-  // ✅ คืนค่าเข้ากับ OffsetPage<ExceptionDefinitionRow>
+  //   คืนค่าเข้ากับ OffsetPage<ExceptionDefinitionRow>
   return {
     items,
     totalCount,

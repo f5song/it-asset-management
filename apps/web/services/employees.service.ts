@@ -26,7 +26,7 @@ export async function listEmployees(
   const sortOrder =
     q.sort?.desc != null ? (q.sort.desc ? "desc" : "asc") : (q.sortOrder ?? "asc");
 
-  // ✅ ดึง exceptionId ที่ต้อง "exclude active assignees" ออกจากลิสต์
+  //   ดึง exceptionId ที่ต้อง "exclude active assignees" ออกจากลิสต์
   //    - ถ้าได้อัปเดต type EmployeesListQuery แล้ว: q.excludeAssignedForExceptionId
   //    - ถ้ายัง: fallback ใช้ (q as any)
   const excludeAssignedForExceptionId =
@@ -43,7 +43,7 @@ export async function listEmployees(
     sortBy: sortBy || undefined,
     sortOrder: sortBy ? (sortOrder ?? "asc") : undefined,
 
-    // ✅ แนบไปเมื่อมีค่า (ตัวเลข)
+    //   แนบไปเมื่อมีค่า (ตัวเลข)
     ...(typeof excludeAssignedForExceptionId === "number"
       ? { excludeAssignedForExceptionId }
       : {}),

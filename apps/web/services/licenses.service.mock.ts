@@ -1,6 +1,6 @@
 // src/services/licenses.service.mock.ts
 
-// ✅ ใช้ alias path ของโปรเจกต์ (ปรับให้ตรงกับโปรเจกต์คุณ เช่น "@/types")
+//   ใช้ alias path ของโปรเจกต์ (ปรับให้ตรงกับโปรเจกต์คุณ เช่น "@/types")
 import type {
   LicenseItem,
   LicenseFilters,
@@ -154,7 +154,7 @@ export async function getLicenses(q: LicenseListQuery): Promise<LicenseListRespo
         );
       }
 
-      // ✅ sort (global ก่อน paginate)
+      //   sort (global ก่อน paginate)
       const dir = (q.sortOrder as SortOrder) === "desc" ? -1 : 1;
       const key = isSortKey(q.sortBy) ? q.sortBy : undefined;
 
@@ -195,7 +195,7 @@ export async function getLicenses(q: LicenseListQuery): Promise<LicenseListRespo
       const start = (q.page - 1) * q.pageSize;
       const items = data.slice(start, start + q.pageSize);
 
-      // ✅ รูปแบบตอบกลับเป็น OffsetPage<LicenseItem>
+      //   รูปแบบตอบกลับเป็น OffsetPage<LicenseItem>
       const totalCount = data.length;
       const totalPages = Math.max(1, Math.ceil(totalCount / q.pageSize));
       const page = q.page;

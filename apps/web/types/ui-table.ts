@@ -1,4 +1,4 @@
-// ✅ ใช้ type จาก TanStack Table v8
+//   ใช้ type จาก TanStack Table v8
 import type { PaginationState, SortingState } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 

@@ -9,7 +9,7 @@ router.get('/simple', ctrl.simple);
 router.get('/:id', ctrl.getById);
 
 /**
- * ✅ รองรับ query:
+ *   รองรับ query:
  *   - status: 'active' | 'revoked' | 'any' (default = 'active')
  *   - page/pageSize มาจาก middleware pagination1Based()
  */

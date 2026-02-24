@@ -80,7 +80,7 @@ export default function AssignEmployeeExceptionsPage() {
     toSimple: (df) => toSimpleFilters(df),
     fromSimple: (sf) => toDomainFilters(sf),
 
-    // ✅ รวม excludeAssignedForExceptionId เพื่อ trigger refetch เมื่อ exception เปลี่ยน
+    //   รวม excludeAssignedForExceptionId เพื่อ trigger refetch เมื่อ exception เปลี่ยน
     resetDeps: [
       domainFilters.status,
       domainFilters.type,
@@ -89,7 +89,7 @@ export default function AssignEmployeeExceptionsPage() {
     ],
   });
 
-  // ✅ เมื่อ exceptionId เปลี่ยน → filter ให้ backend "ซ่อนพนักงานที่ active ใน exception นี้"
+  //   เมื่อ exceptionId เปลี่ยน → filter ให้ backend "ซ่อนพนักงานที่ active ใน exception นี้"
   React.useEffect(() => {
     setDomainFilters((prev) => {
       const next = exceptionIdNum ?? undefined;
@@ -118,7 +118,7 @@ export default function AssignEmployeeExceptionsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctl.simpleFilters.status]);
 
-  // ✅ hook นี้จะส่ง domainFilters (ที่มี excludeAssignedForExceptionId) เข้า service → API
+  //   hook นี้จะส่ง domainFilters (ที่มี excludeAssignedForExceptionId) เข้า service → API
   const { rows, totalRows, isLoading, isError, errorMessage } =
     useEmployeesInventory(ctl.serverQuery, domainFilters);
 
@@ -144,7 +144,7 @@ export default function AssignEmployeeExceptionsPage() {
     [defs, exceptionId],
   );
 
-  // ✅ ดึงชื่อจาก backend รายตัว (ไม่จำกัด Active) เพื่อใช้เป็นหัวข้อเสมอ
+  //   ดึงชื่อจาก backend รายตัว (ไม่จำกัด Active) เพื่อใช้เป็นหัวข้อเสมอ
   const [titleName, setTitleName] = React.useState<string | null>(null);
   const [loadingTitle, setLoadingTitle] = React.useState<boolean>(false);
 

@@ -13,7 +13,7 @@ export function useLicenseInventory(
     sortBy?: string;
     sortOrder?: "asc" | "desc";
   },
-  // ✅ รับแบบ optional ตาม type กลาง
+  //   รับแบบ optional ตาม type กลาง
   filters?: Pick<LicenseFilters, "status" | "licenseModel" | "manufacturer" | "search">
 ) {
   const [rows, setRows] = React.useState<LicenseItem[]>([]);
@@ -36,12 +36,12 @@ export function useLicenseInventory(
         setErrorMessage(undefined);
 
         const res = await getLicenses({
-          // ✅ service ใช้ 1-based
+          //   service ใช้ 1-based
           page: query.pageIndex + 1,
           pageSize: query.pageSize,
           sortBy: query.sortBy,
           sortOrder: query.sortOrder,
-          // ✅ ส่ง optional ตรง ๆ — ไม่ต้อง || ""
+          //   ส่ง optional ตรง ๆ — ไม่ต้อง || ""
           status: filters?.status,
           licenseModel: filters?.licenseModel,
           manufacturer: filters?.manufacturer,

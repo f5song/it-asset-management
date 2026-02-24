@@ -77,7 +77,7 @@ export default function ExceptionsDetail({
       try {
         const res = await getExceptionAssigneesPage(
           item.id,
-          { page, pageSize, status: "active" }, // ✅ 1-based + เฉพาะ active
+          { page, pageSize, status: "active" }, //   1-based + เฉพาะ active
           ac.signal,
         );
         setAssignRows(res.items ?? []);
@@ -97,7 +97,7 @@ export default function ExceptionsDetail({
     return () => ac.abort();
   }, [item.id, page, pageSize]);
 
-  // ✅ ถ้าภายนอกส่ง assignments มา (เช่นจาก SSR) ให้ override หน้านั้น
+  //   ถ้าภายนอกส่ง assignments มา (เช่นจาก SSR) ให้ override หน้านั้น
   React.useEffect(() => {
     if (Array.isArray(assignments) && assignments.length) {
       setAssignRows(assignments);
@@ -105,7 +105,7 @@ export default function ExceptionsDetail({
     }
   }, [assignments]);
 
-  // ✅ เรียง Active -> Resigned; ถ้าไม่มีสถานะ ให้ไปท้าย (เฉพาะในหน้า)
+  //   เรียง Active -> Resigned; ถ้าไม่มีสถานะ ให้ไปท้าย (เฉพาะในหน้า)
   const sortedRows = React.useMemo<ExceptionAssignmentRow[]>(() => {
     const pr = new Map<string, number>([
       ["active", 0],

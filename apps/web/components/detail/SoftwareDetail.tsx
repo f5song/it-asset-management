@@ -11,7 +11,7 @@ import type {
   HistoryEvent,
   InstallationRow,
   SoftwareItem,
-  LicenseItem, // ✅ เพิ่ม
+  LicenseItem, //   เพิ่ม
 } from "types";
 import {
   demoHistory,
@@ -31,7 +31,7 @@ interface SoftwareDetailProps {
   installations: InstallationRow[];
   history: HistoryEvent[];
   breadcrumb?: BreadcrumbItem[];
-  /** ✅ เพิ่ม: ถ้ามีข้อมูล license แยก */
+  /**   เพิ่ม: ถ้ามีข้อมูล license แยก */
   licenses?: LicenseItem[];
 }
 
@@ -40,7 +40,7 @@ export default function SoftwareDetail({
   installations,
   history,
   breadcrumb,
-  licenses, // ✅ รับเข้ามา (ออปชัน)
+  licenses, //   รับเข้ามา (ออปชัน)
 }: SoftwareDetailProps) {
   const onBack = React.useCallback(() => window.history.back(), []);
   const onDelete = React.useCallback(() => {
@@ -75,7 +75,7 @@ export default function SoftwareDetail({
     />
   );
 
-  // ✅ เตรียมแถวสำหรับแท็บ Licenses (ถ้าไม่มี ให้เป็นอาร์เรย์ว่าง)
+  //   เตรียมแถวสำหรับแท็บ Licenses (ถ้าไม่มี ให้เป็นอาร์เรย์ว่าง)
   const licenseRows = React.useMemo<LicenseItem[]>(
     () => (licenses && licenses.length ? licenses : []),
     [licenses]

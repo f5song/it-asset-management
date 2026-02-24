@@ -103,7 +103,7 @@ export async function assignLicense(params: {
 }
 
 /**
- * ✅ Bulk assign แบบ "หนึ่ง license ให้พนักงานหลายคน" (สอดคล้องกับสัญญาที่คุณให้มา)
+ *   Bulk assign แบบ "หนึ่ง license ให้พนักงานหลายคน" (สอดคล้องกับสัญญาที่คุณให้มา)
  * - seatMode:
  *    - "partial" (ค่าเริ่มต้น): best-effort, บางรายการล้มเหลวได้
  *    - "all-or-nothing": ถ้าที่นั่งไม่พอ → ไม่ทำอะไรเลยและคืน failed ทั้งหมด

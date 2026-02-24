@@ -9,7 +9,7 @@ export const exceptionInventoryColumns: AppColumnDef<ExceptionDefinitionRow>[] =
   {
     id: "exception_id",
     header: "Exception Id",
-    accessorKey: "exception_id",                 // ✅ key มีอยู่จริงใน ExceptionDefinitionRow
+    accessorKey: "exception_id",                 //   key มีอยู่จริงใน ExceptionDefinitionRow
     getSortValue: (row) => row.exception_id,
     cell: (value) => show(value as string),
   },
@@ -30,14 +30,14 @@ export const exceptionInventoryColumns: AppColumnDef<ExceptionDefinitionRow>[] =
   {
     id: "risk",
     header: "Risk",
-    accessorKey: "risk",                          // ✅ ใน type ใช้ 'risk' (ไม่ใช่ risk_level)
+    accessorKey: "risk",                          //   ใน type ใช้ 'risk' (ไม่ใช่ risk_level)
     getSortValue: (row) => row.risk ?? "",
     cell: (value) => show(value as string),
   },
   {
     id: "createdAt",
     header: "Created At",
-    accessorKey: "createdAt",                     // ✅ คุณ map camelCase แล้ว
+    accessorKey: "createdAt",                     //   คุณ map camelCase แล้ว
     getSortValue: (row) => row.createdAt ?? "",
     cell: (value) => formatDateTH(value as string | null | undefined),
   },

@@ -27,7 +27,7 @@
 
 // export type Paged<T> = { items: T[]; total: number };
 
-// // ✅ สลับ MOCK/REAL ผ่าน env
+// //   สลับ MOCK/REAL ผ่าน env
 // const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 // export async function getDevices(q: DeviceQuery): Promise<Paged<DeviceItem>> {
 //   if (USE_MOCK) {

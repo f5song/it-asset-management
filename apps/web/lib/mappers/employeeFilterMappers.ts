@@ -60,7 +60,7 @@ export function toServiceFilters(
   if (sorting?.length) {
     const orderBy: OrderBy[] = sorting.map((s) => {
       if (s.id === "status_priority") {
-        // ✅ ให้ service ใช้ CASE ครอบเพื่อ Active -> Resigned -> อื่น ๆ
+        //   ให้ service ใช้ CASE ครอบเพื่อ Active -> Resigned -> อื่น ๆ
         return {
           raw: `CASE status
                   WHEN 'Active'   THEN 0

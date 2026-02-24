@@ -1,7 +1,7 @@
 // src/app.ts
 import express from 'express';
-import cors from 'cors';                 // ✅ เพิ่ม
-import cookieParser from 'cookie-parser';// ✅ เพิ่ม
+import cors from 'cors';                 
+import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import { sequelize } from './models';
 import exceptionRoutes from './routes/exception.routes';
@@ -12,10 +12,10 @@ import employeeRoutes from './routes/employee.routes';
 export function createApp() {
   const app = express();
 
-  // ✅ ถ้าอยู่หลัง Nginx/Ingress/Cloudflare แนะนำให้เปิด เพื่อให้ Secure cookie ทำงาน
+
   app.set('trust proxy', 1);
 
-  // ✅ CORS (ต้องมาก่อน route อื่น ๆ)
+  // CORS (ต้องมาก่อน route อื่น ๆ)
   // รองรับได้ทั้งค่าเดียวหรือหลายค่า (คั่นด้วย ,)
   const allowedOrigins = (env.FRONTEND_ORIGIN ?? '')
     .split(',')
@@ -37,13 +37,12 @@ export function createApp() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   }));
 
-  // (ถ้าต้องการตอบสนอง preflight เร็ว ๆ)
   app.options('*', cors({
     origin: allowedOrigins.length ? allowedOrigins : true,
     credentials: true,
   }));
 
-  // ✅ Parsers
+  // Parsers
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser()); // ถ้าใช้คุกกี้ auth/session

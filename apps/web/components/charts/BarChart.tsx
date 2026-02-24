@@ -66,7 +66,7 @@ export default function BarChart({
       x: {
         type: "category",
         ticks: { maxRotation: 0, minRotation: 0 },
-        grid: { display: false },         // ❌ drawBorder → ✅ display
+        grid: { display: false },         // ❌ drawBorder →   display
         border: { display: false },       // 🔹 ปิดเส้นกรอบแกน
       },
       y: {

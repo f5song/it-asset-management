@@ -1,0 +1,52 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  // โปรเจกต์ Next.js + TS
+  "project": [
+    "app/**/*.{ts,tsx}",
+    "pages/**/*.{ts,tsx}",
+    "src/**/*.{ts,tsx}",
+    "components/**/*.{ts,tsx}",
+    "lib/**/*.{ts,tsx}",
+    "hooks/**/*.{ts,tsx}",
+    "services/**/*.{ts,tsx}",
+    "config/**/*.{ts,tsx}",
+    "types/**/*.{ts,tsx}"
+  ],
+
+  // จุดเข้า (entries) ที่ Next.js ผูกอัตโนมัติ ให้ knip ถือว่าเป็น entry ด้วย
+  "entry": [
+    // App Router
+    "app/**/*.{ts,tsx}",
+    // Pages Router (ถ้ามี)
+    "pages/**/*.{ts,tsx}",
+    // API Routes & Route Handlers
+    "app/**/route.{ts,tsx}",
+    "pages/api/**/*.{ts,tsx}",
+    "app/api/**/*.{ts,tsx}",
+    // Layout/Template/Loading/Not-Found/Default Next.js special files
+    "app/**/{layout,page,template,loading,not-found,error}.{ts,tsx}"
+  ],
+
+  // ไฟล์/โฟลเดอร์ที่ควรถูกละเว้นจากการคิดว่า "unused"
+  "ignore": [
+    // Types / config / mocks / test / story
+    "types/**/*",
+    "config/**/*",
+    "mock/**/*",
+    "**/*.d.ts",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/*.stories.*",
+    // ไฟล์ที่ tooling ใช้ แต่ไม่ถูก import ตรง ๆ
+    "eslint.config.mjs",
+    "postcss.config.js",
+    "tailwind.config.{js,ts}",
+    "next-env.d.ts"
+  ],
+
+  // ปรับ heuristics สำหรับ Next.js
+  "next": {
+    "pagesDirectory": "pages",
+    "appDirectory": "app"
+  }
+}

@@ -33,7 +33,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
     const { search, risk, categoryId, isActive } = req.query;
     const sortParam = parseSortParam(typeof req.query.sort === 'string' ? req.query.sort : undefined);
 
-    // ✅ parse isActive จาก query แล้วส่งเข้าบริการ (service รองรับอยู่แล้ว)
+    //   parse isActive จาก query แล้วส่งเข้าบริการ (service รองรับอยู่แล้ว)
     const isActiveBool = parseBoolean(isActive);
 
     // ใช้ pagination 1-based จาก middleware
@@ -42,7 +42,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
       search: typeof search === 'string' ? search : undefined,
       risk: typeof risk === 'string' ? (risk as any) : undefined,
       categoryId: typeof categoryId === 'string' ? +categoryId : undefined,
-      isActive: isActiveBool,            // ✅ เพิ่มให้สอดคล้อง service
+      isActive: isActiveBool,            //   เพิ่มให้สอดคล้อง service
       sort: sortParam,
       pageIndex: p.pageIndex0,           // service 0‑based
       pageSize: p.pageSize,
@@ -67,14 +67,14 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 export async function listAssignees(req: Request, res: Response, next: NextFunction) {
   try {
     const p = req.pagination!;
-    // ✅ รองรับ status ใน query และตั้งค่าเริ่มต้นเป็น 'active'
+    //   รองรับ status ใน query และตั้งค่าเริ่มต้นเป็น 'active'
     const status = parseAssigneeStatus(req.query.status, 'active');
 
     const { items, total } = await svc.listAssigneesByException(
       +req.params.id,
       p.pageIndex0,
       p.pageSize,
-      { status },                    // ✅ ส่งสถานะให้ service
+      { status },                    //   ส่งสถานะให้ service
     );
 
     return res.json(withPaging(items, total, p.pageIndex0, p.pageSize));

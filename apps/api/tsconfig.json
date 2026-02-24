@@ -12,8 +12,8 @@
     "resolveJsonModule": true,
     "sourceMap": true,
 
-    "types": ["node"],                 // ✅ เพื่อให้รู้จัก process, Buffer, ฯลฯ
-    "useUnknownInCatchVariables": false // ✅ ให้ catch (err) เป็น any (ลด error เบื้องต้น)
+    "types": ["node"],                 
+    "useUnknownInCatchVariables": false 
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

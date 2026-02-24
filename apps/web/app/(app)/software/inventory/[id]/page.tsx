@@ -14,7 +14,7 @@ export default async function Page({ params }: PageProps) {
   const item = await getItemById(id);
   if (!item) return notFound();
 
-  // ✅ ใช้ของจริง ไม่ส่ง [] อีกต่อไป
+  //   ใช้ของจริง ไม่ส่ง [] อีกต่อไป
   const [installations, history] = await Promise.all([
     getInstallationsBySoftware(id),
     getHistoryBySoftware(id),

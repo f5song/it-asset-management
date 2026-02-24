@@ -7,7 +7,7 @@ const toOptions = <T extends string>(arr: readonly T[]) =>
   arr.map((v) => ({ label: v, value: v }));
 
 /**
- * ✅ กำหนดชุดตัวเลือกสถานะให้ตรงกับโดเมนของคุณ
+ *   กำหนดชุดตัวเลือกสถานะให้ตรงกับโดเมนของคุณ
  * - ถ้าในระบบคุณใช้ "Active" | "Resigned" → ใช้ชุดนี้
  * - ถ้าหน้าอื่นอยากใช้ "Active" | "Inactive" ก็เปลี่ยนชุดนี้ให้ตรง หรือแยกเป็นไฟล์ config ต่อโดเมน
  */
@@ -17,7 +17,7 @@ export const EMPLOYEE_STATUS_OPTIONS: readonly EmployeeStatus[] = [
 ] as const;
 
 /**
- * ✅ ตัวอย่างชุดตัวเลือกประเภทพนักงาน (ปรับให้ตรงกับ type ของคุณ)
+ *   ตัวอย่างชุดตัวเลือกประเภทพนักงาน (ปรับให้ตรงกับ type ของคุณ)
  * - ถ้าใน `EmployeeType` ของคุณมีค่าอื่น ๆ ให้แก้ตามจริง
  */
 export const EMPLOYEE_TYPE_OPTIONS: readonly EmployeeType[] = [
@@ -26,7 +26,7 @@ export const EMPLOYEE_TYPE_OPTIONS: readonly EmployeeType[] = [
 ] as const;
 
 /**
- * ✅ ฟิลด์สำหรับหน้าแก้ไขพนักงาน (Edit) ที่ "ตรงตาม" EmployeesEditValues
+ *   ฟิลด์สำหรับหน้าแก้ไขพนักงาน (Edit) ที่ "ตรงตาม" EmployeesEditValues
  */
 export const employeesEditFields: FormField<
   keyof EmployeesEditValues & string

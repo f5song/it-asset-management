@@ -7,7 +7,7 @@ export default async function ExceptionAssignPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  // ✅ ต้อง await ก่อน แล้วค่อยใช้
+  //   ต้อง await ก่อน แล้วค่อยใช้
   const { id: idRaw } = await params;
   const id = decodeURIComponent(idRaw ?? "").trim();
 

@@ -29,7 +29,7 @@ export type AssignedDisplayRow = {
   employeeName: string;
   department: string;
   expiryDate: string;       // ISO date string
-  assignedDate: string;     // ✅ เปลี่ยนจาก AssignedDate → camelCase
+  assignedDate: string;     //   เปลี่ยนจาก AssignedDate → camelCase
   softwareId?: string;
   softwareName?: string;
   status: LicenseStatus;

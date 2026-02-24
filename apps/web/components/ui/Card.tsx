@@ -18,7 +18,7 @@ export type CardProps = {
   hideFooter?: boolean;
   icon?: React.ReactNode;
   tone?: Tone;
-  /** ✅ เพิ่ม children ลงใน props */
+  /**   เพิ่ม children ลงใน props */
   children?: React.ReactNode;
 };
 
@@ -41,7 +41,7 @@ export const Card: React.FC<CardProps> = ({
   hideFooter = true,
   icon,
   tone = "slate",
-  children, // ✅ รับ children
+  children, //   รับ children
 }) => {
   const Container: any = href ? Link : "div";
   const showIcon = Boolean(icon);
@@ -71,7 +71,7 @@ export const Card: React.FC<CardProps> = ({
             {loading ? "…" : showCount ? (typeof count === "number" ? count.toLocaleString() : count) : null}
           </div>
 
-          {/* ✅ แสดง children ต่อจาก count */}
+          {/*   แสดง children ต่อจาก count */}
           {children ? (
             <div className="mt-1 text-sm text-slate-600">
               {children}

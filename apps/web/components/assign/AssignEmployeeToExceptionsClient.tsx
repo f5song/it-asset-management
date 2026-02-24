@@ -48,7 +48,7 @@ export default function AssignEmployeeToExceptionsClient({
     resetDeps: [domainFilters.status, domainFilters.search],
   });
 
-  // ✅ บังคับ Active มาก่อน เมื่ออยู่ All Status (เหมือน ExceptionPage)
+  //   บังคับ Active มาก่อน เมื่ออยู่ All Status (เหมือน ExceptionPage)
   React.useEffect(() => {
     const isAll = ctl.simpleFilters.status == null; // undefined = All
     if (isAll) {
@@ -147,7 +147,7 @@ export default function AssignEmployeeToExceptionsClient({
         <Card title="Total Exceptions" count={totalRows} compact />
       </div>
 
-      {/* ✅ ใช้ ExceptionFilterBar แทน UI ฟิลเตอร์เดิม */}
+      {/*   ใช้ ExceptionFilterBar แทน UI ฟิลเตอร์เดิม */}
       <ExceptionFilterBar
         filters={ctl.simpleFilters}
         onFiltersChange={ctl.onSimpleFiltersChange}

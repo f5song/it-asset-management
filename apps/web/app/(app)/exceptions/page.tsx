@@ -31,7 +31,7 @@ export default function ExceptionPage() {
     resetDeps: [domainFilters.status, domainFilters.search],
   });
 
-  // ✅ บังคับให้ Active มาก่อน เมื่ออยู่ All Status
+  //   บังคับให้ Active มาก่อน เมื่ออยู่ All Status
   React.useEffect(() => {
     const isAll = ctl.simpleFilters.status == null; // undefined = All Status
     if (isAll) {

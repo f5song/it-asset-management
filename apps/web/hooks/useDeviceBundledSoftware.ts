@@ -46,7 +46,7 @@ export function useDeviceBundledSoftware(
         const res = await fetchDeviceSoftware(deviceId, query);
 
         if (!ac.signal.aborted) {
-          setRows((res.items ?? []) as DeviceSoftwareRow[]);   // ✅ คืน DeviceSoftwareRow[] เสมอ
+          setRows((res.items ?? []) as DeviceSoftwareRow[]);   //   คืน DeviceSoftwareRow[] เสมอ
           setTotal(res.total ?? (res.items?.length ?? 0));
         }
       } catch (e: any) {

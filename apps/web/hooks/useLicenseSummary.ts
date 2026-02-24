@@ -33,7 +33,7 @@ export function useLicenseSummary(
             status: filters?.status,
             licenseModel: filters?.licenseModel,
             manufacturer: filters?.manufacturer,
-            search: filters?.search, // ✅ ใช้ key "search" ตามมาตรฐานใหม่
+            search: filters?.search, //   ใช้ key "search" ตามมาตรฐานใหม่
           },
           ac.signal
         );

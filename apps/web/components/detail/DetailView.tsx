@@ -4,7 +4,7 @@
 import { BreadcrumbItem, Compliance, HistoryEvent } from "@/types";
 import React, { ReactNode, useEffect, useMemo, useState } from "react";
 
-// ✅ ใช้ imports เดิมทั้งหมด
+//   ใช้ imports เดิมทั้งหมด
 import type { FormField } from "types/forms";
 import { DetailHeader } from "./DetailHeader";
 import { TabList, TabPanel, TabTrigger } from "../ui/Tabs";
@@ -205,7 +205,7 @@ export function DetailView<TValues extends Record<string, any>>({
               key={t.key}
               active={activeKey === t.key}
               onClick={() =>
-                // ✅ type guard ป้องกัน union ที่บางสมาชิกอาจไม่มี disabled
+                //   type guard ป้องกัน union ที่บางสมาชิกอาจไม่มี disabled
                 !("disabled" in t && t.disabled) && setActiveKey(t.key)
               }
               aria-disabled={"disabled" in t ? t.disabled : undefined}
@@ -213,7 +213,7 @@ export function DetailView<TValues extends Record<string, any>>({
               <span className={"disabled" in t && t.disabled ? "opacity-50" : ""}>
                 {t.label}
               </span>
-              {/* ✅ guard badge เช่นกัน */}
+              {/*   guard badge เช่นกัน */}
               {"badge" in t && t.badge ? (
                 <span className="ml-2">{t.badge}</span>
               ) : null}

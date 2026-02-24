@@ -24,13 +24,13 @@ const pick = <T,>(arr: readonly T[], idx: number) => arr[idx % arr.length];
 const MOCK_DEVICES: DeviceItem[] = Array.from({ length: 57 }).map((_, i) => ({
   id: `D-${i + 1}`,
   name: `Device ${i + 1}`,
-  // ✅ ให้แน่ใจว่าตรงกับ union ของ DeviceType
+  //   ให้แน่ใจว่าตรงกับ union ของ DeviceType
   type: i % 2 === 0 ? "Laptop" : "Desktop",
-  // ✅ อย่าใช้ "" ให้ใช้ null เมื่อ "ไม่มีค่า"
+  //   อย่าใช้ "" ให้ใช้ null เมื่อ "ไม่มีค่า"
   assignedTo: i % 3 === 0 ? `user${i}` : null,
-  // ✅ ให้แน่ใจว่าตรงกับ union ของ DeviceOS
+  //   ให้แน่ใจว่าตรงกับ union ของ DeviceOS
   os: pick(DEVICE_OSES, i), // Windows / macOS / Linux / ...
-  // ✅ ใช้ค่าในชุดของ Compliance ที่ถูกต้อง
+  //   ใช้ค่าในชุดของ Compliance ที่ถูกต้อง
   compliance: pick(COMPLIANCE_SET, i),
   lastScan: "2026-01-10",
 }));
@@ -204,25 +204,25 @@ export async function assignDeviceToEmployee(
 }
 
 
-// ✅ แบบเร็ว (พอใช้ใน mock/demo): ดึงทีเดียวด้วย pageSize ใหญ่
+//   แบบเร็ว (พอใช้ใน mock/demo): ดึงทีเดียวด้วย pageSize ใหญ่
 export async function getAllDevicesQuick(signal?: AbortSignal): Promise<DeviceItem[]> {
   const res = await getDevices({ page: 1, pageSize: 9999 }, signal);
   return res.items;
 }
 
-// ✅ แบบ robust: loop ทีละหน้า เผื่ออนาคตเปลี่ยน pageSize/จำนวนข้อมูล
-export async function getAllDevices(signal?: AbortSignal): Promise<DeviceItem[]> {
-  const pageSize = 100;
-  let page = 1;
-  const out: DeviceItem[] = [];
+//   แบบ robust: loop ทีละหน้า เผื่ออนาคตเปลี่ยน pageSize/จำนวนข้อมูล
+// export async function getAllDevices(signal?: AbortSignal): Promise<DeviceItem[]> {
+//   const pageSize = 100;
+//   let page = 1;
+//   const out: DeviceItem[] = [];
 
-  // ดึงจนหมดทุกหน้า
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const res: DeviceListResponse = await getDevices({ page, pageSize }, signal);
-    out.push(...res.items);
-    if (!res.hasNext) break;
-    page += 1;
-  }
-  return out;
-}
+//   // ดึงจนหมดทุกหน้า
+//   // eslint-disable-next-line no-constant-condition
+//   while (true) {
+//     const res: DeviceListResponse = await getDevices({ page, pageSize }, signal);
+//     out.push(...res.items);
+//     if (!res.hasNext) break;
+//     page += 1;
+//   }
+//   return out;
+// }

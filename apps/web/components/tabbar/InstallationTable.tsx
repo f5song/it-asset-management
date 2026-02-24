@@ -37,7 +37,7 @@ type Props<R extends { id?: string | number }> = {
   getRowId?: (row: R) => string | number;
 
   /** ===== Passthrough (optional) ===== */
-  variant?: 'default' | 'striped'; // ✅ ให้ตรงกับ DataTable
+  variant?: 'default' | 'striped'; //   ให้ตรงกับ DataTable
   size?: 'xs' | 'sm' | 'md';
   emptyMessage?: string;
   isLoading?: boolean;
@@ -70,7 +70,7 @@ export function InstallationTable<R extends { id?: string | number }>(props: Pro
     getRowId,
 
     // passthrough
-    variant = 'default', // ✅ default ถูกกับ DataTable
+    variant = 'default', //   default ถูกกับ DataTable
     size = 'xs',
     emptyMessage = 'ไม่พบข้อมูล',
     isLoading,
@@ -140,7 +140,7 @@ export function InstallationTable<R extends { id?: string | number }>(props: Pro
     });
   }, [filtered, pageRows, totalRows, onAfterFilter]);
 
-  // ✅ แปลง onPaginationChange ของ DataTable (0-based) -> onPageChange ของเรา (1-based)
+  //   แปลง onPaginationChange ของ DataTable (0-based) -> onPageChange ของเรา (1-based)
   const handlePaginationChange = React.useCallback(
     (next: PaginationState) => {
       onPageChange?.(next.pageIndex + 1);
@@ -148,7 +148,7 @@ export function InstallationTable<R extends { id?: string | number }>(props: Pro
     [onPageChange],
   );
 
-  // ✅ สร้าง rowHref สำหรับ DataTable ให้แน่ใจว่า return string เสมอ (หรือไม่ส่ง prop ถ้าไม่มี)
+  //   สร้าง rowHref สำหรับ DataTable ให้แน่ใจว่า return string เสมอ (หรือไม่ส่ง prop ถ้าไม่มี)
   const dtRowHref = React.useMemo(() => {
     if (!rowHref) return undefined;
     return (row: R) => rowHref(row) ?? ''; // fallback เป็น '' ถ้า undefined
@@ -157,10 +157,10 @@ export function InstallationTable<R extends { id?: string | number }>(props: Pro
   return (
     <DataTable<R>
       columns={columns}
-      /** ✅ ส่งเฉพาะแถวของหน้านี้เข้า DataTable เพื่อให้ selection header ทำงานเฉพาะหน้า */
+      /**   ส่งเฉพาะแถวของหน้านี้เข้า DataTable เพื่อให้ selection header ทำงานเฉพาะหน้า */
       rows={pageRows}
       totalRows={totalRows}
-      /** ✅ DataTable ใช้ 0-based pageIndex */
+      /**   DataTable ใช้ 0-based pageIndex */
       pagination={{ pageIndex: safePage - 1, pageSize }}
       onPaginationChange={onPageChange ? handlePaginationChange : undefined}
       /** passthrough */
@@ -175,7 +175,7 @@ export function InstallationTable<R extends { id?: string | number }>(props: Pro
       onSortingChange={onSortingChange}
       clientSideSort={clientSideSort}
       onRowClick={onRowClick}
-      rowHref={dtRowHref as any}   // ✅ ให้ type ตรงกับ DataTable (คืน string เสมอ)
+      rowHref={dtRowHref as any}   //   ให้ type ตรงกับ DataTable (คืน string เสมอ)
       defaultColMinWidth={defaultColMinWidth}
       /** selection */
       selectable={selectable}

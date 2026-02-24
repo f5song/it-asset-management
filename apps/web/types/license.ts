@@ -118,7 +118,7 @@ export type LicenseEditValues = {
   notes?: string;
 };
 
-/** ✅ Query/Response สำหรับ License (หน้าตาเหมือน Software) */
+/**   Query/Response สำหรับ License (หน้าตาเหมือน Software) */
 export type LicenseListQuery = OffsetPaginationParams & {
   // ถ้าคุณมี Searchable แยกใน common เช่น:
   // export type Searchable = { search?: string }

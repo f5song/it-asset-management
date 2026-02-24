@@ -13,7 +13,7 @@ type PageProps = {
 };
 
 export default async function ExceptionsDetailPage({ params }: PageProps) {
-  // ✅ ต้อง await ก่อนใช้งาน
+  //   ต้อง await ก่อนใช้งาน
   const { id } = await params;
   if (!id) return notFound();
 
@@ -31,7 +31,7 @@ export default async function ExceptionsDetailPage({ params }: PageProps) {
     { label: "Exceptions", href: "/exceptions" },
     {
       label: exception.name ?? `Exception ${exception.exception_id}`,
-      href: `/exceptions/${id}`, // ✅ ใช้ id จาก route แทนค่าใน record ที่อาจชื่อ field ต่างกัน
+      href: `/exceptions/${id}`, //   ใช้ id จาก route แทนค่าใน record ที่อาจชื่อ field ต่างกัน
     },
   ];
 

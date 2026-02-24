@@ -37,10 +37,8 @@ export default function RequestsView(props: Props) {
     manufacturer: undefined,
     search: "",
   });
-
-  // เริ่มหน้า 101 ตามภาพ
   const [pagination, setPagination] = React.useState({
-    pageIndex: 100,
+    pageIndex: 0,
     pageSize: 10,
   });
   const [data, setData] = React.useState<RequestListResponse>({
@@ -55,7 +53,7 @@ export default function RequestsView(props: Props) {
   // NOTE: DataTable ใช้ได้ทั้ง string | number
   const [selectedIds, setSelectedIds] = React.useState<Set<string | number>>(new Set());
 
-  // ✅ แปลงเป็น string[] เฉพาะตอนส่งให้ InventoryActionToolbar (แก้ปัญหา type)
+  //   แปลงเป็น string[] เฉพาะตอนส่งให้ InventoryActionToolbar (แก้ปัญหา type)
   const selectedIdStrings = React.useMemo(() => Array.from(selectedIds, String), [selectedIds]);
 
   // debounce เฉพาะ search
@@ -202,7 +200,7 @@ export default function RequestsView(props: Props) {
         onManufacturerSelectedChange={undefined}
       />
 
-      {/* ✅ DataTable แทน list */}
+      {/* DataTable แทน list */}
       <div className="rounded-lg border border-slate-200 bg-white">
         <DataTable<RequestItem>
           // data

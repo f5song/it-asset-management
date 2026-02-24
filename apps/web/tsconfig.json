@@ -21,7 +21,7 @@
     "allowJs": false,
     "strict": true,
     "noEmit": true,
-    "moduleResolution": "bundler",        // ✅ เหมาะกับ Next 13+
+    "moduleResolution": "bundler",        //   เหมาะกับ Next 13+
     "resolveJsonModule": true,
     "isolatedModules": true,
     "incremental": true,

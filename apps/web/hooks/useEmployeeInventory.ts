@@ -105,7 +105,7 @@ export function useEmployeesInventory(
     const type = toUndefTrim(filters.type);
     const search = toUndefTrim(filters.search) ?? "";
 
-    // ✅ จากหน้า Assign
+    //   จากหน้า Assign
     const excludeAssignedForExceptionId =
       typeof (filters as any)?.excludeAssignedForExceptionId === "number"
         ? (filters as any).excludeAssignedForExceptionId as number
@@ -117,7 +117,7 @@ export function useEmployeesInventory(
       orderByRaw?: string[];
       excludeAssignedForExceptionId?: number;
     } = {
-      page: pageIndex + 1,  // ✅ 1-based
+      page: pageIndex + 1,  //   1-based
       pageSize,
       search,
       status,
@@ -151,7 +151,7 @@ export function useEmployeesInventory(
     filters.status,
     filters.type,
     filters.search,
-    (filters as any)?.excludeAssignedForExceptionId, // ✅ refetch เมื่อ exception เปลี่ยน
+    (filters as any)?.excludeAssignedForExceptionId, //   refetch เมื่อ exception เปลี่ยน
   ]);
 
   React.useEffect(() => {
@@ -221,7 +221,7 @@ export function useEmployeesInventory(
     filters.status,
     serverQuery.sortBy,
     serverQuery.sortOrder,
-    (filters as any)?.excludeAssignedForExceptionId, // ✅ เพื่อ refetch
+    (filters as any)?.excludeAssignedForExceptionId, //   เพื่อ refetch
   ]);
 
   return { rows, totalRows, isLoading, isError, errorMessage };

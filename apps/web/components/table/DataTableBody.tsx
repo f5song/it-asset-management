@@ -15,7 +15,7 @@ type Props<T extends { id?: string | number }> = {
   size: 'xs' | 'sm' | 'md';
   defaultColMinWidth: number;
 
-  /** ✅ ช่องนำหน้า (เช่น checkbox) — ส่งเฉพาะ content แล้วตารางจะห่อ <td> ให้เอง */
+  /**   ช่องนำหน้า (เช่น checkbox) — ส่งเฉพาะ content แล้วตารางจะห่อ <td> ให้เอง */
   renderLeadingCell?: (row: T, rowIndex: number) => React.ReactNode;
 };
 
@@ -72,7 +72,7 @@ export function DataTableBody<T extends { id?: string | number }>({
             onClick={handleRowClick}
             onKeyDown={handleRowKeyDown}
           >
-            {/* ✅ คอลัมน์นำหน้า */}
+            {/*   คอลัมน์นำหน้า */}
             {renderLeadingCell && (
               <td className={cn(tdSize, 'w-10 align-middle')} onClick={(e) => e.stopPropagation()}>
                 {renderLeadingCell(row, ri)}

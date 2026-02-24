@@ -48,7 +48,7 @@ export type ExceptionDefinitionListQuery = OffsetPaginationParams &
   Searchable &
   ExceptionDomainFilters;
 
-/** ✅ เปลี่ยนให้ items เป็น Row[] */
+/**   เปลี่ยนให้ items เป็น Row[] */
 export type ExceptionDefinitionListResponse =
   OffsetPage<ExceptionDefinitionRow>;
 
@@ -95,7 +95,7 @@ export interface ExceptionDefinition {
   totalAssignments?: number;
 }
 
-/** ✅ Canonical: Payload/Result สำหรับ Assign แบบ bulk */
+/**   Canonical: Payload/Result สำหรับ Assign แบบ bulk */
 export type AssignExceptionsToEmployeesPayload = {
   employeeIds: string[]; // กลุ่มพนักงาน
   definitionIds: string[]; // ข้อยกเว้นหลายรายการ

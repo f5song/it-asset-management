@@ -109,7 +109,7 @@ Employee.init(
     emp_stus: { type: DataTypes.CHAR(1), allowNull: false },      // 'A' | 'R' | etc.
     update_time: { type: DataTypes.DATEONLY, allowNull: true },
 
-    // ✅ ตรงกับ DDL: emp_type เป็น CHAR(1) และอนุญาต NULL
+    //   ตรงกับ DDL: emp_type เป็น CHAR(1) และอนุญาต NULL
     emp_type: { type: DataTypes.CHAR(1), allowNull: true },
   },
   {

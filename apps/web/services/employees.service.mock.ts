@@ -4,7 +4,7 @@ import type {
   EmployeeStatus,
   EmployeesListQuery,
   EmployeesListResponse,
-  EmployeeType, // ✅ ใช้สำหรับ mock EMP_TYPES
+  EmployeeType, //   ใช้สำหรับ mock EMP_TYPES
 } from "@/types/employees";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -368,7 +368,7 @@ export async function listEmployees(
     const dir = (q as any).sortOrder === "desc" ? -1 : 1;
 
     if (sortBy === "status_priority" && !q.status /* All Status */) {
-      // ✅ Global: Active -> Resigned -> (else)  แล้ว secondary ด้วย id ASC
+      //   Global: Active -> Resigned -> (else)  แล้ว secondary ด้วย id ASC
       const priority = new Map<string, number>([
         ["Active", 0],
         ["Resigned", 1],

@@ -53,7 +53,7 @@ export default function LicenseDetail({
     [item],
   );
 
-  // ✅ ให้ dropdown มีเฉพาะ "Assign" เท่านั้น
+  //   ให้ dropdown มีเฉพาะ "Assign" เท่านั้น
   const toolbar = (
     <InventoryActionToolbar
       entity="licenses"

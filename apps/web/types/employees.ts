@@ -38,7 +38,7 @@ export type EmployeeDomainFilters = {
   type?: string;
   status?: EmployeeStatus;
   search?: string;
-  excludeAssignedForExceptionId?: number; // ✅ add
+  excludeAssignedForExceptionId?: number; //   add
 };
 
 /** โครงข้อมูลแถวพนักงานสำหรับตาราง/หน้ารายการ */
@@ -103,7 +103,7 @@ export type EmployeesFilterValues = {
   /** ใช้กับ FilterBar: ใช้ type เป็น department ใน UI */
   type?: string;
   search?: string;
-  excludeAssignedForExceptionId?: number; // ✅ add
+  excludeAssignedForExceptionId?: number; //   add
 };
 
 /** ใช้ในฟอร์มแก้ไข/สร้าง (align กับ device ฝั่งฟอร์ม) */

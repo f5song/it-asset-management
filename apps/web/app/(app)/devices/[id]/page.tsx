@@ -28,7 +28,7 @@ export default async function DeviceDetailPage({ params }: PageProps) {
       <DeviceDetail
         item={device}
         history={history}
-        breadcrumbs={breadcrumbs} // ✅ ส่งไปให้ Header ด้านในด้วย
+        breadcrumbs={breadcrumbs} //   ส่งไปให้ Header ด้านในด้วย
       />
     </div>
   );

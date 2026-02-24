@@ -12,7 +12,7 @@
 //     const mod = await import('./software.service.mock');
 //     return mod.getItemById(id);
 //   }
-//   // ✅ internal API (Next.js route) — ปลอดภัยจาก Invalid URL
+//   //   internal API (Next.js route) — ปลอดภัยจาก Invalid URL
 //   return apiFetch<SoftwareItem | null>(`/api/software/${id}`);
 
 //   // หรือถ้าเป็น external API:
@@ -27,7 +27,7 @@
 //     return mod.getItemsStock(q);
 //   }
 
-//   // ✅ ถ้า BE จริงยังส่งรูปแบบเก่า { items, total }:
+//   //   ถ้า BE จริงยังส่งรูปแบบเก่า { items, total }:
 //   // เราจะแปลงให้เป็น ItemsResponse ใหม่ที่ layer นี้
 //   const raw = await apiFetch<{ items: SoftwareItem[]; total: number }>(
 //     `/api/software`,  // internal API

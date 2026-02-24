@@ -14,7 +14,7 @@ type PageProps = { params: { id: string } };
 
 export default async function LicenseDetailPage({ params }: PageProps) {
   // ❌ เดิม: const { id } = await params;
-  // ✅ params เป็น sync object
+  //   params เป็น sync object
   const { id } = await params;
 
   // 1) โหลดข้อมูลหลัก (license)

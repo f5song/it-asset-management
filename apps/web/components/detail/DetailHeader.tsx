@@ -10,7 +10,7 @@ export function DetailHeader({
   onEdit,
   onDeleteClick,
   breadcrumbs,
-  // ✅ เพิ่มช่องว่างด้านขวา
+  //   เพิ่มช่องว่างด้านขวา
   rightExtra,
 }: {
   title: string;
@@ -19,7 +19,7 @@ export function DetailHeader({
   onEdit?: () => void;
   onDeleteClick?: () => void;
   breadcrumbs?: BreadcrumbItem[];
-  rightExtra?: React.ReactNode; // ✅ ใหม่
+  rightExtra?: React.ReactNode; //   ใหม่
 }) {
   return (
     <div className="flex items-center gap-3">
@@ -59,7 +59,7 @@ export function DetailHeader({
         )}
       </div>
 
-      {/* ✅ ด้านขวา */}
+      {/*   ด้านขวา */}
       <div className="ml-auto flex items-center gap-2">
         {rightExtra /* ← ปุ่ม/เมนูจากภายนอก */}
         {onEdit && (

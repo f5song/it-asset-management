@@ -59,11 +59,11 @@ export function FormPage<TIn extends AnyValues, TOut extends AnyValues = TIn>({
   submitLabel = "Submit",
   cancelLabel = "Cancel",
 }: FormPageProps<TIn, TOut>) {
-  // ✅ RHF ใส่ generic 3 ตัว: <input, any, output>
+  //   RHF ใส่ generic 3 ตัว: <input, any, output>
 
   const methods = useForm<TIn, any, TOut>({
     defaultValues,
-    resolver: makeResolver<TIn, TOut>(schema), // ✅ เรียกผ่าน helper
+    resolver: makeResolver<TIn, TOut>(schema), //   เรียกผ่าน helper
     mode: "onBlur",
   });
 

@@ -62,7 +62,7 @@ export function InventoryActionToolbar({
         }
       : entity === "licenses"
         ? {
-            // ✅ licenses: มี assign ได้เช่นกัน
+            //   licenses: มี assign ได้เช่นกัน
             Add: `${basePath}/add`,
             Edit: ({
               selectedIds,
@@ -139,7 +139,7 @@ export function InventoryActionToolbar({
       enableDefaultMapping={false}
       requireSelection={false}
       singleSelectionOnly={true}
-      visibleActions={visibleActions} // ✅ ส่งต่อเพื่อไม่ fallback เป็น ["delete","add"]
+      visibleActions={visibleActions} //   ส่งต่อเพื่อไม่ fallback เป็น ["delete","add"]
     />
   );
 }

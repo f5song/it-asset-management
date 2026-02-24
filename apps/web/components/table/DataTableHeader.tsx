@@ -21,7 +21,7 @@ type Props<T extends { id?: string | number }> = {
   size: 'xs' | 'sm' | 'md';
   defaultColMinWidth: number;
 
-  /** ✅ เฮดเดอร์ช่องนำหน้า (เช่น checkbox select-all ของหน้า) */
+  /**   เฮดเดอร์ช่องนำหน้า (เช่น checkbox select-all ของหน้า) */
   leadingHeaderCell?: React.ReactNode;
 };
 
@@ -50,7 +50,7 @@ export function DataTableHeader<T extends { id?: string | number }>({
   return (
     <thead className="sticky top-0 z-10 bg-slate-50">
       <tr>
-        {/* ✅ ช่องนำหน้า เช่น checkbox select page */}
+        {/*   ช่องนำหน้า เช่น checkbox select page */}
         {leadingHeaderCell}
 
         {columns.map((col) => {
