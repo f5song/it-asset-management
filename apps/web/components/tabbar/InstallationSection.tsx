@@ -308,7 +308,7 @@ export function InstallationSection<R extends { id?: string | number }>({
 
       {/* ตาราง */}
       <div
-        className="border rounded overflow-auto"
+        // className="border rounded overflow-auto"
         style={{ maxHeight: maxBodyHeight }}
       >
         <InstallationTable<R>

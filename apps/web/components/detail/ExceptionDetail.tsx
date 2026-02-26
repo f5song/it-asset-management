@@ -62,6 +62,9 @@ export default function ExceptionsDetail({
   // selection (ใช้ emp_code เป็น id selection เพื่อส่งให้ revoke ตรง ๆ)
   const [selectedEmpCodes, setSelectedEmpCodes] = React.useState<Set<string | number>>(new Set());
 
+  // 🔁 ตัวบังคับ reload เมื่อ unassign เสร็จ แม้ page/pageSize จะไม่เปลี่ยน
+  const [reloadTick, setReloadTick] = React.useState(0);
+
   // โหลดเฉพาะ "Active assignees" ด้วย page 1-based
   React.useEffect(() => {
     if (!item?.id) {
@@ -95,9 +98,9 @@ export default function ExceptionsDetail({
     })();
 
     return () => ac.abort();
-  }, [item.id, page, pageSize]);
+  }, [item.id, page, pageSize, reloadTick]); // ⬅️ เพิ่ม reloadTick
 
-  //   ถ้าภายนอกส่ง assignments มา (เช่นจาก SSR) ให้ override หน้านั้น
+  // ถ้าภายนอกส่ง assignments มา (เช่นจาก SSR) ให้ override หน้านั้น
   React.useEffect(() => {
     if (Array.isArray(assignments) && assignments.length) {
       setAssignRows(assignments);
@@ -105,7 +108,7 @@ export default function ExceptionsDetail({
     }
   }, [assignments]);
 
-  //   เรียง Active -> Resigned; ถ้าไม่มีสถานะ ให้ไปท้าย (เฉพาะในหน้า)
+  // เรียง Active -> Resigned; ถ้าไม่มีสถานะ ให้ไปท้าย (เฉพาะในหน้า)
   const sortedRows = React.useMemo<ExceptionAssignmentRow[]>(() => {
     const pr = new Map<string, number>([
       ["active", 0],
@@ -254,8 +257,11 @@ export default function ExceptionsDetail({
     try {
       const actor = resolveActor();
       await revokeAssignments(item.id, pendingEmpCodes, actor);
-      // refresh หน้าแรกเพื่อให้หายจากรายการ (เพราะไม่ active แล้ว)
+
+      // ✅ รีโหลด: เพิ่ม tick + รีเซ็ตไปหน้า 1 เพื่อความปลอดภัย
       setPage(1);
+      setReloadTick((t) => t + 1);
+
       // ล้าง selection
       setSelectedEmpCodes(new Set());
     } catch (e: any) {
@@ -339,7 +345,7 @@ export default function ExceptionsDetail({
           <InstallationSection<ExceptionAssignmentRow>
             rows={sortedRows}
             columns={assignmentColsWithActions}
-            resetKey={`exception-${item.id}-${page}-${pageSize}`}
+            resetKey={`exception-${item.id}-${page}-${pageSize}-${reloadTick}`} // ⬅️ ผูก reloadTick
             initialPage={page} // 1-based
             pageSize={pageSize}
             totalRows={totalRows}
@@ -353,7 +359,6 @@ export default function ExceptionsDetail({
                 setPage(nextPage);
               }
             }}
-
             // ===== Selection สำหรับ Bulk Unassign =====
             selectable
             selectedIds={selectedEmpCodes}
@@ -366,7 +371,6 @@ export default function ExceptionsDetail({
               row?.userId ??
               row?.id
             }
-
             // ปุ่มด้านขวา (รวมกับ Export)
             rightExtra={rightExtra}
           />
@@ -392,6 +396,7 @@ export default function ExceptionsDetail({
       historyData,
       selectedEmpCodes,
       rightExtra,
+      reloadTick, // ⬅️ ให้คีย์ tabs เปลี่ยนเมื่อ reloadTick เปลี่ยน (ช่วยรีเฟรชบาง UI)
     ],
   );
 

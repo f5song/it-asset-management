@@ -41,7 +41,7 @@ export default function LoginPage() {
             ลงชื่อเข้าใช้ด้วยบัญชี Microsoft บริษัท บีอีซี เวิลด์ จำกัด (มหาชน) เพื่อเข้าสู่ระบบ
           </p>
         </div>
-        <p className="text-sm text-white/70">&copy; {new Date().getFullYear()} BEC Studio Co., Ltd</p>
+        <p className="text-sm text-white/70">&copy; {new Date().getFullYear()} BEC World Co., Ltd</p>
       </div>
 
       {/* Login panel */}
