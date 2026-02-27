@@ -8,7 +8,7 @@ import { DetailView, EditConfig } from "@/components/detail/DetailView";
 import { InstallationSection } from "@/components/tabbar/InstallationSection";
 import { InventoryActionToolbar } from "@/components/toolbar/InventoryActionToolbar";
 
-import type { BreadcrumbItem, HistoryEvent } from "@/types";
+import type { AppColumnDef, BreadcrumbItem, HistoryEvent } from "@/types";
 import type {
   ExceptionDefinitionRow, // ⬅️ ใช้ Row ที่มี id
   ExceptionAssignmentRow,
@@ -45,7 +45,8 @@ export default function ExceptionsDetail({
   const router = useRouter();
 
   const historyData = React.useMemo<HistoryEvent[]>(
-    () => (Array.isArray(history) && history.length ? history : demoExceptionHistory),
+    () =>
+      Array.isArray(history) && history.length ? history : demoExceptionHistory,
     [history],
   );
 
@@ -55,12 +56,16 @@ export default function ExceptionsDetail({
   const [page, setPage] = React.useState<number>(1); // 1-based
   const [pageSize, setPageSize] = React.useState<number>(8);
   const [totalRows, setTotalRows] = React.useState<number>(0);
-  const [assignRows, setAssignRows] = React.useState<ExceptionAssignmentRow[]>([]);
+  const [assignRows, setAssignRows] = React.useState<ExceptionAssignmentRow[]>(
+    [],
+  );
   const [loadingAssign, setLoadingAssign] = React.useState<boolean>(false);
   const [assignError, setAssignError] = React.useState<string | null>(null);
 
   // selection (ใช้ emp_code เป็น id selection เพื่อส่งให้ revoke ตรง ๆ)
-  const [selectedEmpCodes, setSelectedEmpCodes] = React.useState<Set<string | number>>(new Set());
+  const [selectedEmpCodes, setSelectedEmpCodes] = React.useState<
+    Set<string | number>
+  >(new Set());
 
   // 🔁 ตัวบังคับ reload เมื่อ unassign เสร็จ แม้ page/pageSize จะไม่เปลี่ยน
   const [reloadTick, setReloadTick] = React.useState(0);
@@ -125,7 +130,8 @@ export default function ExceptionsDetail({
       return typeof s === "string" ? s : undefined;
     };
 
-    const getEmpId = (r: any) => r?.employeeId ?? r?.emp_code ?? r?.userId ?? r?.empId ?? "";
+    const getEmpId = (r: any) =>
+      r?.employeeId ?? r?.emp_code ?? r?.userId ?? r?.empId ?? "";
 
     return [...assignRows].sort((a: any, b: any) => {
       const sa = (getStatus(a) ?? "").toLowerCase();
@@ -274,42 +280,43 @@ export default function ExceptionsDetail({
   }, [item?.id, pendingEmpCodes, resolveActor, closeUnassign]);
 
   // สร้าง columns ใหม่ (เพิ่มปุ่ม Actions -> Unassign รายแถว)
-  const assignmentColsWithActions = React.useMemo(
-    () =>
-      [
-        ...exceptionAssignmentColumns,
-        {
-          id: "actions",
-          header: "Actions",
-          accessorKey: "__actions",
-          align: "center",
-          width: 120,
-          cell: (_value: unknown, row: any) => {
-            // เดา emp_code จากหลายฟิลด์
-            const empCode =
-              row?.emp_code ??
-              row?.employeeId ??
-              row?.empId ??
-              row?.userId ??
-              row?.id ??
-              "";
-            return (
-              <button
-                className="text-red-600 hover:underline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const code = String(empCode || "").trim();
-                  if (!code) return;
-                  openUnassignFor([code]);
-                }}
-              >
-                Unassign
-              </button>
-            );
-          },
-        } as const,
-      ] as const,
-    [openUnassignFor],
+  // แนะนำ: เพิ่ม dependency exceptionAssignmentColumns ด้วย
+  const assignmentColsWithActions = React.useMemo<
+    AppColumnDef<ExceptionAssignmentRow>[]
+  >(
+    () => [
+      ...exceptionAssignmentColumns,
+      {
+        id: "actions",
+        header: "Actions",
+        accessorKey: "__actions",
+        align: "center",
+        width: 120,
+        cell: (_value: unknown, row: any) => {
+          const empCode =
+            row?.emp_code ??
+            row?.employeeId ??
+            row?.empId ??
+            row?.userId ??
+            row?.id ??
+            "";
+          return (
+            <button
+              className="text-red-600 hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+                const code = String(empCode || "").trim();
+                if (!code) return;
+                openUnassignFor([code]);
+              }}
+            >
+              Unassign
+            </button>
+          );
+        },
+      } as AppColumnDef<ExceptionAssignmentRow>,
+    ],
+    [exceptionAssignmentColumns, openUnassignFor],
   );
 
   // ปุ่ม Bulk (อยู่ทางขวาของแถบใน InstallationSection ผ่าน prop rightExtra)
@@ -324,7 +331,9 @@ export default function ExceptionsDetail({
           if (list.length === 0) return;
           openUnassignFor(list);
         }}
-        title={count > 0 ? `Unassign Selected (${count})` : "Select rows to unassign"}
+        title={
+          count > 0 ? `Unassign Selected (${count})` : "Select rows to unassign"
+        }
       >
         {count > 0 ? `Unassign Selected (${count})` : "Unassign Selected"}
       </button>
@@ -418,9 +427,12 @@ export default function ExceptionsDetail({
       {unassignOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="w-full max-w-md rounded bg-white p-4 shadow-lg">
-            <h3 className="mb-2 text-base font-semibold">ยืนยันการยกเลิกสิทธิ์ (Unassign)</h3>
+            <h3 className="mb-2 text-base font-semibold">
+              ยืนยันการยกเลิกสิทธิ์ (Unassign)
+            </h3>
             <p className="mb-4 text-sm text-slate-700">
-              จะยกเลิกสิทธิ์ของพนักงานจำนวน <strong>{pendingEmpCodes.length}</strong> รายการ
+              จะยกเลิกสิทธิ์ของพนักงานจำนวน{" "}
+              <strong>{pendingEmpCodes.length}</strong> รายการ
             </p>
 
             <div className="flex justify-end gap-2">
