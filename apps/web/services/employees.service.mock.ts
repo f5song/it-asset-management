@@ -24,10 +24,12 @@ const DEPARTMENTS = [
   "สำนักการพาณิชย์",
 ] as const;
 
-const COMPANIES = ["บจก. บีอีซีไอ คอร์ปอเรชั่น",
-"บริษัท บางกอกเอ็นเตอร์เทนเม้นต์ จำกัด",
-"บริษัท บีอีซี-มัลติมีเดีย จำกัด",
-"บริษัท บีอีซี เวิลด์ จำกัด (มหาชน)"] as const;
+const COMPANIES = [
+  "บจก. บีอีซีไอ คอร์ปอเรชั่น",
+  "บริษัท บางกอกเอ็นเตอร์เทนเม้นต์ จำกัด",
+  "บริษัท บีอีซี-มัลติมีเดีย จำกัด",
+  "บริษัท บีอีซี เวิลด์ จำกัด (มหาชน)",
+] as const;
 const SECTIONS = [
   "ฝ่ายการตลาดธุรกิจระหว่างประเทศ",
   "ฝ่ายจัดการธุรกิจระหว่างประเทศ",
@@ -357,9 +359,11 @@ export async function listEmployees(
     const s = ci(q.status);
     filtered = filtered.filter((e) => ci(e.status) === s);
   }
+
   if (q.department) {
-    const d = ci(q.type);
-    filtered = filtered.filter((e) => ci(e.department) === d);
+    // แก้บั๊ก: เดิมใช้ q.type → ต้องเป็น q.department
+    const d = ci(q.type); // <-- กัน null
+    filtered = filtered.filter((e) => ci(e.department ?? undefined) === d); // <-- กัน null
   }
 
   // ----- Sort (optional) -----
