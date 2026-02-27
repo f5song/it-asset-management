@@ -327,6 +327,7 @@ Service → Hook → Component → Page
 
 * ยังไม่มี unit test
 * บาง service ยังมี mock file ค้างอยู่
+* build docker / server ยังมี bug เรื่อง .env API_BASE 
 
 ---
 
